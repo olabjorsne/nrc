@@ -151,8 +151,10 @@ s32_t nrc_os_register_node(struct nrc_node *node, struct nrc_node_api *api, cons
 
         memset(p, 0, size);
 
-        for (i = 0; i < _os.node_list_max_cnt; i++) {
-            p[i] = _os.node_list[i];
+        if (_os.node_list_max_cnt > 0) {
+            for (i = 0; i < _os.node_list_max_cnt; i++) {
+                p[i] = _os.node_list[i];
+            }
         }
 
         nrc_port_heap_free(_os.node_list);
@@ -163,10 +165,12 @@ s32_t nrc_os_register_node(struct nrc_node *node, struct nrc_node_api *api, cons
     _os.node_list[_os.node_list_cnt].api = api;
     _os.node_list[_os.node_list_cnt].node = node;
     _os.node_list[_os.node_list_cnt].cfg_id = cfg_id;
+
     _os.node_list[_os.node_list_cnt].event = (struct nrc_os_event*)nrc_port_heap_alloc(sizeof(struct nrc_os_event));
     assert(_os.node_list[_os.node_list_cnt].event != NULL);
-
     memset(_os.node_list[_os.node_list_cnt].event, 0, sizeof(struct nrc_os_event));
+
+    _os.node_list_cnt++;
 
     return result;
 }
@@ -195,16 +199,21 @@ struct nrc_msg_hdr* nrc_os_msg_alloc(u32_t size)
 
     u32_t total_size = sizeof(struct nrc_os_msg_hdr) + size + sizeof(struct nrc_os_msg_tail);
 
-    struct nrc_os_msg_hdr       *header = (struct nrc_os_msg_hdr*)nrc_port_heap_fast_alloc(total_size);
-    struct nrc_msg_hdr          *msg = (struct nrc_msg_hdr*)(header + 1);
-    struct nrc_os_msg_tail      *tail = (struct nrc_os_msg_tail*)((uint8_t*)msg + size);
+    struct nrc_os_msg_hdr *header = (struct nrc_os_msg_hdr*)nrc_port_heap_fast_alloc(total_size);
+    struct nrc_msg_hdr    *msg = 0;
 
-    memset(&header, 0, sizeof(header));
-    memset(&msg, 0, sizeof(struct nrc_msg_hdr));
+    if (header != 0) {
+        msg = (struct nrc_msg_hdr*)(header + 1);
 
-    header->total_size = total_size;
-    header->dead_beef = 0xDEADBEEF;
-    tail->dead_beef = 0xDEADBEEF;
+        struct nrc_os_msg_tail *tail = (struct nrc_os_msg_tail*)((uint8_t*)msg + size);
+
+        memset(&header, 0, sizeof(header));
+        memset(&msg, 0, sizeof(struct nrc_msg_hdr));
+
+        header->total_size = total_size;
+        header->dead_beef = 0xDEADBEEF;
+        tail->dead_beef = 0xDEADBEEF;
+    }
     
     return msg;
 }
@@ -253,16 +262,23 @@ s32_t nrc_os_send_msg(nrc_node_id_t id, struct nrc_msg_hdr *msg, enum nrc_os_pri
         else {
             struct nrc_os_msg_hdr *pos = _os.msg_list_head;
 
-            while ((header->prio < pos->prio) && (pos->next != 0)) {
+            while ((header->prio >= pos->prio) && (pos->next != 0)) {
+                pos = pos->next;
             }
+
+            header->next = pos->next;
+            pos->next = header;
         }
+
+        result = NRC_PORT_RES_OK;
     }
+
     return result;
 }
 
 s32_t nrc_os_set_evt(nrc_node_id_t id, u32_t event_mask, enum nrc_os_prio prio)
 {
-    s32_t status = 0;
+    s32_t result = NRC_PORT_RES_NOT_SUPPORTED;
     
-    return status;
+    return result;
 }
