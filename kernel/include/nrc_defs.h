@@ -27,9 +27,6 @@ extern "C" {
 
 #define NRC_MAX_CFG_NAME_LEN    (32) //Max string length for id, type, name, etc.. in cfg
 
-#define NRC_MAX_NODES           (64)
-#define NRC_MAX_NODE_WIRES      (4)
-
 #ifdef __cplusplus
 }
 #endif

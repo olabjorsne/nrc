@@ -31,6 +31,10 @@ extern "C" {
 #define TRUE    (1)
 #endif
 
+#define S8_MAX_VALUE  (0x7F)
+#define S32_MAX_VALUE (0x7FFFFFFF)
+#define U32_MAX_VALUE (0xFFFFFFFF)
+
 typedef signed char         s8_t;
 typedef signed short        s16_t;
 typedef signed int          s32_t;

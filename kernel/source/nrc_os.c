@@ -19,7 +19,9 @@
 #include <assert.h>
 #include <string.h>
 
-#define NRC_OS_STACK_SIZE (4096)
+#define NRC_OS_STACK_SIZE   (4096)
+#define NRC_OS_NODE_TYPE    (0xA5A5)
+#define NRC_OS_MSG_TYPE     (0x5A5A)
 
 enum nrc_os_state {
     NRC_OS_S_INVALID = 0,
@@ -27,32 +29,31 @@ enum nrc_os_state {
     NRC_OS_S_STARTED
 };
 
-struct nrc_os_event {
-    struct nrc_os_event *next;
-    struct nrc_os_event *previous;
-    nrc_node_id_t       to_node_id;
-    u32_t               event;
-    uint8_t             prio;
-};
-
 struct nrc_os_msg_hdr {
     struct nrc_os_msg_hdr   *next;
     nrc_node_id_t           to_node_id;
-    uint8_t                 prio;
-    uint8_t                 padding[3];
+    s8_t                    prio;
+    s8_t                    padding[3];
     u32_t                   total_size;
-    u32_t                   dead_beef;
+    u32_t                   type;
 };
 
 struct nrc_os_msg_tail {
     u32_t dead_beef;
 };
 
-struct nrc_os_node {
-    struct nrc_node     *node;
+struct nrc_os_node_hdr {
+    struct nrc_os_node_hdr  *next;
+    struct nrc_os_node_hdr  *previous;
+
     struct nrc_node_api *api;
     const s8_t          *cfg_id;
-    struct nrc_os_event *event;
+
+    u32_t               event;
+    s8_t                prio;
+    s8_t                padding[3];
+
+    u32_t               type;
 };
 
 struct nrc_os {
@@ -61,12 +62,8 @@ struct nrc_os {
     nrc_port_thread_t           thread;
     nrc_port_sema_t             sema;
 
-    u16_t                       node_list_max_cnt;
-    u16_t                       node_list_cnt;
-    struct nrc_os_node          *node_list;
-
-    struct nrc_os_msg_hdr       *msg_list_head;
-    struct nrc_os_msg_hdr       *msg_list_tail;
+    struct nrc_os_node_hdr      *node_list;
+    struct nrc_os_msg_hdr       *msg_list;
 };
 
 static struct nrc_os _os;
@@ -138,56 +135,86 @@ s32_t nrc_os_stop(void)
     return result;
 }
 
-s32_t nrc_os_register_node(struct nrc_node *node, struct nrc_node_api *api, const s8_t *cfg_id)
+struct nrc_node_hdr* nrc_os_node_alloc(u32_t size)
 {
-    s32_t result = NRC_PORT_RES_OK;
-    
-    if (_os.node_list_cnt == _os.node_list_max_cnt) {
-        u32_t   i;
-        u32_t   size = sizeof(struct nrc_os_node*) * (8 + _os.node_list_max_cnt);
+    u32_t total_size = sizeof(struct nrc_os_node_hdr) + size;
 
-        struct nrc_os_node *p = (struct nrc_os_node*)nrc_port_heap_alloc(size);
-        assert(p != NULL);
+    struct nrc_os_node_hdr  *os_node_hdr = (struct nrc_os_node_hdr*)nrc_port_heap_alloc(total_size);
+    struct nrc_node_hdr     *node_hdr = 0;
 
-        memset(p, 0, size);
+    if (os_node_hdr != 0) {
+        node_hdr = (struct nrc_node_hdr*)(os_node_hdr + 1);
 
-        if (_os.node_list_max_cnt > 0) {
-            for (i = 0; i < _os.node_list_max_cnt; i++) {
-                p[i] = _os.node_list[i];
-            }
-        }
+        memset(os_node_hdr, 0, sizeof(struct nrc_os_node_hdr));
+        memset(node_hdr, 0, sizeof(struct nrc_node_hdr));
 
-        nrc_port_heap_free(_os.node_list);
-        _os.node_list = p;
-        _os.node_list_max_cnt += 8;
+        os_node_hdr->prio = S8_MAX_VALUE;
+        os_node_hdr->type = NRC_OS_NODE_TYPE;
     }
 
-    _os.node_list[_os.node_list_cnt].api = api;
-    _os.node_list[_os.node_list_cnt].node = node;
-    _os.node_list[_os.node_list_cnt].cfg_id = cfg_id;
+    return node_hdr;
+}
 
-    _os.node_list[_os.node_list_cnt].event = (struct nrc_os_event*)nrc_port_heap_alloc(sizeof(struct nrc_os_event));
-    assert(_os.node_list[_os.node_list_cnt].event != NULL);
-    memset(_os.node_list[_os.node_list_cnt].event, 0, sizeof(struct nrc_os_event));
+s32_t nrc_os_register_node(struct nrc_node_hdr *node_hdr, struct nrc_node_api *api, const s8_t *cfg_id)
+{
+    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
-    _os.node_list_cnt++;
+    if ((node_hdr != 0) && (api != 0) && (cfg_id != 0) &&
+        (api->init != 0) && (api->deinit != 0) && (api->start != 0) && (api->stop != 0) &&
+        (api->recv_msg != 0) && (api->recv_evt != 0)) {
+
+        struct nrc_os_node_hdr *os_node_hdr = (struct nrc_os_node_hdr*)node_hdr - 1;
+
+        if (os_node_hdr->type != NRC_OS_NODE_TYPE) {
+            os_node_hdr->api = api;
+            os_node_hdr->cfg_id = cfg_id;
+            os_node_hdr->prio = S8_MAX_VALUE;
+            os_node_hdr->event = 0;
+
+            if (_os.node_list == 0) {
+                _os.node_list = os_node_hdr;
+                os_node_hdr->previous = 0;
+            }
+            else {
+                struct nrc_os_node_hdr *node = _os.node_list;
+
+                while (node->next != 0) {
+                    node = node->next;
+                }
+
+                node->next = os_node_hdr;
+                os_node_hdr->previous = node;
+            }
+
+            result = NRC_PORT_RES_OK;
+        }
+    }
 
     return result;
 }
 
 s32_t nrc_os_get_node_id(const s8_t *cfg_id, nrc_node_id_t *id)
 {
-    s32_t       result = NRC_PORT_RES_ERROR;
-    
-    *id = 0xFFFFFFFF;
+    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
-    for (uint32_t i = 0; (i < _os.node_list_cnt) && (result == NRC_PORT_RES_ERROR); i++) {
-        if (strcmp(cfg_id, _os.node_list[i].cfg_id) == 0) {
-            *id = i | 0xBB000000;
-            result = NRC_PORT_RES_OK;
+    if ((cfg_id != 0) && (id != 0)) {
+
+        *id = 0;
+        result = NRC_PORT_RES_NOT_FOUND;
+
+        bool_t                  found = FALSE;
+        struct nrc_os_node_hdr  *node = _os.node_list;
+
+        while ((found == FALSE) && (node != 0)) {
+            if (strncmp(cfg_id, node->cfg_id, NRC_MAX_CFG_NAME_LEN) == 0) {
+                found = TRUE;
+                *id = (nrc_node_id_t)node;
+                result = NRC_PORT_RES_OK;
+            }
+            node = node->next;
         }
     }
-    
+     
     return result;
 }
 
@@ -211,7 +238,7 @@ struct nrc_msg_hdr* nrc_os_msg_alloc(u32_t size)
         memset(&msg, 0, sizeof(struct nrc_msg_hdr));
 
         header->total_size = total_size;
-        header->dead_beef = 0xDEADBEEF;
+        header->type = NRC_OS_MSG_TYPE;
         tail->dead_beef = 0xDEADBEEF;
     }
     
@@ -220,6 +247,8 @@ struct nrc_msg_hdr* nrc_os_msg_alloc(u32_t size)
 
 struct nrc_msg_hdr* nrc_os_msg_clone(struct nrc_msg_hdr *msg)
 {
+    //TODO: Check valid message
+
     struct nrc_os_msg_hdr *header = (struct nrc_os_msg_hdr*)msg - 1;
     struct nrc_os_msg_hdr *new_header = (struct nrc_os_msg_hdr*)nrc_port_heap_fast_alloc(header->total_size);
 
@@ -235,7 +264,7 @@ void nrc_os_msg_free(struct nrc_msg_hdr *msg)
     while (msg != 0) {
         os_msg_header = (struct nrc_os_msg_hdr*)msg - 1;
 
-        //TODO: Check ->deadBeef x 2
+        //TODO: Check valid message
 
         msg = msg->next;
 
@@ -244,33 +273,35 @@ void nrc_os_msg_free(struct nrc_msg_hdr *msg)
 }
 
 
-s32_t nrc_os_send_msg(nrc_node_id_t id, struct nrc_msg_hdr *msg, enum nrc_os_prio prio)
+s32_t nrc_os_send_msg(nrc_node_id_t id, struct nrc_msg_hdr *msg, s8_t prio)
 {
-    s32_t result = NRC_PORT_RES_ERROR;
+    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
-    if (((id & 0xFF000000) == 0xBB000000) && (msg != 0)) {
-        id &= 0x00FFFFFF;
+    if ((id != 0) && (msg != 0)) {
 
-        struct nrc_os_msg_hdr *header = (struct nrc_os_msg_hdr*)msg - 1;
+        struct nrc_os_node_hdr  *os_node_hdr = (struct nrc_os_node_hdr*)id - 1;
+        struct nrc_os_msg_hdr   *os_msg_hdr = (struct nrc_os_msg_hdr*)msg - 1;
 
-        header->prio = prio;
+        if ((os_node_hdr->type == NRC_OS_NODE_TYPE) && (os_msg_hdr->type == NRC_OS_MSG_TYPE)) {
 
-        if (_os.msg_list_head == 0) {
-            _os.msg_list_head = header;
-            _os.msg_list_tail = header;
-        }
-        else {
-            struct nrc_os_msg_hdr *pos = _os.msg_list_head;
+            os_msg_hdr->prio = prio;
 
-            while ((header->prio >= pos->prio) && (pos->next != 0)) {
-                pos = pos->next;
+            if ((_os.msg_list == 0) || (os_msg_hdr->prio < _os.msg_list->prio)) {
+                os_msg_hdr->next = _os.msg_list;
+                _os.msg_list = os_msg_hdr;
+            }
+            else {
+                struct nrc_os_msg_hdr *msg = _os.msg_list;
+
+                while ((msg->next != 0) && (os_msg_hdr->prio >= msg->next->prio)) {
+                    msg = msg->next;
+                }
+                os_msg_hdr->next = msg->next;
+                msg->next = os_msg_hdr;
             }
 
-            header->next = pos->next;
-            pos->next = header;
+            result = NRC_PORT_RES_OK;
         }
-
-        result = NRC_PORT_RES_OK;
     }
 
     return result;

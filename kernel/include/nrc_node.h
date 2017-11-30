@@ -25,16 +25,20 @@
 extern "C" {
 #endif
 
+#ifdef _LONG_HANDLES_
+typedef u64_t nrc_node_id_t;
+#else
 typedef u32_t nrc_node_id_t;
+#endif
 
 struct nrc_node;
 
-typedef s32_t (*nrc_node_init_t)(struct nrc_node *self, nrc_node_id_t id);
-typedef s32_t (*nrc_node_deinit_t)(struct nrc_node *self);
-typedef s32_t (*nrc_node_start_t)(struct nrc_node *self);
-typedef s32_t (*nrc_node_stop_t)(struct nrc_node *self);
-typedef s32_t (*nrc_node_recv_msg_t)(struct nrc_node *self, struct nrc_msg_hdr *msg);
-typedef s32_t (*nrc_node_recv_evt_t)(struct nrc_node *self, u32_t event_mask);
+typedef s32_t (*nrc_node_init_t)(struct nrc_node_hdr *self, nrc_node_id_t id);
+typedef s32_t (*nrc_node_deinit_t)(struct nrc_node_hdr *self);
+typedef s32_t (*nrc_node_start_t)(struct nrc_node_hdr *self);
+typedef s32_t (*nrc_node_stop_t)(struct nrc_node_hdr *self);
+typedef s32_t (*nrc_node_recv_msg_t)(struct nrc_node_hdr *self, struct nrc_msg_hdr *msg);
+typedef s32_t (*nrc_node_recv_evt_t)(struct nrc_node_hdr *self, u32_t event_mask);
 
 struct nrc_node_api {
     nrc_node_init_t     init;
@@ -45,15 +49,10 @@ struct nrc_node_api {
     nrc_node_recv_evt_t recv_evt;
 };
 
-struct nrc_node {
-    struct nrc_node_api *api;
-
+struct nrc_node_hdr {
     const s8_t          *cfg_type;
     const s8_t          *cfg_id;
     const s8_t          *cfg_name;
-    const s8_t          *cfg_wires;
-
-    nrc_node_id_t       wires[NRC_MAX_NODE_WIRES];
 };
 
 #ifdef __cplusplus
