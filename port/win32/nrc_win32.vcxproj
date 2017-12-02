@@ -98,7 +98,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_LONG_HANDLES_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\..\port\win32\include;.\..\..\\kernel\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\..\port\include;.\..\..\\kernel\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <StructMemberAlignment>4Bytes</StructMemberAlignment>
     </ClCompile>
     <Link>
@@ -148,7 +148,7 @@
     <ClInclude Include="..\..\kernel\include\nrc_node.h" />
     <ClInclude Include="..\..\kernel\include\nrc_os.h" />
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
-    <ClInclude Include="include\nrc_port.h" />
+    <ClInclude Include="..\include\nrc_port.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
