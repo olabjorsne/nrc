@@ -254,11 +254,14 @@ struct nrc_msg_hdr* nrc_os_msg_clone(struct nrc_msg_hdr *msg)
 void nrc_os_msg_free(struct nrc_msg_hdr *msg)
 {
     struct nrc_os_msg_hdr   *os_msg_header;
+    struct nrc_os_msg_tail  *os_msg_tail;
 
     while (msg != 0) {
         os_msg_header = (struct nrc_os_msg_hdr*)msg - 1;
+        assert(os_msg_header->type == NRC_OS_MSG_TYPE);
 
-        //TODO: Check valid message
+        os_msg_tail = (struct nrc_os_msg_tail*)((u8_t*)os_msg_header + os_msg_header->total_size) - 1;
+        assert(os_msg_tail->dead_beef == 0xDEADBEEF);
 
         msg = msg->next;
 
@@ -270,7 +273,7 @@ s32_t nrc_os_send_msg(nrc_node_id_t id, struct nrc_msg_hdr *msg, s8_t prio)
 {
     s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
-    if ((id != 0) && (msg != 0)) {
+    if ((id != 0) && (msg != 0) && (prio < S8_MAX_VALUE)) {
 
         struct nrc_os_node_hdr  *os_node_hdr = (struct nrc_os_node_hdr*)id;
         struct nrc_os_msg_hdr   *os_msg_hdr = (struct nrc_os_msg_hdr*)msg - 1;
