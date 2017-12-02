@@ -26,6 +26,9 @@
 #define NRC_PORT_RES_NOT_SUPPORTED      (-3)
 #define NRC_PORT_RES_INVALID_IN_PARAM   (-4)
 #define NRC_PORT_RES_NOT_FOUND          (-5)
+#define NRC_PORT_RES_OUT_OF_MEM         (-6)
+
+#define NRC_PORT_TIMER_RES_MS           (10)
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,17 +41,21 @@ enum nrc_port_thread_prio {
     NRC_PORT_THREAD_PRIO_LOW            // For background tasks
 };
 
-typedef void(*nrc_port_thread_fcn_t)(void);
-
 #ifdef _LONG_HANDLES_
 typedef s64_t nrc_port_thread_t;
 typedef s64_t nrc_port_sema_t;
 typedef s64_t nrc_port_mutex_t;
+typedef s64_t nrc_port_timer_t;
 #else
 typedef s32_t nrc_port_thread_t;
 typedef s32_t nrc_port_sema_t;
 typedef s32_t nrc_port_mutex_t;
+typedef s32_t nrc_port_timer_t;
 #endif
+
+typedef void(*nrc_port_thread_fcn_t)(void);
+typedef void(*nrc_port_timeout_fcn_t)(nrc_port_timer_t timer_id, s32_t tag);
+
 
 s32_t nrc_port_init(void);
 
@@ -97,6 +104,12 @@ s32_t nrc_port_mutex_unlock(nrc_port_mutex_t mutex);
 s32_t nrc_port_sema_init(u32_t count, nrc_port_sema_t *sema);
 s32_t nrc_port_sema_signal(nrc_port_sema_t sema);
 s32_t nrc_port_sema_wait(nrc_port_sema_t sema, u32_t timeout);
+
+/**
+ * Timer
+ */
+s32_t nrc_port_timer_after(u32_t timeout_ms, s32_t tag, nrc_port_timeout_fcn_t timeout_fcn, nrc_port_timer_t *timer);
+s32_t nrc_port_timer_cancel(nrc_port_timer_t timer);
 
 /**
  * IRQ Disable/Enable
