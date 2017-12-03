@@ -20,7 +20,8 @@
 #include <Windows.h>
 #include <assert.h>
 
-#define NRC_PORT_TIMER_TYPE (0xAAAAAAAA)
+#define NRC_PORT_TIMER_TYPE     (0xAAAAAAAA)
+#define NRC_PORT_TIMER_RES_MS   (32)
 
 enum nrc_port_state {
     NRC_PORT_S_INVALID = 0,
@@ -31,7 +32,7 @@ struct nrc_port_timer {
     struct nrc_port_timer   *next;
     u32_t                   type;
     s32_t                   tag;
-    u32_t                   timeout_ms;
+    u64_t                   time;
     nrc_port_timeout_fcn_t  fcn;
 };
 
@@ -41,20 +42,37 @@ struct nrc_port {
     nrc_port_mutex_t        irq_mutex;
 
     nrc_port_mutex_t        timer_mutex;
+    nrc_port_thread_t       timer_thread_id;
+    u64_t                   time_start;
     struct nrc_port_timer   *timer_list;
 };
+
+static void timer_thread_fcn(void);
+
+s32_t nrc_port_thread_start(nrc_port_thread_t thread_id);
 
 static struct nrc_port _port = { NRC_PORT_S_INVALID, 0, 0, 0};
 
 s32_t nrc_port_init(void)
 {
-    s32_t result = NRC_PORT_RES_OK;
+    s32_t       result = NRC_PORT_RES_OK;
 
-    assert(_port.state == NRC_PORT_S_INVALID);
+    if (_port.state == NRC_PORT_S_INVALID) {
 
-    result = nrc_port_mutex_init(&(_port.irq_mutex));
+        result = nrc_port_mutex_init(&(_port.irq_mutex));
 
-    result = nrc_port_mutex_init(&(_port.timer_mutex));
+        result = nrc_port_mutex_init(&(_port.timer_mutex));
+
+        result = nrc_port_thread_init(NRC_PORT_THREAD_PRIO_CRITICAL, 4096, timer_thread_fcn, &(_port.timer_thread_id));
+
+        result = nrc_port_thread_start(_port.timer_thread_id);
+
+        _port.time_start = GetTickCount64();
+
+        if (result == NRC_PORT_RES_OK) {
+            _port.state = NRC_PORT_S_INITIALISED;
+        }
+    }
 
     return result;
 }
@@ -206,8 +224,8 @@ s32_t nrc_port_mutex_unlock(nrc_port_mutex_t mutex)
 
 s32_t nrc_port_sema_init(u32_t count, nrc_port_sema_t *sema)
 {
-    s32_t   result = NRC_PORT_RES_OK;
-    HANDLE  handle;
+    s32_t       result = NRC_PORT_RES_OK;
+    HANDLE      handle;
 
     assert(sema != NULL);
     
@@ -265,92 +283,82 @@ s32_t nrc_port_sema_wait(nrc_port_sema_t sema, u32_t timeout)
 	return result;
 }
 
-static VOID CALLBACK timer_proc(
-    _In_ HWND     hwnd,
-    _In_ UINT     uMsg,
-    _In_ UINT_PTR idEvent,
-    _In_ DWORD    dwTime)
+static void timer_thread_fcn(void)
 {
     s32_t result;
     struct nrc_port_timer *tmr = 0;
     struct nrc_port_timer *tmr_pre = 0;
     struct nrc_port_timer *triggered = 0;
 
-    result = nrc_port_mutex_lock(_port.timer_mutex, 0);
+    while (_port.state == NRC_PORT_S_INITIALISED) {
+        Sleep(NRC_PORT_TIMER_RES_MS);
 
-    tmr = _port.timer_list;
-    tmr_pre = 0;
+        result = nrc_port_mutex_lock(_port.timer_mutex, 0);
 
-    while (tmr != 0) {
-        tmr->timeout_ms = (tmr->timeout_ms > NRC_PORT_TIMER_RES_MS) ? (tmr->timeout_ms - NRC_PORT_TIMER_RES_MS) : 0;
+        tmr = _port.timer_list;
+        tmr_pre = 0;
 
-        if (tmr->timeout_ms == 0) {
-            //Remove timer from list
-            if (tmr_pre == 0) {
-                _port.timer_list = tmr->next;
+        while (tmr != 0) {
+
+            if (tmr->time <= nrc_port_timer_get_time_ms()) {
+
+                //Remove timer from list
+                if (tmr_pre == 0) {
+                    _port.timer_list = tmr->next;
+                }
+                else {
+                    tmr_pre->next = tmr->next;
+                }
+                //Add timer to trigger list
+                tmr->next = triggered;
+                triggered = tmr->next;
+
+                //Update for next iteration
+                if (tmr_pre == 0) {
+                    tmr = _port.timer_list;
+                }
+                else {
+                    tmr = tmr_pre->next;
+                }
             }
             else {
-                tmr_pre->next = tmr->next;
+                tmr_pre = tmr;
+                tmr = tmr->next;
             }
-            //Add timer to trigger list
-            tmr->next = triggered;
+        }
+
+        result = nrc_port_mutex_unlock(_port.timer_mutex);
+
+        while (triggered != 0)
+        {
+            tmr = triggered;
             triggered = tmr->next;
-            
-            //Update for next iteration
-            if (tmr_pre == 0) {
-                tmr = _port.timer_list;
-            }
-            else {
-                tmr = tmr_pre->next;
-            }
-        }
-        else {
-            tmr_pre = tmr;
-            tmr = tmr->next;
-        }
-    }
-    if (_port.timer_list != 0) {
-        UINT_PTR wres = SetTimer(NULL, 0, (UINT)NRC_PORT_TIMER_RES_MS, timer_proc);
-    }
-    result = nrc_port_mutex_unlock(_port.timer_mutex);
 
-    while (triggered != 0)
-    {
-        tmr = triggered;
-        triggered = tmr->next;
-
-        tmr->fcn((nrc_port_timer_t)tmr, tmr->tag);
-        nrc_port_heap_fast_free(tmr);
+            tmr->fcn((nrc_port_timer_t)tmr, tmr->tag);
+            nrc_port_heap_fast_free(tmr);
+        }
     }
 }
 
 s32_t nrc_port_timer_after(u32_t timeout_ms, s32_t tag, nrc_port_timeout_fcn_t fcn, nrc_port_timer_t *timer_id)
 {
-    s32_t       result = NRC_PORT_RES_INVALID_IN_PARAM;
-    UINT_PTR    wres;
+    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
     if (timer_id != 0) {
 
         struct nrc_port_timer *timer = (struct nrc_port_timer*)nrc_port_heap_fast_alloc(sizeof(struct nrc_port_timer));
 
         if (timer != 0) {
+            timeout_ms = (timeout_ms < 10) ? 10 : timeout_ms;
+
             timer->fcn = fcn;
             timer->tag = tag;
-            timer->timeout_ms = timeout_ms;
+            timer->time = timeout_ms + nrc_port_timer_get_time_ms(); //Time when to trigger
 
             result = nrc_port_mutex_lock(_port.timer_mutex, 0);
 
-            if (_port.timer_list == 0) {
-                _port.timer_list = timer;
-
-                wres = SetTimer(NULL, 0, (UINT)NRC_PORT_TIMER_RES_MS, timer_proc);
-            }
-            else {
-                timer->next = _port.timer_list;
-                _port.timer_list = timer;
-
-                timer->timeout_ms += NRC_PORT_TIMER_RES_MS;
-            }
+            timer->next = _port.timer_list;
+            _port.timer_list = timer;
 
             *timer_id = (nrc_port_timer_t)timer;
 
@@ -398,6 +406,19 @@ s32_t nrc_port_timer_cancel(nrc_port_timer_t timer_id)
     }
 
     return result;
+}
+
+u32_t nrc_port_timer_get_res_ms(void)
+{
+    return NRC_PORT_TIMER_RES_MS;
+}
+
+u64_t nrc_port_timer_get_time_ms(void)
+{
+
+    u64_t now = GetTickCount64();
+
+    return (now - _port.time_start);
 }
 
 s32_t nrc_port_irq_disable(void)

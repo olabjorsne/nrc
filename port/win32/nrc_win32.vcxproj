@@ -140,6 +140,7 @@
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="source\nrc_port.c" />
+    <ClCompile Include="test_port.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_cfg.h" />
@@ -149,6 +150,7 @@
     <ClInclude Include="..\..\kernel\include\nrc_os.h" />
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
     <ClInclude Include="..\include\nrc_port.h" />
+    <ClInclude Include="..\include\test_port.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

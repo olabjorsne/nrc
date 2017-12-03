@@ -28,8 +28,6 @@
 #define NRC_PORT_RES_NOT_FOUND          (-5)
 #define NRC_PORT_RES_OUT_OF_MEM         (-6)
 
-#define NRC_PORT_TIMER_RES_MS           (10)
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -110,6 +108,8 @@ s32_t nrc_port_sema_wait(nrc_port_sema_t sema, u32_t timeout);
  */
 s32_t nrc_port_timer_after(u32_t timeout_ms, s32_t tag, nrc_port_timeout_fcn_t timeout_fcn, nrc_port_timer_t *timer);
 s32_t nrc_port_timer_cancel(nrc_port_timer_t timer);
+u64_t nrc_port_timer_get_time_ms(void);
+u32_t nrc_port_timer_get_res_ms(void);
 
 /**
  * IRQ Disable/Enable

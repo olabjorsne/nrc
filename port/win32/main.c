@@ -17,17 +17,23 @@
 #include <Windows.h>
 #include <stdio.h>
 
+#include "nrc_types.h"
 #include "nrc_port.h"
 #include "nrc_os.h"
+#include "test_port.h"
 
 int main(void)
 {
+    bool_t ok = FALSE;
+
 	printf("nrc is about to start\n");
 
-#include "nrc_port.h"
-    nrc_port_init();
     nrc_os_init();
     nrc_os_start();
+
+#if 0
+    ok = test_all();
+#endif
 
     while (1) {
         Sleep(1000);
