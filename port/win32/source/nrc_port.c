@@ -151,21 +151,6 @@ s32_t nrc_port_thread_start(nrc_port_thread_t thread_id)
 	return result;
 }
 
-/*
-s32_t nrc_port_queue_init(u32_t size, nrc_port_queue_t *queue)
-{
-	return 0;
-}
-s32_t nrc_port_queue_put(nrc_port_queue_t queue, void *item)
-{
-	return 0;
-}
-void* nrc_port_queue_get(nrc_port_queue_t queue, u32_t timeout)
-{
-	return 0;
-}
-*/
-
 s32_t nrc_port_mutex_init(nrc_port_mutex_t *mutex)
 {
     s32_t   result = NRC_PORT_RES_OK;
@@ -311,7 +296,7 @@ static void timer_thread_fcn(void)
                 }
                 //Add timer to trigger list
                 tmr->next = triggered;
-                triggered = tmr->next;
+                triggered = tmr;
 
                 //Update for next iteration
                 if (tmr_pre == 0) {
