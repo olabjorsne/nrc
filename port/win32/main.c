@@ -21,13 +21,17 @@
 #include "nrc_port.h"
 #include "nrc_os.h"
 #include "test_port.h"
+#include "nrc_log.h"
+
+const s8_t *TAG = "main";
 
 int main(void)
 {
     bool_t ok = FALSE;
 
-	printf("nrc is about to start\n");
-
+    NRC_LOGI(TAG, "nrc version : v0.01");
+    NRC_LOGI(TAG, "target : win32");
+    NRC_LOGI(TAG, "loading");
     nrc_os_init();
     nrc_os_start();
 
@@ -36,6 +40,7 @@ int main(void)
 #endif
 
     while (1) {
+        NRC_LOGD(TAG, "sleep 1s");
         Sleep(1000);
     }
 }

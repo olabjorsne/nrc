@@ -119,6 +119,13 @@ u32_t nrc_port_timer_get_res_ms(void);
 s32_t nrc_port_irq_disable(void);
 s32_t nrc_port_irq_enable(void);
 
+/**
+ * Used by log macros
+ */
+s32_t nrc_port_vprintf(const char * format, va_list argptr);
+u32_t nrc_port_timestamp_in_ms(void);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -137,6 +137,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\kernel\source\nrc_log.c" />
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="source\nrc_port.c" />
@@ -145,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_cfg.h" />
     <ClInclude Include="..\..\kernel\include\nrc_defs.h" />
+    <ClInclude Include="..\..\kernel\include\nrc_log.h" />
     <ClInclude Include="..\..\kernel\include\nrc_msg.h" />
     <ClInclude Include="..\..\kernel\include\nrc_node.h" />
     <ClInclude Include="..\..\kernel\include\nrc_os.h" />

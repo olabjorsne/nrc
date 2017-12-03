@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <Windows.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 #define NRC_PORT_TIMER_TYPE     (0xAAAAAAAA)
 #define NRC_PORT_TIMER_RES_MS   (32)
@@ -418,4 +420,21 @@ s32_t nrc_port_irq_enable(void)
     assert(_port.state == NRC_PORT_S_INITIALISED);
 
     return nrc_port_mutex_unlock(_port.irq_mutex);
+}
+
+u32_t nrc_port_timestamp_in_ms(void)
+{
+    s32_t timestamp = 0;
+    if (_port.state == NRC_PORT_S_INITIALISED) {
+        timestamp = (u32_t)(GetTickCount64() - _port.time_start);
+    }
+    else {
+        timestamp = 0;
+    }
+    return timestamp;
+}
+
+s32_t nrc_port_vprintf(const char *format, va_list argptr)
+{
+    return vprintf(format, argptr);
 }
