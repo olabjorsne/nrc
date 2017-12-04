@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="kernel">
+      <UniqueIdentifier>{497d8889-ff1c-4a52-9e3d-f183a63be8a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\include">
+      <UniqueIdentifier>{ddbfbb0d-2249-4097-9d32-8ace6dc75e1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\source">
+      <UniqueIdentifier>{084810f0-13c5-42e4-8d41-072bcc27db53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="port">
+      <UniqueIdentifier>{e65eff24-a199-4463-8c5e-9853d50184d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="port\win32">
+      <UniqueIdentifier>{403b6cd5-3538-4852-b973-02413c062a26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\nodes">
+      <UniqueIdentifier>{010ac94e-2235-4256-a6a2-1553401b7a57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernel\nodes\include">
+      <UniqueIdentifier>{88a575c2-cb3e-43dc-b278-92cb3a3a901e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="port\win32\source">
+      <UniqueIdentifier>{0f480a5e-a93f-4a57-bc39-1f72fb28666f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="port\include">
+      <UniqueIdentifier>{35e08fc4-f5bc-4c43-aeec-635fa85e69e1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\kernel\source\nrc_os.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="main.c">
+      <Filter>port\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="source\nrc_port.c">
+      <Filter>port\win32\source</Filter>
+    </ClCompile>
+    <ClCompile Include="test_port.c">
+      <Filter>port\win32\source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\kernel\include\nrc_os.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_cfg.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_defs.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_msg.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_node.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_types.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\nrc_port.h">
+      <Filter>port\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\test_port.h">
+      <Filter>port\include</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
