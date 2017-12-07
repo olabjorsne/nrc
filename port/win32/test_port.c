@@ -150,9 +150,9 @@ bool_t test_sema_and_thread(u32_t ms, u32_t sema_count)
     return ok;
 }
 
-static void timeout_fcn(nrc_port_timer_t timer_id, s32_t tag)
+static void timeout_fcn(nrc_port_timer_t timer_id, void *tag)
 {
-    _bit_mask |= tag;
+    _bit_mask |= (u32_t)tag;
 
     nrc_port_sema_signal(_sema);
 }
@@ -201,26 +201,26 @@ bool_t test_timeout_after_and_cancel(void)
     result = nrc_port_sema_init(0, &_sema);
 
     if (result == NRC_PORT_RES_OK) {
-        result = nrc_port_timer_after(2050, 1, timeout_fcn, &timer1);
+        result = nrc_port_timer_after(2050, (void*)1, timeout_fcn, &timer1);
     }
 
     if (result == NRC_PORT_RES_OK) {
-        result = nrc_port_timer_after(2000, 2, timeout_fcn, &timer2);
+        result = nrc_port_timer_after(2000, (void*)2, timeout_fcn, &timer2);
     }
     if (result == NRC_PORT_RES_OK) {
-        result = nrc_port_timer_after(1000, 4, timeout_fcn, &timer4);
+        result = nrc_port_timer_after(1000, (void*)4, timeout_fcn, &timer4);
     }
     if (result == NRC_PORT_RES_OK) {
-        result = nrc_port_timer_after(3000, 8, timeout_fcn, &timer8);
+        result = nrc_port_timer_after(3000, (void*)8, timeout_fcn, &timer8);
     }
     if (result == NRC_PORT_RES_OK) {
-        result = nrc_port_timer_after(1100, 16, timeout_fcn, &timer16);
+        result = nrc_port_timer_after(1100, (void*)16, timeout_fcn, &timer16);
     }
     if (result == NRC_PORT_RES_OK) {
-        result = nrc_port_timer_after(4000, 32, timeout_fcn, &timer32);
+        result = nrc_port_timer_after(4000, (void*)32, timeout_fcn, &timer32);
     }
     if (result == NRC_PORT_RES_OK) {
-        result = nrc_port_timer_after(5000, 64, timeout_fcn, &timer64);
+        result = nrc_port_timer_after(5000, (void*)64, timeout_fcn, &timer64);
     }
 
     if (result == NRC_PORT_RES_OK) {

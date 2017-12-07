@@ -25,11 +25,7 @@
 extern "C" {
 #endif
 
-#ifdef _LONG_HANDLES_
-typedef u64_t nrc_node_id_t;
-#else
-typedef u32_t nrc_node_id_t;
-#endif
+typedef void* nrc_node_id_t;
 
 struct nrc_node;
 

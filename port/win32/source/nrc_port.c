@@ -33,7 +33,7 @@ enum nrc_port_state {
 struct nrc_port_timer {
     struct nrc_port_timer   *next;
     u32_t                   type;
-    s32_t                   tag;
+    void                    *tag;
     u64_t                   time;
     nrc_port_timeout_fcn_t  fcn;
 };
@@ -327,7 +327,7 @@ static void timer_thread_fcn(void)
     }
 }
 
-s32_t nrc_port_timer_after(u32_t timeout_ms, s32_t tag, nrc_port_timeout_fcn_t fcn, nrc_port_timer_t *timer_id)
+s32_t nrc_port_timer_after(u32_t timeout_ms, void *tag, nrc_port_timeout_fcn_t fcn, nrc_port_timer_t *timer_id)
 {
     s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 

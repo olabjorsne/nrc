@@ -39,20 +39,13 @@ enum nrc_port_thread_prio {
     NRC_PORT_THREAD_PRIO_LOW            // For background tasks
 };
 
-#ifdef _LONG_HANDLES_
-typedef s64_t nrc_port_thread_t;
-typedef s64_t nrc_port_sema_t;
-typedef s64_t nrc_port_mutex_t;
-typedef s64_t nrc_port_timer_t;
-#else
-typedef s32_t nrc_port_thread_t;
-typedef s32_t nrc_port_sema_t;
-typedef s32_t nrc_port_mutex_t;
-typedef s32_t nrc_port_timer_t;
-#endif
+typedef void* nrc_port_thread_t;
+typedef void* nrc_port_sema_t;
+typedef void* nrc_port_mutex_t;
+typedef void* nrc_port_timer_t;
 
 typedef void(*nrc_port_thread_fcn_t)(void);
-typedef void(*nrc_port_timeout_fcn_t)(nrc_port_timer_t timer_id, s32_t tag);
+typedef void(*nrc_port_timeout_fcn_t)(nrc_port_timer_t timer_id, void *tag);
 
 
 s32_t nrc_port_init(void);
@@ -78,18 +71,6 @@ s32_t nrc_port_thread_init(
 s32_t nrc_port_thread_start(nrc_port_thread_t thread_id);
 
 /**
- * Queue
- */
-
-/**
-typedef u32_t nrc_port_queue_t;
-
-s32_t nrc_port_queue_init(u32_t size, nrc_port_queue_t *queue);
-s32_t nrc_port_queue_put(nrc_port_queue_t queue, void *item);
-void* nrc_port_queue_get(nrc_port_queue_t queue, u32_t timeout);
-*/
-
-/**
  * Mutex
  */
 s32_t nrc_port_mutex_init(nrc_port_mutex_t *mutex);
@@ -106,7 +87,7 @@ s32_t nrc_port_sema_wait(nrc_port_sema_t sema, u32_t timeout);
 /**
  * Timer
  */
-s32_t nrc_port_timer_after(u32_t timeout_ms, s32_t tag, nrc_port_timeout_fcn_t timeout_fcn, nrc_port_timer_t *timer);
+s32_t nrc_port_timer_after(u32_t timeout_ms, void *tag, nrc_port_timeout_fcn_t timeout_fcn, nrc_port_timer_t *timer);
 s32_t nrc_port_timer_cancel(nrc_port_timer_t timer);
 u64_t nrc_port_timer_get_time_ms(void);
 u32_t nrc_port_timer_get_res_ms(void);
