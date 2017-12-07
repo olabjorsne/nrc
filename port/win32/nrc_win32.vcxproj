@@ -139,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\kernel\nodes\source\nrc_node_inject.c" />
     <ClCompile Include="..\..\kernel\source\nrc_log.c" />
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="..\..\kernel\source\nrc_timer.c" />
@@ -155,6 +156,7 @@
     <ClInclude Include="..\..\kernel\include\nrc_os.h" />
     <ClInclude Include="..\..\kernel\include\nrc_timer.h" />
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
+    <ClInclude Include="..\..\kernel\nodes\include\nrc_node_factory.h" />
     <ClInclude Include="..\include\nrc_port.h" />
     <ClInclude Include="..\include\test_port.h" />
   </ItemGroup>

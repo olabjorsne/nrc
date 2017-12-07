@@ -40,6 +40,9 @@
     <Filter Include="port\include">
       <UniqueIdentifier>{35e08fc4-f5bc-4c43-aeec-635fa85e69e1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="kernel\nodes\source">
+      <UniqueIdentifier>{b77e9440-432a-4121-a969-e194a6e00c05}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\kernel\source\nrc_os.c">
@@ -59,6 +62,9 @@
     </ClCompile>
     <ClCompile Include="..\..\kernel\source\nrc_timer.c">
       <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\nodes\source\nrc_node_inject.c">
+      <Filter>kernel\nodes\source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -91,6 +97,9 @@
     </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_timer.h">
       <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\nodes\include\nrc_node_factory.h">
+      <Filter>kernel\nodes\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
