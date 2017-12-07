@@ -50,33 +50,33 @@ s32_t nrc_timer_init(void)
     return result;
 }
 
-s32_t nrc_set_timer(u32_t timeout, struct nrc_timer_tag *tag)
+s32_t nrc_timer_after(u32_t timeout, struct nrc_timer_info *info)
 {
     s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
-    if (tag != 0) {
-        result = nrc_port_timer_after(timeout, tag, timeout_fcn, &tag->timer_id);
+    if (info != 0) {
+        result = nrc_port_timer_after(timeout, info, timeout_fcn, &info->timer_id);
     }
 
     return result;
 }
 
-s32_t nrc_abort_timer(nrc_timer_id_t timer_id)
+s32_t nrc_timer_cancel(nrc_timer_id_t timer_id)
 {
     return nrc_port_timer_cancel(timer_id);
 }
 
-static void timeout_fcn(nrc_port_timer_t timer_id, void* tag)
+static void timeout_fcn(nrc_port_timer_t timer_id, void* info)
 {
     s32_t                   result;
-    struct nrc_timer_tag    *timer_tag = (struct nrc_timer_tag*)tag;
+    struct nrc_timer_info    *timer_info = (struct nrc_timer_info*)info;
 
-    if ((timer_tag != 0) &&
-        (timer_id == timer_tag->timer_id)) {
+    if ((timer_info != 0) &&
+        (timer_id == timer_info->timer_id)) {
 
-        result = nrc_os_set_evt(timer_tag->node_id, timer_tag->evt, timer_tag->prio);
+        result = nrc_os_set_evt(timer_info->node_id, timer_info->evt, timer_info->prio);
     }
     else {
-        NRC_LOGD("nrc_timer", "timeout_fcn: invalid paramters tag %d, timer_id %d", tag, timer_tag->timer_id);
+        NRC_LOGD("nrc_timer", "timeout_fcn: invalid parameters timer_info ptr %d, timer_id %d", timer_info, timer_info->timer_id);
     }
 }

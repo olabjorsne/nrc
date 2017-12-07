@@ -163,7 +163,7 @@ s32_t nrc_os_register_node(struct nrc_node_hdr *node_hdr, struct nrc_node_api *a
     s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
     if ((node_hdr != 0) && (api != 0) && (cfg_id != 0) &&
-        (api->init != 0) && (api->deinit != 0) && (api->start != 0) && (api->stop != 0) &&
+        (api->init != 0) && (api->teardown != 0) && (api->start != 0) && (api->stop != 0) &&
         (api->recv_msg != 0) && (api->recv_evt != 0)) {
 
         struct nrc_os_node_hdr *os_node_hdr = (struct nrc_os_node_hdr*)node_hdr - 1;
@@ -303,7 +303,7 @@ s32_t nrc_os_send_msg(nrc_node_id_t id, struct nrc_msg_hdr *msg, s8_t prio)
     return result;
 }
 
-s32_t nrc_os_set_evt(nrc_node_id_t id, u32_t event_mask, enum nrc_os_prio prio)
+s32_t nrc_os_set_evt(nrc_node_id_t id, u32_t event_mask, s8_t prio)
 {
     s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
