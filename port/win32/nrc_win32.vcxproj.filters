@@ -54,6 +54,12 @@
     <ClCompile Include="test_port.c">
       <Filter>port\win32\source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_log.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_timer.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
@@ -79,6 +85,12 @@
     </ClInclude>
     <ClInclude Include="..\include\test_port.h">
       <Filter>port\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_log.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_timer.h">
+      <Filter>kernel\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
