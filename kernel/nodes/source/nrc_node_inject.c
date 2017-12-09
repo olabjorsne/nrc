@@ -24,7 +24,6 @@ struct nrc_node_inject {
     struct nrc_node_hdr         hdr;
 
     enum nrc_node_inject_state  state;
-    nrc_node_id_t               id;
 
     s8_t                        *topic;
     enum nrc_node_inject_types  payload_type;
@@ -32,19 +31,19 @@ struct nrc_node_inject {
     u32_t                       period_ms;
 
     s8_t                        prio;
-    struct nrc_timer_info       timer_info;
+    struct nrc_timer_pars       timer_pars;
 };
 
-static s32_t nrc_node_inject_init(struct nrc_node_hdr *self, nrc_node_id_t id);
-static s32_t nrc_node_inject_teardown(struct nrc_node_hdr *self);
-static s32_t nrc_node_inject_start(struct nrc_node_hdr *self);
-static s32_t nrc_node_inject_stop(struct nrc_node_hdr *self);
-static s32_t nrc_node_inject_recv_msg(struct nrc_node_hdr *self, struct nrc_msg_hdr *msg);
-static s32_t nrc_node_inject_recv_evt(struct nrc_node_hdr *self, u32_t event_mask);
+static s32_t nrc_node_inject_init(nrc_node_t self);
+static s32_t nrc_node_inject_deinit(nrc_node_t self);
+static s32_t nrc_node_inject_start(nrc_node_t self);
+static s32_t nrc_node_inject_stop(nrc_node_t self);
+static s32_t nrc_node_inject_recv_msg(nrc_node_t self, struct nrc_msg_hdr *msg);
+static s32_t nrc_node_inject_recv_evt(nrc_node_t self, u32_t event_mask);
 
 static struct nrc_node_api _api;
 
-struct nrc_node_hdr* nrc_factory_create_inject(
+nrc_node_t nrc_factory_create_inject(
     const s8_t          *cfg_type,
     const s8_t          *cfg_id,
     const s8_t          *cfg_name,
@@ -68,7 +67,7 @@ struct nrc_node_hdr* nrc_factory_create_inject(
             node->state = NRC_N_INJECT_S_INVALID;
 
             _api.init = nrc_node_inject_init;
-            _api.teardown = nrc_node_inject_teardown;
+            _api.deinit = nrc_node_inject_deinit;
             _api.start = nrc_node_inject_start;
             _api.stop = nrc_node_inject_stop;
             _api.recv_msg = nrc_node_inject_recv_msg;
@@ -78,19 +77,18 @@ struct nrc_node_hdr* nrc_factory_create_inject(
         }
     }
 
-    return (struct nrc_node_hdr*)node;
+    return node;
 }
 
-static s32_t nrc_node_inject_init(struct nrc_node_hdr *hdr, nrc_node_id_t id)
+static s32_t nrc_node_inject_init(nrc_node_t *slf)
 {
-    struct nrc_node_inject  *self = (struct nrc_node_inject*)hdr;
+    struct nrc_node_inject  *self = (struct nrc_node_inject*)slf;
     s32_t                   result = NRC_R_INVALID_IN_PARAM;
 
     if (self != 0) {
         result = NRC_R_OK;
 
         if (self->state == NRC_N_INJECT_S_INVALID) {
-            self->id = id;
 
             result = nrc_timer_init();
 
@@ -108,27 +106,27 @@ static s32_t nrc_node_inject_init(struct nrc_node_hdr *hdr, nrc_node_id_t id)
     return result;
 }
 
-static s32_t nrc_node_inject_teardown(struct nrc_node_hdr *self)
+static s32_t nrc_node_inject_deinit(nrc_node_t *self)
 {
     s32_t result = NRC_R_NOT_SUPPORTED;
 
     return result;
 }
 
-static s32_t nrc_node_inject_start(struct nrc_node_hdr *hdr)
+static s32_t nrc_node_inject_start(nrc_node_t slf)
 {
-    struct nrc_node_inject  *self = (struct nrc_node_inject*)hdr;
+    struct nrc_node_inject  *self = (struct nrc_node_inject*)slf;
     s32_t                   result = NRC_R_INVALID_IN_PARAM;
 
     if (self != 0) {
         result = NRC_R_OK;
 
         if (self->state = NRC_N_INJECT_S_INITIALISED) {
-            self->timer_info.node_id = self->id;
-            self->timer_info.evt = NRC_N_INJECT_EVT_TIMEOUT;
-            self->timer_info.prio = self->prio;
+            self->timer_pars.node = self;
+            self->timer_pars.evt = NRC_N_INJECT_EVT_TIMEOUT;
+            self->timer_pars.prio = self->prio;
 
-            result = nrc_timer_after(self->period_ms, &self->timer_info);
+            result = nrc_timer_after(self->period_ms, &self->timer_pars);
 
             if (result == NRC_R_OK) {
                 self->state = NRC_N_INJECT_S_STARTED;
@@ -139,9 +137,9 @@ static s32_t nrc_node_inject_start(struct nrc_node_hdr *hdr)
     return result;
 }
 
-static s32_t nrc_node_inject_stop(struct nrc_node_hdr *hdr)
+static s32_t nrc_node_inject_stop(nrc_node_t *slf)
 {
-    struct nrc_node_inject  *self = (struct nrc_node_inject*)hdr;
+    struct nrc_node_inject  *self = (struct nrc_node_inject*)slf;
     s32_t                   result = NRC_R_INVALID_IN_PARAM;
 
     if (self != 0) {    
@@ -151,7 +149,7 @@ static s32_t nrc_node_inject_stop(struct nrc_node_hdr *hdr)
             break;
 
         case NRC_N_INJECT_S_STARTED:
-            nrc_timer_cancel(self->timer_info.timer_id);
+            nrc_timer_cancel(self->timer_pars.timer);
 
             result = NRC_R_OK;
             break;
@@ -165,7 +163,7 @@ static s32_t nrc_node_inject_stop(struct nrc_node_hdr *hdr)
     return result;
 }
 
-static s32_t nrc_node_inject_recv_msg(struct nrc_node_hdr *self, struct nrc_msg_hdr *msg)
+static s32_t nrc_node_inject_recv_msg(nrc_node_t *slf, struct nrc_msg_hdr *msg)
 {
     s32_t result = NRC_R_ERROR;
 
@@ -174,9 +172,9 @@ static s32_t nrc_node_inject_recv_msg(struct nrc_node_hdr *self, struct nrc_msg_
     return result;
 }
 
-static s32_t nrc_node_inject_recv_evt(struct nrc_node_hdr *hdr, u32_t event_mask)
+static s32_t nrc_node_inject_recv_evt(nrc_node_t *slf, u32_t event_mask)
 {
-    struct nrc_node_inject  *self = (struct nrc_node_inject*)hdr;
+    struct nrc_node_inject  *self = (struct nrc_node_inject*)slf;
     s32_t                   result = NRC_R_INVALID_IN_PARAM;
 
     if (self != 0) {

@@ -24,22 +24,22 @@
 extern "C" {
 #endif
 
-typedef void* nrc_timer_id_t;
+typedef void* nrc_timer_t;
 
-struct nrc_timer_info {
+struct nrc_timer_pars {
     // Info for sending the timeout event
-    nrc_node_id_t   node_id;
+    nrc_node_t      node;
     u32_t           evt;
     s8_t            prio;
 
-    // Internal; use only to abort timer
-    nrc_timer_id_t  timer_id;
+    // Internal; use only to abort timer; do not change
+    nrc_timer_t     timer;
 };
 
 s32_t nrc_timer_init(void);
 
-s32_t nrc_timer_after(u32_t timeout, struct nrc_timer_info *tag);
-s32_t nrc_timer_cancel(nrc_timer_id_t timer_id);
+s32_t nrc_timer_after(u32_t timeout, struct nrc_timer_pars *pars);
+s32_t nrc_timer_cancel(nrc_timer_t timer);
 
 #ifdef __cplusplus
 }

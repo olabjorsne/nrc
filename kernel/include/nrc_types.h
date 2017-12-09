@@ -40,6 +40,10 @@ extern "C" {
 #define TRUE    (1)
 #endif
 
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
 #define S8_MAX_VALUE  (0x7F)
 #define S32_MAX_VALUE (0x7FFFFFFF)
 #define U32_MAX_VALUE (0xFFFFFFFF)

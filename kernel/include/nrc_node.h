@@ -25,20 +25,18 @@
 extern "C" {
 #endif
 
-typedef void* nrc_node_id_t;
+typedef void* nrc_node_t;
 
-struct nrc_node;
-
-typedef s32_t (*nrc_node_init_t)(struct nrc_node_hdr *self, nrc_node_id_t id);
-typedef s32_t (*nrc_node_teardown_t)(struct nrc_node_hdr *self);
-typedef s32_t (*nrc_node_start_t)(struct nrc_node_hdr *self);
-typedef s32_t (*nrc_node_stop_t)(struct nrc_node_hdr *self);
-typedef s32_t (*nrc_node_recv_msg_t)(struct nrc_node_hdr *self, struct nrc_msg_hdr *msg);
-typedef s32_t (*nrc_node_recv_evt_t)(struct nrc_node_hdr *self, u32_t event_mask);
+typedef s32_t (*nrc_node_init_t)(nrc_node_t self);
+typedef s32_t (*nrc_node_deinit_t)(nrc_node_t self);
+typedef s32_t (*nrc_node_start_t)(nrc_node_t self);
+typedef s32_t (*nrc_node_stop_t)(nrc_node_t self);
+typedef s32_t (*nrc_node_recv_msg_t)(nrc_node_t self, struct nrc_msg_hdr *msg);
+typedef s32_t (*nrc_node_recv_evt_t)(nrc_node_t self, u32_t event_mask);
 
 struct nrc_node_api {
     nrc_node_init_t     init;
-    nrc_node_teardown_t teardown;
+    nrc_node_deinit_t   deinit;
     nrc_node_start_t    start;
     nrc_node_stop_t     stop;
     nrc_node_recv_msg_t recv_msg;

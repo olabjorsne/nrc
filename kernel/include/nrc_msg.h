@@ -24,10 +24,13 @@
 #define NRC_MSG_TYPE_INT    (1)
 #define NRC_MSG_TYPE_STRING (2)
 #define NRC_MSG_TYPE_BUF    (3)
+#define NRC_MSG_TYPE_READ   (4)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef void nrc_msg_t;
 
 struct nrc_msg_hdr {
     struct nrc_msg_hdr  *next;
@@ -47,7 +50,15 @@ struct nrc_msg_str {
 
 struct nrc_msg_buf {
     struct nrc_msg_hdr  hdr;
+    u32_t               buf_size;
     u8_t                buf[NRC_EMTPY_ARRAY];
+};
+
+typedef u32_t(*nrc_msg_read_t)(u8_t *buf, u32_t buf_size);
+
+struct nrc_msg_data_read {
+    struct nrc_msg_hdr  hdr;
+    nrc_msg_read_t      read;
 };
 
 #ifdef __cplusplus
