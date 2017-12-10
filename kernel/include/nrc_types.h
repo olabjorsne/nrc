@@ -24,11 +24,24 @@
 extern "C" {
 #endif
 
+#define NRC_R_OK                 (0)
+#define NRC_R_ERROR              (-1)
+#define NRC_R_TIMEOUT            (-2)
+#define NRC_R_NOT_SUPPORTED      (-3)
+#define NRC_R_INVALID_IN_PARAM   (-4)
+#define NRC_R_NOT_FOUND          (-5)
+#define NRC_R_OUT_OF_MEM         (-6)
+#define NRC_R_INVALID_STATE      (-7)
+
 #ifndef FALSE
 #define FALSE   (0)
 #endif
 #ifndef TRUE
 #define TRUE    (1)
+#endif
+
+#ifndef NULL
+#define NULL ((void*)0)
 #endif
 
 #define S8_MAX_VALUE  (0x7F)

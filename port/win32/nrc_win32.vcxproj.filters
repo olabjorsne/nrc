@@ -1,18 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="kernel">
       <UniqueIdentifier>{497d8889-ff1c-4a52-9e3d-f183a63be8a1}</UniqueIdentifier>
     </Filter>
@@ -28,17 +16,20 @@
     <Filter Include="port\win32">
       <UniqueIdentifier>{403b6cd5-3538-4852-b973-02413c062a26}</UniqueIdentifier>
     </Filter>
-    <Filter Include="kernel\nodes">
-      <UniqueIdentifier>{010ac94e-2235-4256-a6a2-1553401b7a57}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="kernel\nodes\include">
-      <UniqueIdentifier>{88a575c2-cb3e-43dc-b278-92cb3a3a901e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="port\win32\source">
       <UniqueIdentifier>{0f480a5e-a93f-4a57-bc39-1f72fb28666f}</UniqueIdentifier>
     </Filter>
     <Filter Include="port\include">
       <UniqueIdentifier>{35e08fc4-f5bc-4c43-aeec-635fa85e69e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="nodes">
+      <UniqueIdentifier>{c15825f6-0b0e-4686-9ddd-2ff1e9cb8ccc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="nodes\include">
+      <UniqueIdentifier>{65c5bd9f-9e13-4037-a72f-c918ca60e4f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="nodes\source">
+      <UniqueIdentifier>{2095227d-6867-46c6-b633-a2c4b005b2ed}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +44,15 @@
     </ClCompile>
     <ClCompile Include="test_port.c">
       <Filter>port\win32\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_log.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_timer.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\nodes\source\nrc_node_inject.c">
+      <Filter>nodes\source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -79,6 +79,15 @@
     </ClInclude>
     <ClInclude Include="..\include\test_port.h">
       <Filter>port\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_log.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_timer.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\nodes\include\nrc_node_factory.h">
+      <Filter>nodes\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -14,40 +14,27 @@
  * limitations under the License.
  */
 
-#ifndef _NRC_OS_H_
-#define _NRC_OS_H_
+#ifndef _NRC_NODE_FACTORY_H_
+#define _NRC_NODE_FACTORY_H_
 
 #include "nrc_types.h"
-#include "nrc_defs.h"
 #include "nrc_node.h"
-#include "nrc_msg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct nrc_os_register_node_pars {
-    struct nrc_node_api *api;
+struct nrc_node_factory_pars {
+    // In parameters
+    const s8_t          *cfg_type;
     const s8_t          *cfg_id;
+    const s8_t          *cfg_name;
+
+    // Out parameters
+    struct nrc_node_api *api;
 };
 
-s32_t nrc_os_init(void);
-s32_t nrc_os_deinit(void);
-
-s32_t nrc_os_start(void);
-s32_t nrc_os_stop(void);
-
-nrc_node_t nrc_os_node_alloc(u32_t size);
-nrc_node_t nrc_os_node_get(const s8_t *cfg_id);
-
-s32_t nrc_os_node_register(nrc_node_t node, struct nrc_os_register_node_pars pars);
-
-nrc_msg_t nrc_os_msg_alloc(u32_t size);
-nrc_msg_t nrc_os_msg_clone(nrc_msg_t msg);
-void nrc_os_msg_free(nrc_msg_t msg);
-
-s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio);
-s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio);
+extern nrc_node_t nrc_factory_create_inject(struct nrc_node_factory_pars *pars);
 
 #ifdef __cplusplus
 }

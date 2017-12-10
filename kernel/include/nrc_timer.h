@@ -14,40 +14,32 @@
  * limitations under the License.
  */
 
-#ifndef _NRC_OS_H_
-#define _NRC_OS_H_
+#ifndef _NRC_TIMER_H_
+#define _NRC_TIMER_H_
 
 #include "nrc_types.h"
-#include "nrc_defs.h"
 #include "nrc_node.h"
-#include "nrc_msg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct nrc_os_register_node_pars {
-    struct nrc_node_api *api;
-    const s8_t          *cfg_id;
+typedef void* nrc_timer_t;
+
+struct nrc_timer_pars {
+    // Info for sending the timeout event
+    nrc_node_t      node;
+    u32_t           evt;
+    s8_t            prio;
+
+    // Internal; use only to abort timer; do not change
+    nrc_timer_t     timer;
 };
 
-s32_t nrc_os_init(void);
-s32_t nrc_os_deinit(void);
+s32_t nrc_timer_init(void);
 
-s32_t nrc_os_start(void);
-s32_t nrc_os_stop(void);
-
-nrc_node_t nrc_os_node_alloc(u32_t size);
-nrc_node_t nrc_os_node_get(const s8_t *cfg_id);
-
-s32_t nrc_os_node_register(nrc_node_t node, struct nrc_os_register_node_pars pars);
-
-nrc_msg_t nrc_os_msg_alloc(u32_t size);
-nrc_msg_t nrc_os_msg_clone(nrc_msg_t msg);
-void nrc_os_msg_free(nrc_msg_t msg);
-
-s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio);
-s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio);
+s32_t nrc_timer_after(u32_t timeout, struct nrc_timer_pars *pars);
+s32_t nrc_timer_cancel(nrc_timer_t timer);
 
 #ifdef __cplusplus
 }
