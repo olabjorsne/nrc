@@ -38,7 +38,7 @@ static s32_t nrc_node_inject_init(nrc_node_t self);
 static s32_t nrc_node_inject_deinit(nrc_node_t self);
 static s32_t nrc_node_inject_start(nrc_node_t self);
 static s32_t nrc_node_inject_stop(nrc_node_t self);
-static s32_t nrc_node_inject_recv_msg(nrc_node_t self, struct nrc_msg_hdr *msg);
+static s32_t nrc_node_inject_recv_msg(nrc_node_t self, nrc_msg_t msg);
 static s32_t nrc_node_inject_recv_evt(nrc_node_t self, u32_t event_mask);
 
 static struct nrc_node_api _api;
