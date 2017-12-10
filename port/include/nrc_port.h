@@ -108,6 +108,7 @@ s32_t nrc_port_irq_enable(void);
 s32_t nrc_port_vprintf(const char * format, va_list argptr);
 u32_t nrc_port_timestamp_in_ms(void);
 
+s32_t nrc_port_get_config(u8_t **config, u32_t *size);
 
 #ifdef __cplusplus
 }

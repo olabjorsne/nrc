@@ -18,6 +18,7 @@ struct nrc_node_debug {
     enum nrc_node_debug_state   state;
 };
 
+static nrc_node_t nrc_node_debug_create(struct nrc_node_factory_pars *pars);
 static s32_t nrc_node_debug_init(nrc_node_t self);
 static s32_t nrc_node_debug_deinit(nrc_node_t self);
 static s32_t nrc_node_debug_start(nrc_node_t self);
@@ -27,9 +28,10 @@ static s32_t nrc_node_debug_recv_evt(nrc_node_t self, u32_t event_mask);
 
 static s32_t log_msg(const s8_t *name, nrc_msg_t msg);
 
+const static s8_t* TAG = "debug";
 static struct nrc_node_api _api;
 
-nrc_node_t nrc_factory_create_debug(struct nrc_node_factory_pars *pars)
+static nrc_node_t nrc_node_debug_create(struct nrc_node_factory_pars *pars)
 {
     struct nrc_node_debug *node = NULL;
 
@@ -57,6 +59,14 @@ nrc_node_t nrc_factory_create_debug(struct nrc_node_factory_pars *pars)
     }
 
     return node;
+}
+
+void nrc_node_debug_register(void)
+{
+    s32_t status = nrc_factory_register("debug", nrc_node_debug_create);
+    if (!OK(status)) {
+        NRC_LOGE(TAG, "Registration to factory failed")
+    }
 }
 
 static s32_t nrc_node_debug_init(nrc_node_t slf)

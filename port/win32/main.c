@@ -20,54 +20,36 @@
 #include "nrc_types.h"
 #include "nrc_port.h"
 #include "nrc_os.h"
+#include "nrc_cfg.h"
+#include "nrc_host.h"
 #include "test_port.h"
 #include "nrc_node_factory.h"
 #include "nrc_log.h"
 
-const s8_t *TAG = "main";
 
-int main(void)
+const s8_t *TAG = "main";
+s8_t *flows_file = NULL;
+
+int main(int argc, char** argv)
 {
     bool_t ok = FALSE;
 
-    NRC_LOGI(TAG, "nrc version : v0.01");
-    NRC_LOGI(TAG, "target : win32");
     NRC_LOGI(TAG, "loading...");
+    NRC_LOGI(TAG, "nrc version : \tv0.01");
+    NRC_LOGI(TAG, "Target      : \twin32");
 
+    if (argc > 1) {
+        flows_file = argv[1];
+    }
     nrc_os_init();
 
-#if 0
-    struct nrc_os_register_node_pars    npars;
-    struct nrc_node_factory_pars        fpars;
-    nrc_node_t                          inject;
-    nrc_node_t                          debug;
+    nrc_node_inject_register();
+    nrc_node_debug_register();
 
-    fpars.cfg_id = "234.567";
-    fpars.cfg_name = "my debug";
-    fpars.cfg_type = "debug";
-    debug = nrc_factory_create_debug(&fpars);
+    nrc_cfg_init();
+    nrc_host_init();
 
-    npars.api = fpars.api;
-    npars.cfg_id = fpars.cfg_id;
-
-    nrc_os_node_register(TRUE, debug, npars);
-
-    nrc_os_start(TRUE);
-
-    fpars.cfg_id = "123.456";
-    fpars.cfg_name = "my inject";
-    fpars.cfg_type = "inject";
-    inject = nrc_factory_create_inject(&fpars);
-
-    npars.api = fpars.api;
-    npars.cfg_id = fpars.cfg_id;
-
-    nrc_os_node_register(FALSE, inject, npars);
-
-
-
-#endif
-
+    nrc_host_start();
     nrc_os_start(FALSE);
 
 #if 0
@@ -75,7 +57,6 @@ int main(void)
 #endif
 
     while (1) {
-        //NRC_LOGD(TAG, "sleep 1s");
         Sleep(1000);
     }
 }

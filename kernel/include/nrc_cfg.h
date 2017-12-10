@@ -24,16 +24,22 @@
 extern "C" {
 #endif
 
-s32_t nrc_cfg_init(u32_t *cfg_address);
-s32_t nrc_cfg_deinit(void);
+typedef struct nrc_cfg_t nrc_cfg_t;
 
-s32_t nrc_cfg_get_node(u32_t index, s8_t *cfg_type, s8_t *cfg_id, u32_t max_str_len);
+//Hack to publish the current configuration
+extern nrc_cfg_t* curr_config;
 
-s32_t nrc_cfg_get_str(s8_t *cfg_type, s8_t *cfg_id, s8_t *cfg_param_name, s8_t *str, uint32_t max_str_len);
-s32_t nrc_cfg_get_int(s8_t *cfg_type, s8_t *cfg_id, s8_t *cfg_param_name, s32_t *value);
+s32_t nrc_cfg_init(void);
 
-s32_t nrc_cfg_get_str_from_array(s8_t *cfg_type, s8_t *cfg_id, s8_t *cfg_arr_name, u8_t index, s8_t *str, uint32_t max_str_len);
-s32_t nrc_cfg_get_int_from_array(s8_t *cfg_type, s8_t *cfg_id, s8_t *cfg_arr_name, u8_t index, s32_t *value);
+nrc_cfg_t * nrc_cfg_create(const u8_t *p_config, u32_t config_size);
+void nrc_cfg_destroy(nrc_cfg_t* config);
+
+s32_t nrc_cfg_get_node(nrc_cfg_t* config, u32_t index, const s8_t **cfg_type, const s8_t **cfg_id, const s8_t **cfg_name);
+
+s32_t nrc_cfg_get_str(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_param_name, const  s8_t **str);
+s32_t nrc_cfg_get_int(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *value);
+s32_t nrc_cfg_get_str_from_array(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_arr_name, u8_t index, const s8_t **str);
+s32_t nrc_cfg_get_int_from_array(nrc_cfg_t* config, const s8_t *cfg_type, const s8_t *cfg_id, s8_t const *cfg_arr_name, u8_t index, s32_t *value);
 
 #ifdef __cplusplus
 }

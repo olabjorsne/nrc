@@ -75,6 +75,18 @@
     <ClCompile Include="..\..\misc\source\test_cbuf.c">
       <Filter>misc\source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_node_factory.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\source\jsmn.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_cfg.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_host.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
@@ -110,6 +122,12 @@
     <ClInclude Include="..\..\nodes\include\nrc_node_factory.h">
       <Filter>nodes\include</Filter>
     </ClInclude>
+       <ClInclude Include="..\..\kernel\source\jsmn.h">
+      <Filter>kernel\source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_host.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude> 
     <ClInclude Include="..\include\nrc_port_uart.h">
       <Filter>port\include</Filter>
     </ClInclude>

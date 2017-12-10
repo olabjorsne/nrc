@@ -6,6 +6,7 @@
 #include "nrc_log.h"
 #include "nrc_node_factory.h"
 #include <string.h>
+#include <assert.h>
 
 #define NRC_N_INJECT_EVT_TIMEOUT    (1)
 #define NRC_N_INJECT_MAX_WIRES      (4)
@@ -36,6 +37,7 @@ struct nrc_node_inject {
     struct nrc_timer_pars       timer_pars;
 };
 
+static nrc_node_t nrc_node_inject_create(struct nrc_node_factory_pars *pars);
 static s32_t nrc_node_inject_init(nrc_node_t self);
 static s32_t nrc_node_inject_deinit(nrc_node_t self);
 static s32_t nrc_node_inject_start(nrc_node_t self);
@@ -43,9 +45,19 @@ static s32_t nrc_node_inject_stop(nrc_node_t self);
 static s32_t nrc_node_inject_recv_msg(nrc_node_t self, nrc_msg_t msg);
 static s32_t nrc_node_inject_recv_evt(nrc_node_t self, u32_t event_mask);
 
+const static s8_t* TAG = "inject";
 static struct nrc_node_api _api;
 
-nrc_node_t nrc_factory_create_inject(struct nrc_node_factory_pars *pars)
+
+void nrc_node_inject_register(void)
+{
+    s32_t status = nrc_factory_register("inject", nrc_node_inject_create);
+    if (!OK(status)) {
+        NRC_LOGE(TAG, "Registration to factory failed")
+    }
+}
+
+nrc_node_t nrc_node_inject_create(struct nrc_node_factory_pars *pars)
 {
     struct nrc_node_inject *node = NULL;
 
@@ -86,14 +98,25 @@ static s32_t nrc_node_inject_init(nrc_node_t slf)
             result = nrc_timer_init();
 
             if (result == NRC_R_OK) {
-                //TODO: read configuration from nrc_cfg
-                self->period_ms = 10000;
+                s32_t period_s = 0;
+                result = nrc_cfg_get_int(curr_config, self->hdr.cfg_id, "repeat", &period_s);
+                assert(OK(result));
+                self->period_ms = period_s * 1000;
+                result = nrc_cfg_get_str(curr_config, self->hdr.cfg_id, "topic", &self->topic);
+                assert(OK(result));
+                result = nrc_cfg_get_str(curr_config, self->hdr.cfg_id, "payload", &self->payload_string);
+                assert(OK(result));
+
                 self->payload_type = NRC_N_INJECT_TYPE_TIME;
                 self->prio = 16;
-                self->topic = "my inject msg";
-
-                //TODO: get wires node ids
-                self->wire[0] = nrc_os_node_get("234.567");
+                
+                for (s32_t i = 0; i < NRC_N_INJECT_MAX_WIRES && OK(result); i++) {
+                    s8_t* wire = NULL;
+                    result = nrc_cfg_get_str_from_array(curr_config, self->hdr.cfg_id, "wires", i, &wire);
+                    if (OK(result)) {
+                        self->wire[i] = nrc_os_node_get(wire);
+                    }
+                }
 
                 self->state = NRC_N_INJECT_S_INITIALISED;
 
@@ -132,7 +155,12 @@ static s32_t nrc_node_inject_start(nrc_node_t slf)
             self->timer_pars.evt = NRC_N_INJECT_EVT_TIMEOUT;
             self->timer_pars.prio = self->prio;
 
-            result = nrc_timer_after(self->period_ms, &self->timer_pars);
+            if (self->period_ms) {
+                result = nrc_timer_after(self->period_ms, &self->timer_pars);
+            }
+            else {
+                result = NRC_R_OK;
+            }
 
             if (result == NRC_R_OK) {
                 self->state = NRC_N_INJECT_S_STARTED;
@@ -200,8 +228,9 @@ static s32_t nrc_node_inject_recv_evt(nrc_node_t slf, u32_t event_mask)
         switch (self->state) {
         case NRC_N_INJECT_S_STARTED:
             if (event_mask == self->timer_pars.evt) {
-                result = nrc_timer_after(self->period_ms, &self->timer_pars);
-
+                if (self->period_ms) {
+                    result = nrc_timer_after(self->period_ms, &self->timer_pars);
+                }
                 // Allocate and send message
                 NRC_LOGI(self->hdr.cfg_name, "recv_evt: timeout", event_mask);
 

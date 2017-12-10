@@ -34,6 +34,8 @@ extern "C" {
 #define NRC_R_INVALID_STATE         (-7)
 #define NRC_R_UNAVAILABLE_RESOURCE  (-8)
 
+#define OK(x) ((x==NRC_R_OK))
+
 #ifndef FALSE
 #define FALSE   (0)
 #endif

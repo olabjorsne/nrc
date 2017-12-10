@@ -22,8 +22,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define NRC_PORT_TIMER_TYPE     (0xAAAAAAAA)
-#define NRC_PORT_TIMER_RES_MS   (32)
+#include "nrc_log.h"
+
+#define NRC_PORT_TIMER_TYPE         (0xAAAAAAAA)
+#define NRC_PORT_TIMER_RES_MS       (32)
+#define NRC_PORT_MAX_CONFIG_SIZE    (10000)
 
 enum nrc_port_state {
     NRC_PORT_S_INVALID = 0,
@@ -47,17 +50,20 @@ struct nrc_port {
     nrc_port_thread_t       timer_thread_id;
     u64_t                   time_start;
     struct nrc_port_timer   *timer_list;
+    s8_t                    flows_config_buffer[NRC_PORT_MAX_CONFIG_SIZE];
+    u32_t                   flows_config_size;
 };
 
 static void timer_thread_fcn(void);
 
 s32_t nrc_port_thread_start(nrc_port_thread_t thread_id);
 
-static struct nrc_port _port = { NRC_PORT_S_INVALID, 0, 0, 0};
+static struct nrc_port _port = {0};
+static const s8_t *TAG = "main";
 
 s32_t nrc_port_init(void)
 {
-    s32_t       result = NRC_PORT_RES_OK;
+    s32_t result = NRC_PORT_RES_OK;
 
     if (_port.state == NRC_PORT_S_INVALID) {
 
@@ -437,4 +443,55 @@ u32_t nrc_port_timestamp_in_ms(void)
 s32_t nrc_port_vprintf(const char *format, va_list argptr)
 {
     return vprintf(format, argptr);
+}
+
+extern s8_t *flows_file;
+s32_t nrc_port_get_config(u8_t **config, u32_t *size)
+{
+    s32_t status = NRC_PORT_RES_ERROR;
+    FILE *stream;
+    errno_t err;
+    
+    *config = NULL;
+    *size = 0;
+
+    if (flows_file) {
+        err = fopen_s(&stream, flows_file, "r");
+        if (err == 0) {
+            status = NRC_PORT_RES_OK;
+        }
+        else {
+            NRC_LOGE("nrc_port", "Flows file : %s could not be opened");
+            status = NRC_PORT_RES_NOT_FOUND;
+        }
+
+        if (status == NRC_PORT_RES_OK) {
+            s32_t i = 0;
+            s8_t data = 0;
+            do 
+            {
+                data = fgetc(stream);
+                if (data != EOF) {
+                    _port.flows_config_buffer[i++] = data;
+                }
+                else {
+                    _port.flows_config_size = i;
+                }
+
+            } while (data != EOF);
+        }
+
+        if (stream) {
+            err = fclose(stream);
+        }
+        *config = _port.flows_config_buffer;
+        *size = _port.flows_config_size;
+
+        NRC_LOGI(TAG, "Config file : \t%s", flows_file);
+        NRC_LOGI(TAG, "Config size : \t%d bytes", _port.flows_config_size);
+    }
+    else {
+        NRC_LOGI(TAG, "No config file defined");
+    }
+    return status;
 }

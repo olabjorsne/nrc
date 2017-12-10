@@ -34,8 +34,10 @@ struct nrc_node_factory_pars {
     struct nrc_node_api *api;
 };
 
-extern nrc_node_t nrc_factory_create_inject(struct nrc_node_factory_pars *pars);
-extern nrc_node_t nrc_factory_create_debug(struct nrc_node_factory_pars *pars);
+
+typedef nrc_node_t (*nrc_node_create_t)(struct nrc_node_factory_pars *pars);
+s32_t nrc_factory_register(s8_t* cfg_type, nrc_node_create_t node_create);
+nrc_node_t nrc_factory_create(struct nrc_node_factory_pars *pars);
 
 #ifdef __cplusplus
 }

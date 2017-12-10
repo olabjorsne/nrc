@@ -139,7 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\kernel\source\jsmn.c" />
+    <ClCompile Include="..\..\kernel\source\nrc_cfg.c" />
+    <ClCompile Include="..\..\kernel\source\nrc_host.c" />
     <ClCompile Include="..\..\kernel\source\nrc_log.c" />
+    <ClCompile Include="..\..\kernel\source\nrc_node_factory.c" />
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="..\..\kernel\source\nrc_timer.c" />
     <ClCompile Include="..\..\misc\source\nrc_misc_cbuf.c" />
@@ -154,6 +158,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_cfg.h" />
     <ClInclude Include="..\..\kernel\include\nrc_defs.h" />
+    <ClInclude Include="..\..\kernel\include\nrc_host.h" />
     <ClInclude Include="..\..\kernel\include\nrc_log.h" />
     <ClInclude Include="..\..\kernel\include\nrc_msg.h" />
     <ClInclude Include="..\..\kernel\include\nrc_node.h" />
@@ -161,8 +166,8 @@
     <ClInclude Include="..\..\kernel\include\nrc_serial.h" />
     <ClInclude Include="..\..\kernel\include\nrc_timer.h" />
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
-    <ClInclude Include="..\..\misc\include\nrc_misc_cbuf.h" />
     <ClInclude Include="..\..\misc\include\test_cbuf.h" />
+    <ClInclude Include="..\..\kernel\source\jsmn.h" />    
     <ClInclude Include="..\..\nodes\include\nrc_node_factory.h" />
     <ClInclude Include="..\include\nrc_port.h" />
     <ClInclude Include="..\include\nrc_port_uart.h" />
