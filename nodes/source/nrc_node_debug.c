@@ -183,8 +183,8 @@ static s32_t nrc_node_debug_recv_evt(nrc_node_t slf, u32_t event_mask)
 
 static s32_t log_msg(const s8_t *name, nrc_msg_t msg)
 {
-    s32_t result = result = NRC_R_INVALID_IN_PARAM;
-    struct nrc_msg_hdr *hdr = (struct nrc_msg_hdr*)msg;
+    s32_t               result = result = NRC_R_INVALID_IN_PARAM;
+    struct nrc_msg_hdr  *hdr = (struct nrc_msg_hdr*)msg;
 
     if (hdr != NULL) {
         switch (hdr->type) {

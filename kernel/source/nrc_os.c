@@ -109,8 +109,6 @@ s32_t nrc_os_deinit(void)
 {
     s32_t result = NRC_PORT_RES_NOT_SUPPORTED;
 
-    assert(_os.state == NRC_OS_S_INITIALIZED);
-
     //TODO: Dealloc all nodes, messages, events, etc..
     
     return result;
@@ -146,8 +144,6 @@ s32_t nrc_os_stop(void)
 {
     s32_t result = NRC_PORT_RES_NOT_SUPPORTED;
 
-    assert(_os.state == NRC_OS_S_STARTED);
-
     //TODO:
     
     return result;
@@ -158,9 +154,9 @@ nrc_node_t nrc_os_node_alloc(u32_t size)
     u32_t total_size = sizeof(struct nrc_os_node_hdr) + size;
 
     struct nrc_os_node_hdr  *os_node_hdr = (struct nrc_os_node_hdr*)nrc_port_heap_alloc(total_size);
-    struct nrc_node_hdr     *node_hdr = 0;
+    struct nrc_node_hdr     *node_hdr = NULL;
 
-    if (os_node_hdr != 0) {
+    if (os_node_hdr != NULL) {
         node_hdr = (struct nrc_node_hdr*)(os_node_hdr + 1);
 
         memset(os_node_hdr, 0, sizeof(struct nrc_os_node_hdr));
@@ -177,9 +173,9 @@ s32_t nrc_os_node_register(nrc_node_t node, struct nrc_os_register_node_pars par
 {
     s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
-    if ((node != 0) && (pars.api != 0) && (pars.cfg_id != 0) &&
-        (pars.api->init != 0) && (pars.api->deinit != 0) && (pars.api->start != 0) && (pars.api->stop != 0) &&
-        (pars.api->recv_msg != 0) && (pars.api->recv_evt != 0)) {
+    if ((node != NULL) && (pars.api != NULL) && (pars.cfg_id != NULL) &&
+        (pars.api->init != NULL) && (pars.api->deinit != NULL) && (pars.api->start != NULL) && (pars.api->stop != NULL) &&
+        (pars.api->recv_msg != NULL) && (pars.api->recv_evt != NULL)) {
 
         struct nrc_os_node_hdr *os_node_hdr = (struct nrc_os_node_hdr*)node - 1;
 
@@ -204,7 +200,7 @@ nrc_node_t nrc_os_node_get(const s8_t *cfg_id)
     s32_t       result = NRC_PORT_RES_INVALID_IN_PARAM;
     nrc_node_t  node = NULL;
 
-    if (cfg_id != 0) {
+    if (cfg_id != NULL) {
 
         result = NRC_PORT_RES_NOT_FOUND;
 
@@ -356,42 +352,42 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
 
 static void extract_node(struct nrc_os_node_hdr* node)
 {
-    assert(node != 0);
+    assert(node != NULL);
 
-    if (node->next != 0) {
+    if (node->next != NULL) {
         node->next->previous = node->previous;
     }
-    if (node->previous != 0) {
+    if (node->previous != NULL) {
         node->previous->next = node->next;
     }
-    node->next = 0;
-    node->previous = 0;
+    node->next = NULL;
+    node->previous = NULL;
 }
 
 static void insert_node(struct nrc_os_node_hdr* node)
 {
-    assert(node != 0);
+    assert(node != NULL);
 
-    if (_os.node_list == 0) {
+    if (_os.node_list == NULL) {
         _os.node_list = node;
     }
     else {
         struct nrc_os_node_hdr *pos = _os.node_list;
-        struct nrc_os_node_hdr *prev_pos = 0;
+        struct nrc_os_node_hdr *prev_pos = NULL;
 
-        while ((pos != 0) && (pos->prio <= node->prio)) {
+        while ((pos != NULL) && (pos->prio <= node->prio)) {
             prev_pos = pos;
             pos = pos->next;
         }
 
         //One of pos and prev_pos must be non-zero.
-        if (pos != 0) {
+        if (pos != NULL) {
             //Place node before pos
             node->next = pos;
             node->previous = pos->previous;
             pos->previous = node;
 
-            if (node->previous != 0) {
+            if (node->previous != NULL) {
                 node->previous->next = node;
             }
             else {
@@ -400,13 +396,13 @@ static void insert_node(struct nrc_os_node_hdr* node)
         }
         else {
             //Place node after prev_pos
-            assert(prev_pos != 0);
+            assert(prev_pos != NULL);
 
             node->next = prev_pos->next;
             prev_pos->next = node;
             node->previous = prev_pos;
 
-            if (node->next != 0) {
+            if (node->next != NULL) {
                 node->next->previous = node;
             }
         }
@@ -415,9 +411,9 @@ static void insert_node(struct nrc_os_node_hdr* node)
 
 static void increased_node_prio(struct nrc_os_node_hdr *node)
 {
-    assert(node != 0);
+    assert(node != NULL);
 
-    if ((node->previous != 0) && (node->prio < node->previous->prio))
+    if ((node->previous != NULL) && (node->prio < node->previous->prio))
     {
         extract_node(node);
 
@@ -427,7 +423,7 @@ static void increased_node_prio(struct nrc_os_node_hdr *node)
 
 static void clear_evt(struct nrc_os_node_hdr *node)
 {
-    assert(node != 0);
+    assert(node != NULL);
 
     node->evt = 0;
     node->prio = S8_MAX_VALUE;
@@ -439,25 +435,23 @@ static void clear_evt(struct nrc_os_node_hdr *node)
 static void nrc_os_thread_fcn(void)
 {
     s32_t   result;
-    bool_t  done;
 
     u32_t                   evt;
     s8_t                    evt_prio;
-    struct nrc_os_node_hdr  *evt_node = 0;
+    struct nrc_os_node_hdr  *evt_node = NULL;
 
-    struct nrc_os_msg_hdr   *msg = 0;
+    struct nrc_os_msg_hdr   *msg = NULL;
     s8_t                    msg_prio;
-    struct nrc_os_node_hdr  *msg_node = 0;
+    struct nrc_os_node_hdr  *msg_node = NULL;
 
     while (_os.state != NRC_OS_S_INVALID) {
         result = nrc_port_sema_wait(_os.sema, 0);
         assert(result == NRC_PORT_RES_OK);
 
-        msg_prio = (_os.msg_list != 0) ? _os.msg_list->prio : S8_MAX_VALUE;
+        msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
 
-        done = FALSE;
-        while (done == FALSE) {
-
+        do {
+            // Get first event (highest prio)
             result = nrc_port_irq_disable();
             evt_prio = _os.node_list->prio;
             if (evt_prio < S8_MAX_VALUE) {
@@ -467,29 +461,29 @@ static void nrc_os_thread_fcn(void)
             }
             result = nrc_port_irq_enable();
 
+            // Send messages with higher prio than event
             while (msg_prio < evt_prio) {
                 msg = _os.msg_list;
                 _os.msg_list = msg->next;
 
                 msg_node = (struct nrc_os_node_hdr*)(msg->to_node);
 
-                if (msg_node->api->recv_msg != 0) {
-                    msg_node->api->recv_msg((struct nrc_node_hdr*)(msg_node + 1), (struct nrc_msg_hdr*)(msg + 1));
+                if (msg_node->api->recv_msg != NULL) {
+                    msg_node->api->recv_msg((msg_node + 1), (msg + 1));
                 }
                 else {
-                    nrc_os_msg_free((struct nrc_msg_hdr*)(msg + 1));
+                    NRC_LOGI("nrc_os", "Receiving node %s has no recv_msg fcn", msg_node->cfg_id);
+                    nrc_os_msg_free(msg + 1);
                 }
-                msg_prio = (_os.msg_list != 0) ? _os.msg_list->prio : S8_MAX_VALUE;
+                msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
             }
 
+            // Send event
             if ((evt_prio < S8_MAX_VALUE) && (evt_node->api->recv_evt != 0)) {
                 evt_node->api->recv_evt((evt_node + 1), evt);
             }
 
-            if ((evt_prio == S8_MAX_VALUE) && (msg_prio == S8_MAX_VALUE)) {
-                done = TRUE;
-            }
-        }
+        } while ((evt_prio != S8_MAX_VALUE) || (msg_prio != S8_MAX_VALUE));
     }
 }
 

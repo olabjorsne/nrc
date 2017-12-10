@@ -193,19 +193,24 @@ static s32_t nrc_node_inject_recv_evt(nrc_node_t slf, u32_t event_mask)
     if (self != NULL) {
         switch (self->state) {
         case NRC_N_INJECT_S_STARTED:
-            result = nrc_timer_after(self->period_ms, &self->timer_pars);
+            if (event_mask == self->timer_pars.evt) {
+                result = nrc_timer_after(self->period_ms, &self->timer_pars);
 
-            // Allocate and send message
-            NRC_LOGI("inject", "recv_evt %d", event_mask);
+                // Allocate and send message
+                NRC_LOGI(self->hdr.cfg_name, "recv_evt: timeout", event_mask);
 
-            hdr = (struct nrc_msg_hdr*)nrc_os_msg_alloc(sizeof(struct nrc_msg_hdr));
-            if (hdr != NULL) {
-                hdr->topic = self->topic;
-                hdr->type = NRC_MSG_TYPE_NULL;
-                result = nrc_os_send_msg(self->wire[0], hdr, 16);
+                hdr = (struct nrc_msg_hdr*)nrc_os_msg_alloc(sizeof(struct nrc_msg_hdr));
+                if (hdr != NULL) {
+                    hdr->topic = self->topic;
+                    hdr->type = NRC_MSG_TYPE_NULL;
+                    result = nrc_os_send_msg(self->wire[0], hdr, 16);
+                }
+
+                result = NRC_R_OK;
             }
-
-            result = NRC_R_OK;
+            else {
+                NRC_LOGI(self->hdr.cfg_name, "recv_evt: invalid evt %d", event_mask);
+            }
             break;
 
         default:
