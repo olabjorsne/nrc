@@ -15,12 +15,13 @@
  */
 
 #include <Windows.h>
-#include <stdio.h>
+//#include <stdio.h>
 
 #include "nrc_types.h"
 #include "nrc_port.h"
 #include "nrc_os.h"
 #include "test_port.h"
+#include "nrc_node_factory.h"
 #include "nrc_log.h"
 
 const s8_t *TAG = "main";
@@ -31,8 +32,39 @@ int main(void)
 
     NRC_LOGI(TAG, "nrc version : v0.01");
     NRC_LOGI(TAG, "target : win32");
-    NRC_LOGI(TAG, "loading");
+    NRC_LOGI(TAG, "loading...");
+
     nrc_os_init();
+
+#if 0
+    struct nrc_os_register_node_pars    npars;
+    struct nrc_node_factory_pars        fpars;
+    nrc_node_t                          inject;
+    nrc_node_t                          debug;
+
+    fpars.cfg_id = "123.456";
+    fpars.cfg_name = "my inject";
+    fpars.cfg_type = "inject";
+    inject = nrc_factory_create_inject(&fpars);
+
+    npars.api = fpars.api;
+    npars.cfg_id = fpars.cfg_id;
+
+    nrc_os_node_register(inject, npars);
+
+
+    fpars.cfg_id = "234.567";
+    fpars.cfg_name = "my debug";
+    fpars.cfg_type = "debug";
+    debug = nrc_factory_create_debug(&fpars);
+
+    npars.api = fpars.api;
+    npars.cfg_id = fpars.cfg_id;
+
+    nrc_os_node_register(debug, npars);
+
+#endif
+
     nrc_os_start();
 
 #if 0
@@ -40,7 +72,7 @@ int main(void)
 #endif
 
     while (1) {
-        NRC_LOGD(TAG, "sleep 1s");
+        //NRC_LOGD(TAG, "sleep 1s");
         Sleep(1000);
     }
 }

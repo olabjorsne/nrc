@@ -8,6 +8,7 @@
 #include <string.h>
 
 #define NRC_N_INJECT_EVT_TIMEOUT    (1)
+#define NRC_N_INJECT_MAX_WIRES      (4)
 
 enum nrc_node_inject_types {
     NRC_N_INJECT_TYPE_NONE,
@@ -25,6 +26,7 @@ struct nrc_node_inject {
     struct nrc_node_hdr         hdr;
     enum nrc_node_inject_state  state;
     const s8_t                  *topic;
+    nrc_node_t                  wire[NRC_N_INJECT_MAX_WIRES];
 
     enum nrc_node_inject_types  payload_type;
     s8_t                        *payload_string;
@@ -88,6 +90,10 @@ static s32_t nrc_node_inject_init(nrc_node_t slf)
                 self->period_ms = 10000;
                 self->payload_type = NRC_N_INJECT_TYPE_TIME;
                 self->prio = 16;
+                self->topic = "my inject msg";
+
+                //TODO: get wires node ids
+                self->wire[0] = nrc_os_node_get("234.567");
 
                 self->state = NRC_N_INJECT_S_INITIALISED;
 
@@ -182,6 +188,7 @@ static s32_t nrc_node_inject_recv_evt(nrc_node_t slf, u32_t event_mask)
 {
     struct nrc_node_inject  *self = (struct nrc_node_inject*)slf;
     s32_t                   result = NRC_R_INVALID_IN_PARAM;
+    struct nrc_msg_hdr      *hdr = NULL;
 
     if (self != NULL) {
         switch (self->state) {
@@ -190,6 +197,13 @@ static s32_t nrc_node_inject_recv_evt(nrc_node_t slf, u32_t event_mask)
 
             // Allocate and send message
             NRC_LOGI("inject", "recv_evt %d", event_mask);
+
+            hdr = (struct nrc_msg_hdr*)nrc_os_msg_alloc(sizeof(struct nrc_msg_hdr));
+            if (hdr != NULL) {
+                hdr->topic = self->topic;
+                hdr->type = NRC_MSG_TYPE_NULL;
+                result = nrc_os_send_msg(self->wire[0], hdr, 16);
+            }
 
             result = NRC_R_OK;
             break;

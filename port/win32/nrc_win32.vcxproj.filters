@@ -54,6 +54,9 @@
     <ClCompile Include="..\..\nodes\source\nrc_node_inject.c">
       <Filter>nodes\source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\nodes\source\nrc_node_debug.c">
+      <Filter>nodes\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">

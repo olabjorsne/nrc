@@ -35,6 +35,7 @@ struct nrc_node_factory_pars {
 };
 
 extern nrc_node_t nrc_factory_create_inject(struct nrc_node_factory_pars *pars);
+extern nrc_node_t nrc_factory_create_debug(struct nrc_node_factory_pars *pars);
 
 #ifdef __cplusplus
 }

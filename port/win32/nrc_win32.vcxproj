@@ -142,6 +142,7 @@
     <ClCompile Include="..\..\kernel\source\nrc_log.c" />
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="..\..\kernel\source\nrc_timer.c" />
+    <ClCompile Include="..\..\nodes\source\nrc_node_debug.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_inject.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="source\nrc_port.c" />

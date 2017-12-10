@@ -243,8 +243,8 @@ nrc_msg_t nrc_os_msg_alloc(u32_t size)
 
         struct nrc_os_msg_tail *tail = (struct nrc_os_msg_tail*)((uint8_t*)msg + size);
 
-        memset(&hdr, 0, sizeof(hdr));
-        memset(&msg, 0, sizeof(struct nrc_msg_hdr));
+        memset(hdr, 0, sizeof(hdr));
+        memset(msg, 0, sizeof(struct nrc_msg_hdr));
 
         hdr->total_size = total_size;
         hdr->type = NRC_OS_MSG_TYPE;
@@ -297,6 +297,7 @@ s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
         if ((os_node_hdr->type == NRC_OS_NODE_TYPE) && (os_msg_hdr->type == NRC_OS_MSG_TYPE)) {
 
             os_msg_hdr->prio = prio;
+            os_msg_hdr->to_node = to;
 
             if ((_os.msg_list == NULL) || (os_msg_hdr->prio < _os.msg_list->prio)) {
                 os_msg_hdr->next = _os.msg_list;
@@ -311,6 +312,9 @@ s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
                 os_msg_hdr->next = msg->next;
                 msg->next = os_msg_hdr;
             }
+
+            result = nrc_port_sema_signal(_os.sema);
+            assert(result == NRC_PORT_RES_OK);
 
             result = NRC_PORT_RES_OK;
         }
@@ -375,7 +379,7 @@ static void insert_node(struct nrc_os_node_hdr* node)
         struct nrc_os_node_hdr *pos = _os.node_list;
         struct nrc_os_node_hdr *prev_pos = 0;
 
-        while ((pos != 0) && (pos->prio < node->prio)) {
+        while ((pos != 0) && (pos->prio <= node->prio)) {
             prev_pos = pos;
             pos = pos->next;
         }
@@ -389,6 +393,9 @@ static void insert_node(struct nrc_os_node_hdr* node)
 
             if (node->previous != 0) {
                 node->previous->next = node;
+            }
+            else {
+                _os.node_list = node;
             }
         }
         else {
