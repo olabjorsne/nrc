@@ -40,7 +40,7 @@ typedef enum {
 
 void nrc_log_write(nrc_log_level level, const char* tag, const char* format, ...);
 
-#define NRF_LOGE(tag, ...)  if (NRC_LOG_LEVEL >= NRC_LOG_ERROR)		{ nrc_log_write(NRC_LOG_ERROR,	 tag, __VA_ARGS__); }
+#define NRC_LOGE(tag, ...)  if (NRC_LOG_LEVEL >= NRC_LOG_ERROR)		{ nrc_log_write(NRC_LOG_ERROR,	 tag, __VA_ARGS__); }
 #define NRC_LOGW(tag, ...)  if (NRC_LOG_LEVEL >= NRC_LOG_WARNING)	{ nrc_log_write(NRC_LOG_WARNING, tag, __VA_ARGS__); }
 #define NRC_LOGI(tag, ...)  if (NRC_LOG_LEVEL >= NRC_LOG_INFO)		{ nrc_log_write(NRC_LOG_INFO,	 tag, __VA_ARGS__); }
 #define NRC_LOGD(tag, ...)  if (NRC_LOG_LEVEL >= NRC_LOG_DEBUG)		{ nrc_log_write(NRC_LOG_DEBUG,   tag, __VA_ARGS__); }
