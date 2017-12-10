@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-typedef void nrc_msg_t;
+typedef void* nrc_msg_t;
 
 struct nrc_msg_hdr {
     struct nrc_msg_hdr  *next;
@@ -56,7 +56,7 @@ struct nrc_msg_buf {
 
 typedef u32_t(*nrc_msg_read_t)(u8_t *buf, u32_t buf_size);
 
-struct nrc_msg_data_read {
+struct nrc_msg_data_available {
     struct nrc_msg_hdr  hdr;
     nrc_msg_read_t      read;
 };

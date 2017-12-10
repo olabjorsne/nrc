@@ -24,11 +24,17 @@
 extern "C" {
 #endif
 
-extern struct nrc_node_hdr* nrc_factory_create_inject(
-    const s8_t          *cfg_type,
-    const s8_t          *cfg_id,
-    const s8_t          *cfg_name,
-    struct nrc_node_api **ptr_api);
+struct nrc_node_factory_pars {
+    // In parameters
+    const s8_t          *cfg_type;
+    const s8_t          *cfg_id;
+    const s8_t          *cfg_name;
+
+    // Out parameters
+    struct nrc_node_api *api;
+};
+
+extern nrc_node_t nrc_factory_create_inject(struct nrc_node_factory_pars *pars);
 
 #ifdef __cplusplus
 }

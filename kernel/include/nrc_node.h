@@ -31,7 +31,7 @@ typedef s32_t (*nrc_node_init_t)(nrc_node_t self);
 typedef s32_t (*nrc_node_deinit_t)(nrc_node_t self);
 typedef s32_t (*nrc_node_start_t)(nrc_node_t self);
 typedef s32_t (*nrc_node_stop_t)(nrc_node_t self);
-typedef s32_t (*nrc_node_recv_msg_t)(nrc_node_t self, struct nrc_msg_hdr *msg);
+typedef s32_t (*nrc_node_recv_msg_t)(nrc_node_t self, nrc_msg_t msg);
 typedef s32_t (*nrc_node_recv_evt_t)(nrc_node_t self, u32_t event_mask);
 
 struct nrc_node_api {
