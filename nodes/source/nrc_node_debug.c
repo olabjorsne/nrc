@@ -7,7 +7,8 @@
 #include <string.h>
 
 enum nrc_node_debug_state {
-    NRC_N_DEBUG_S_INVALID,
+    NRC_N_DEBUG_S_INVALID = 0,
+    NRC_N_DEBUG_S_CREATED,
     NRC_N_DEBUG_S_INITIALISED,
     NRC_N_DEBUG_S_STARTED
 };
@@ -51,7 +52,7 @@ nrc_node_t nrc_factory_create_debug(struct nrc_node_factory_pars *pars)
 
             pars->api = &_api;
 
-            node->state = NRC_N_DEBUG_S_INVALID;
+            node->state = NRC_N_DEBUG_S_CREATED;
         }
     }
 
@@ -65,7 +66,7 @@ static s32_t nrc_node_debug_init(nrc_node_t slf)
 
     if (self != 0) {
         switch (self->state) {
-        case NRC_N_DEBUG_S_INVALID:
+        case NRC_N_DEBUG_S_CREATED:
             //TODO:
 
             self->state = NRC_N_DEBUG_S_INITIALISED;

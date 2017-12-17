@@ -26,6 +26,7 @@
 
 enum nrc_os_state {
     NRC_OS_S_INVALID = 0,
+    NRC_OS_S_CREATED,
     NRC_OS_S_INITIALIZED,
     NRC_OS_S_STARTED
 };
@@ -75,32 +76,48 @@ static void init_registered_nodes(void);
 
 static void nrc_os_thread_fcn(void);
 
-static struct nrc_os _os;
+static struct nrc_os    _os;
+static bool_t           _created = FALSE;
 
 s32_t nrc_os_init(void)
 {
-    s32_t result = 0;
+    s32_t result = NRC_R_ERROR;
 
-    assert(sizeof(struct nrc_os_msg_hdr) % 4 == 0);
-    assert(sizeof(struct nrc_os_msg_tail) % 4 == 0);
-    assert(sizeof(struct nrc_os_node_hdr) % 4 == 0);
+    if (_created == FALSE) {
+        _created = TRUE;
+        _os.state = NRC_OS_S_CREATED;
+    }
 
-    memset(&_os, 0, sizeof(struct nrc_os));
+    switch (_os.state) {
+    case NRC_OS_S_CREATED:
+        assert(sizeof(struct nrc_os_msg_hdr) % 4 == 0);
+        assert(sizeof(struct nrc_os_msg_tail) % 4 == 0);
+        assert(sizeof(struct nrc_os_node_hdr) % 4 == 0);
 
-    result = nrc_port_init();
-    assert(result == NRC_PORT_RES_OK);
+        memset(&_os, 0, sizeof(struct nrc_os));
 
-    result = nrc_port_sema_init(0, &_os.sema);
-    assert(result == NRC_PORT_RES_OK);
+        result = nrc_port_init();
+        assert(result == NRC_PORT_RES_OK);
 
-    result = nrc_port_thread_init(
-        NRC_PORT_THREAD_PRIO_NORMAL,
-        NRC_OS_STACK_SIZE,
-        nrc_os_thread_fcn,
-        &(_os.thread));
-    assert(result == NRC_PORT_RES_OK);
+        result = nrc_port_sema_init(0, &_os.sema);
+        assert(result == NRC_PORT_RES_OK);
 
-    _os.state = NRC_OS_S_INITIALIZED;
+        result = nrc_port_thread_init(
+            NRC_PORT_THREAD_PRIO_NORMAL,
+            NRC_OS_STACK_SIZE,
+            nrc_os_thread_fcn,
+            &(_os.thread));
+        assert(result == NRC_PORT_RES_OK);
+
+        _os.state = NRC_OS_S_INITIALIZED;
+        result = NRC_R_OK;
+        break;
+
+    default:
+        NRC_LOGD("os", "init: invalid state %d", _os.state);
+        result = NRC_R_INVALID_STATE;
+        break;
+    }
 
     return result;
 }
@@ -134,6 +151,7 @@ s32_t nrc_os_start(void)
         break;
     default:
         NRC_LOGD("os", "nrc_os_start: invalid state %d", _os.state);
+        result = NRC_R_INVALID_STATE;
         break;
     }
     
@@ -174,8 +192,7 @@ s32_t nrc_os_node_register(nrc_node_t node, struct nrc_os_register_node_pars par
     s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
     if ((node != NULL) && (pars.api != NULL) && (pars.cfg_id != NULL) &&
-        (pars.api->init != NULL) && (pars.api->deinit != NULL) && (pars.api->start != NULL) && (pars.api->stop != NULL) &&
-        (pars.api->recv_msg != NULL) && (pars.api->recv_evt != NULL)) {
+        (pars.api->init != NULL) && (pars.api->deinit != NULL) && (pars.api->start != NULL) && (pars.api->stop != NULL)) {
 
         struct nrc_os_node_hdr *os_node_hdr = (struct nrc_os_node_hdr*)node - 1;
 
@@ -197,12 +214,9 @@ s32_t nrc_os_node_register(nrc_node_t node, struct nrc_os_register_node_pars par
 
 nrc_node_t nrc_os_node_get(const s8_t *cfg_id)
 {
-    s32_t       result = NRC_PORT_RES_INVALID_IN_PARAM;
     nrc_node_t  node = NULL;
 
     if (cfg_id != NULL) {
-
-        result = NRC_PORT_RES_NOT_FOUND;
 
         bool_t                  found = FALSE;
         struct nrc_os_node_hdr  *hdr = _os.node_list;
@@ -210,8 +224,7 @@ nrc_node_t nrc_os_node_get(const s8_t *cfg_id)
         while ((found == FALSE) && (hdr != NULL)) {
             if (strncmp(cfg_id, hdr->cfg_id, NRC_MAX_CFG_NAME_LEN) == 0) {
                 found = TRUE;
-                node = hdr;
-                result = NRC_PORT_RES_OK;
+                node = hdr + 1;
             }
             hdr = hdr->next;
         }
@@ -287,13 +300,13 @@ s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
 
     if ((to != NULL) && (msg != NULL) && (prio < S8_MAX_VALUE)) {
 
-        struct nrc_os_node_hdr  *os_node_hdr = (struct nrc_os_node_hdr*)to;
+        struct nrc_os_node_hdr  *os_node_hdr = (struct nrc_os_node_hdr*)to - 1;
         struct nrc_os_msg_hdr   *os_msg_hdr = (struct nrc_os_msg_hdr*)msg - 1;
 
         if ((os_node_hdr->type == NRC_OS_NODE_TYPE) && (os_msg_hdr->type == NRC_OS_MSG_TYPE)) {
 
             os_msg_hdr->prio = prio;
-            os_msg_hdr->to_node = to;
+            os_msg_hdr->to_node = os_node_hdr;
 
             if ((_os.msg_list == NULL) || (os_msg_hdr->prio < _os.msg_list->prio)) {
                 os_msg_hdr->next = _os.msg_list;

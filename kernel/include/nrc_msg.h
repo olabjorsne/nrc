@@ -20,11 +20,12 @@
 #include "nrc_types.h"
 #include "nrc_defs.h"
 
-#define NRC_MSG_TYPE_NULL           (0)
-#define NRC_MSG_TYPE_INT            (1)
-#define NRC_MSG_TYPE_STRING         (2)
-#define NRC_MSG_TYPE_BUF            (3)
-#define NRC_MSG_TYPE_DATA_AVAILABLE (4)
+#define NRC_MSG_TYPE_INVALID        (0) //Shall not be used
+#define NRC_MSG_TYPE_EMPTY          (1)
+#define NRC_MSG_TYPE_INT            (2)
+#define NRC_MSG_TYPE_STRING         (3)
+#define NRC_MSG_TYPE_BUF            (4)
+#define NRC_MSG_TYPE_DATA_AVAILABLE (5)
 
 #ifdef __cplusplus
 extern "C" {

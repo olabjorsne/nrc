@@ -202,7 +202,7 @@ static s32_t nrc_node_inject_recv_evt(nrc_node_t slf, u32_t event_mask)
                 hdr = (struct nrc_msg_hdr*)nrc_os_msg_alloc(sizeof(struct nrc_msg_hdr));
                 if (hdr != NULL) {
                     hdr->topic = self->topic;
-                    hdr->type = NRC_MSG_TYPE_NULL;
+                    hdr->type = NRC_MSG_TYPE_EMPTY;
                     result = nrc_os_send_msg(self->wire[0], hdr, 16);
                 }
 
