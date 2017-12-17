@@ -450,7 +450,6 @@ static void nrc_os_thread_fcn(void)
     s32_t   result;
 
     u32_t                   evt;
-    s8_t                    evt_prio;
     struct nrc_os_node_hdr  *evt_node = NULL;
 
     struct nrc_os_msg_hdr   *msg = NULL;
@@ -461,21 +460,29 @@ static void nrc_os_thread_fcn(void)
         result = nrc_port_sema_wait(_os.sema, 0);
         assert(result == NRC_PORT_RES_OK);
 
-        msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
-
         do {
-            // Get first event (highest prio)
+            msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
+
             result = nrc_port_irq_disable();
-            evt_prio = _os.node_list->prio;
-            if (evt_prio < S8_MAX_VALUE) {
+            if ((_os.node_list->prio < S8_MAX_VALUE) && (_os.node_list->prio <= msg_prio)) {
                 evt_node = _os.node_list;
                 evt = _os.node_list->evt;
                 clear_evt(evt_node);
             }
+            else {
+                evt_node = NULL;
+            }
             result = nrc_port_irq_enable();
 
-            // Send messages with higher prio than event
-            while (msg_prio < evt_prio) {
+            if (evt_node != NULL) {
+                if (evt_node->api->recv_evt != NULL) {
+                    evt_node->api->recv_evt((evt_node + 1), evt);
+                }
+                else {
+                    NRC_LOGI("nrc_os", "Receiving node %s has no recv_evt fcn", evt_node->cfg_id);
+                }
+            }
+            else if (msg_prio < S8_MAX_VALUE) {
                 msg = _os.msg_list;
                 _os.msg_list = msg->next;
 
@@ -488,15 +495,9 @@ static void nrc_os_thread_fcn(void)
                     NRC_LOGI("nrc_os", "Receiving node %s has no recv_msg fcn", msg_node->cfg_id);
                     nrc_os_msg_free(msg + 1);
                 }
-                msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
             }
 
-            // Send event
-            if ((evt_prio < S8_MAX_VALUE) && (evt_node->api->recv_evt != 0)) {
-                evt_node->api->recv_evt((evt_node + 1), evt);
-            }
-
-        } while ((evt_prio != S8_MAX_VALUE) || (msg_prio != S8_MAX_VALUE));
+        } while ((evt_node != NULL) || (msg_prio < S8_MAX_VALUE));
     }
 }
 
