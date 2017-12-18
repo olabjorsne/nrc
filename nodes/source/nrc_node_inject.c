@@ -163,6 +163,8 @@ static s32_t nrc_node_inject_stop(nrc_node_t slf)
 
             self->state = NRC_N_INJECT_S_INITIALISED;
             result = NRC_R_OK;
+
+            NRC_LOGD("inject", "stopped");
             break;
 
         default:
@@ -179,7 +181,7 @@ static s32_t nrc_node_inject_recv_msg(nrc_node_t slf, nrc_msg_t msg)
 {
     s32_t result = NRC_R_ERROR;
 
-    NRC_LOGD("nrc_timer", "Unexpected msg");
+    NRC_LOGD("inject", "Unexpected msg");
 
     if (msg != NULL) {
         nrc_os_msg_free(msg);
