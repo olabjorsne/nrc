@@ -71,6 +71,8 @@ static s32_t nrc_node_debug_init(nrc_node_t slf)
 
             self->state = NRC_N_DEBUG_S_INITIALISED;
             result = NRC_R_OK;
+
+            NRC_LOGD("debug", "initialised");
             break;
 
         default:
@@ -101,6 +103,8 @@ static s32_t nrc_node_debug_start(nrc_node_t slf)
 
             self->state = NRC_N_DEBUG_S_STARTED;
             result = NRC_R_OK;
+
+            NRC_LOGD("debug", "started");
             break;
 
         default:

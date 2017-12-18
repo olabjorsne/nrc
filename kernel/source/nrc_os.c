@@ -28,6 +28,7 @@ enum nrc_os_state {
     NRC_OS_S_INVALID = 0,
     NRC_OS_S_CREATED,
     NRC_OS_S_INITIALIZED,
+    NRC_OS_S_STARTED_KERNAL,
     NRC_OS_S_STARTED
 };
 
@@ -51,6 +52,8 @@ struct nrc_os_node_hdr {
     struct nrc_node_api *api;
     const s8_t          *cfg_id;
 
+    bool_t              kernal_node;
+
     u32_t               evt;
     s8_t                prio;
     s8_t                padding[3];
@@ -71,8 +74,8 @@ struct nrc_os {
 static void insert_node(struct nrc_os_node_hdr *node);
 static void extract_node(struct nrc_os_node_hdr *node);
 static void increased_node_prio(struct nrc_os_node_hdr *node);
-static void start_registered_nodes(void);
-static void init_registered_nodes(void);
+static void start_registered_nodes(bool_t kernal_nodes_only);
+static void init_registered_nodes(bool_t kernal_nodes_only);
 
 static void nrc_os_thread_fcn(void);
 
@@ -131,23 +134,43 @@ s32_t nrc_os_deinit(void)
     return result;
 }
 
-s32_t nrc_os_start(void)
+s32_t nrc_os_start(bool_t kernal_nodes_only)
 {
     s32_t result = NRC_R_INVALID_STATE;
 
     switch (_os.state) {
     case NRC_OS_S_INITIALIZED:
-        // Initialize all registered nodes
-        init_registered_nodes();
+        if (kernal_nodes_only == TRUE) {
+            init_registered_nodes(TRUE);
+            start_registered_nodes(TRUE);
 
-        // Start all registered nodes
-        start_registered_nodes();
+            _os.state = NRC_OS_S_STARTED_KERNAL;
+        }
+        else {
+            init_registered_nodes(TRUE);
+            init_registered_nodes(FALSE);
+            start_registered_nodes(TRUE);
+            start_registered_nodes(FALSE);
 
-        _os.state = NRC_OS_S_STARTED;
+            _os.state = NRC_OS_S_STARTED;
+        }
 
         // Start msg and event handling thread
         result = nrc_port_thread_start(_os.thread);
         assert(result == NRC_PORT_RES_OK);
+        break;
+
+    case NRC_OS_S_STARTED_KERNAL:
+        if (kernal_nodes_only == FALSE) {
+            init_registered_nodes(FALSE);
+            start_registered_nodes(FALSE);
+
+            _os.state = NRC_OS_S_STARTED;
+        }
+        else {
+            NRC_LOGD("os", "nrc_os_start: invalid state %d", _os.state);
+            result = NRC_R_INVALID_STATE;
+        }
         break;
     default:
         NRC_LOGD("os", "nrc_os_start: invalid state %d", _os.state);
@@ -187,7 +210,7 @@ nrc_node_t nrc_os_node_alloc(u32_t size)
     return node_hdr;
 }
 
-s32_t nrc_os_node_register(nrc_node_t node, struct nrc_os_register_node_pars pars)
+s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_register_node_pars pars)
 {
     s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
 
@@ -200,6 +223,7 @@ s32_t nrc_os_node_register(nrc_node_t node, struct nrc_os_register_node_pars par
 
             os_node_hdr->api = pars.api;
             os_node_hdr->cfg_id = pars.cfg_id;
+            os_node_hdr->kernal_node = kernal_node;
             os_node_hdr->prio = S8_MAX_VALUE;
             os_node_hdr->evt = 0;
 
@@ -501,26 +525,27 @@ static void nrc_os_thread_fcn(void)
     }
 }
 
-static void init_registered_nodes(void)
+static void init_registered_nodes(bool_t kernal_node)
 {
     struct nrc_os_node_hdr *hdr = _os.node_list;
 
     while (hdr != NULL) {
-        hdr->api->init(hdr + 1);
-
+        if (kernal_node == hdr->kernal_node) {
+            hdr->api->init(hdr + 1);
+        }
         hdr = hdr->next;
     }
 }
 
-static void start_registered_nodes(void)
+static void start_registered_nodes(bool_t kernal_node)
 {
     struct nrc_os_node_hdr *hdr = _os.node_list;
 
     while (hdr != NULL) {
-        hdr->api->start(hdr + 1);
-
+        if (kernal_node == hdr->kernal_node) {
+            hdr->api->start(hdr + 1);
+        }
         hdr = hdr->next;
     }
-
 }
 

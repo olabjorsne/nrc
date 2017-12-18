@@ -98,6 +98,8 @@ static s32_t nrc_node_inject_init(nrc_node_t slf)
                 self->state = NRC_N_INJECT_S_INITIALISED;
 
                 result = NRC_R_OK;
+
+                NRC_LOGD("inject", "initialised");
             }
             break;
 
@@ -134,6 +136,8 @@ static s32_t nrc_node_inject_start(nrc_node_t slf)
 
             if (result == NRC_R_OK) {
                 self->state = NRC_N_INJECT_S_STARTED;
+
+                NRC_LOGD("inject", "started");
             }
             break;
 

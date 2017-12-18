@@ -42,17 +42,6 @@ int main(void)
     nrc_node_t                          inject;
     nrc_node_t                          debug;
 
-    fpars.cfg_id = "123.456";
-    fpars.cfg_name = "my inject";
-    fpars.cfg_type = "inject";
-    inject = nrc_factory_create_inject(&fpars);
-
-    npars.api = fpars.api;
-    npars.cfg_id = fpars.cfg_id;
-
-    nrc_os_node_register(inject, npars);
-
-
     fpars.cfg_id = "234.567";
     fpars.cfg_name = "my debug";
     fpars.cfg_type = "debug";
@@ -61,11 +50,25 @@ int main(void)
     npars.api = fpars.api;
     npars.cfg_id = fpars.cfg_id;
 
-    nrc_os_node_register(debug, npars);
+    nrc_os_node_register(TRUE, debug, npars);
+
+    nrc_os_start(TRUE);
+
+    fpars.cfg_id = "123.456";
+    fpars.cfg_name = "my inject";
+    fpars.cfg_type = "inject";
+    inject = nrc_factory_create_inject(&fpars);
+
+    npars.api = fpars.api;
+    npars.cfg_id = fpars.cfg_id;
+
+    nrc_os_node_register(FALSE, inject, npars);
+
+
 
 #endif
 
-    nrc_os_start();
+    nrc_os_start(FALSE);
 
 #if 0
     ok = test_all();

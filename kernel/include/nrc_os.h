@@ -34,13 +34,13 @@ struct nrc_os_register_node_pars {
 s32_t nrc_os_init(void);
 s32_t nrc_os_deinit(void);
 
-s32_t nrc_os_start(void);
-s32_t nrc_os_stop(void);
+s32_t nrc_os_start(bool_t kernal_nodes_only);
+s32_t nrc_os_stop(bool_t application_nodes_only);
 
 nrc_node_t nrc_os_node_alloc(u32_t size);
 nrc_node_t nrc_os_node_get(const s8_t *cfg_id);
 
-s32_t nrc_os_node_register(nrc_node_t node, struct nrc_os_register_node_pars pars);
+s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_register_node_pars pars);
 
 nrc_msg_t nrc_os_msg_alloc(u32_t size);
 nrc_msg_t nrc_os_msg_clone(nrc_msg_t msg);
