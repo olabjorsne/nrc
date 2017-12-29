@@ -92,5 +92,8 @@
     <ClInclude Include="..\..\nodes\include\nrc_node_factory.h">
       <Filter>nodes\include</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\nrc_port_uart.h">
+      <Filter>port\include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

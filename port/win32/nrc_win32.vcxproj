@@ -159,6 +159,7 @@
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
     <ClInclude Include="..\..\nodes\include\nrc_node_factory.h" />
     <ClInclude Include="..\include\nrc_port.h" />
+    <ClInclude Include="..\include\nrc_port_uart.h" />
     <ClInclude Include="..\include\test_port.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
