@@ -34,7 +34,6 @@ enum nrc_port_uart_flow_ctrl {
 };
 
 struct nrc_port_uart_pars {
-    u8_t                            port;
     u32_t                           baud_rate;
     u8_t                            data_bits;
     enum nrc_port_serial_parity     parity;
@@ -43,7 +42,7 @@ struct nrc_port_uart_pars {
 };
 
 typedef void(*nrc_port_uart_data_available_t)(nrc_port_uart_t uart);
-typedef void(*nrc_port_uart_write_complete_t)(nrc_port_uart_t uart, s32_t result);
+typedef void(*nrc_port_uart_write_complete_t)(nrc_port_uart_t uart, s32_t result, u32_t bytes);
 typedef void(*nrc_port_uart_error_t)(nrc_port_uart_t uart, s32_t error);
 
 struct nrc_port_uart_callback_fcn {
@@ -55,6 +54,7 @@ struct nrc_port_uart_callback_fcn {
 s32_t nrc_port_uart_init(void);
 
 s32_t nrc_port_uart_open(
+    u8_t                                port,
     struct nrc_port_uart_pars           pars,
     struct nrc_port_uart_callback_fcn   callback,
     nrc_port_uart_t                     *uart);

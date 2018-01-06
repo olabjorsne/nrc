@@ -20,13 +20,15 @@
 
 #include "nrc_types.h"
 
-#define NRC_PORT_RES_OK                 (0)
-#define NRC_PORT_RES_ERROR              (-1)
-#define NRC_PORT_RES_TIMEOUT            (-2)
-#define NRC_PORT_RES_NOT_SUPPORTED      (-3)
-#define NRC_PORT_RES_INVALID_IN_PARAM   (-4)
-#define NRC_PORT_RES_NOT_FOUND          (-5)
-#define NRC_PORT_RES_OUT_OF_MEM         (-6)
+#define NRC_PORT_RES_OK                     (0)
+#define NRC_PORT_RES_ERROR                  (-1)
+#define NRC_PORT_RES_TIMEOUT                (-2)
+#define NRC_PORT_RES_NOT_SUPPORTED          (-3)
+#define NRC_PORT_RES_INVALID_IN_PARAM       (-4)
+#define NRC_PORT_RES_NOT_FOUND              (-5)
+#define NRC_PORT_RES_OUT_OF_MEM             (-6)
+#define NRC_PORT_RES_INVALID_STATE          (-7)
+#define NRC_PORT_RES_RESOURCE_UNAVAILABLE   (-8)
 
 #ifdef __cplusplus
 extern "C" {

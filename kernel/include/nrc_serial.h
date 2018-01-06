@@ -37,6 +37,8 @@ s32_t nrc_serial_open(
     struct nrc_serial_usr   *write_complete,
     nrc_serial_t            *port);
 
+s32_t nrc_serial_close(nrc_serial_t port);
+
 u32_t nrc_serial_read(nrc_serial_t port, u8_t *buf, u32_t buf_size);
 
 u32_t nrc_serial_write(nrc_serial_t port, u8_t *buf, u32_t buf_size);

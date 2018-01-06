@@ -57,6 +57,9 @@
     <ClCompile Include="..\..\nodes\source\nrc_node_debug.c">
       <Filter>nodes\source</Filter>
     </ClCompile>
+    <ClCompile Include="source\nrc_port_uart.c">
+      <Filter>port\win32\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
@@ -94,6 +97,9 @@
     </ClInclude>
     <ClInclude Include="..\include\nrc_port_uart.h">
       <Filter>port\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_serial.h">
+      <Filter>kernel\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

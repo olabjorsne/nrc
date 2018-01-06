@@ -146,6 +146,7 @@
     <ClCompile Include="..\..\nodes\source\nrc_node_inject.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="source\nrc_port.c" />
+    <ClCompile Include="source\nrc_port_uart.c" />
     <ClCompile Include="test_port.c" />
   </ItemGroup>
   <ItemGroup>
@@ -155,6 +156,7 @@
     <ClInclude Include="..\..\kernel\include\nrc_msg.h" />
     <ClInclude Include="..\..\kernel\include\nrc_node.h" />
     <ClInclude Include="..\..\kernel\include\nrc_os.h" />
+    <ClInclude Include="..\..\kernel\include\nrc_serial.h" />
     <ClInclude Include="..\..\kernel\include\nrc_timer.h" />
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
     <ClInclude Include="..\..\nodes\include\nrc_node_factory.h" />
