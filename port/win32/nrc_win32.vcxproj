@@ -100,7 +100,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_LONG_HANDLES_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\nodes\include;$(ProjectDir)..\..\port\include;$(ProjectDir)..\..\kernel\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\nodes\include;$(ProjectDir)..\..\misc\include;$(ProjectDir)..\..\port\include;$(ProjectDir)..\..\kernel\include</AdditionalIncludeDirectories>
       <StructMemberAlignment>1Byte</StructMemberAlignment>
     </ClCompile>
     <Link>
@@ -142,6 +142,7 @@
     <ClCompile Include="..\..\kernel\source\nrc_log.c" />
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="..\..\kernel\source\nrc_timer.c" />
+    <ClCompile Include="..\..\misc\source\nrc_misc_cbuf.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_debug.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_inject.c" />
     <ClCompile Include="main.c" />
@@ -159,6 +160,7 @@
     <ClInclude Include="..\..\kernel\include\nrc_serial.h" />
     <ClInclude Include="..\..\kernel\include\nrc_timer.h" />
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
+    <ClInclude Include="..\..\misc\include\nrc_misc_cbuf.h" />
     <ClInclude Include="..\..\nodes\include\nrc_node_factory.h" />
     <ClInclude Include="..\include\nrc_port.h" />
     <ClInclude Include="..\include\nrc_port_uart.h" />

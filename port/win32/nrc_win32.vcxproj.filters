@@ -31,6 +31,15 @@
     <Filter Include="nodes\source">
       <UniqueIdentifier>{2095227d-6867-46c6-b633-a2c4b005b2ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="misc">
+      <UniqueIdentifier>{3a3b0fb3-a180-4a7e-9b1f-05b16ec558e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc\include">
+      <UniqueIdentifier>{eea8ff5e-c345-440c-81d3-d11ab4238aff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="misc\source">
+      <UniqueIdentifier>{e62db790-c74c-4858-b917-66d40e37b2f1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\kernel\source\nrc_os.c">
@@ -59,6 +68,9 @@
     </ClCompile>
     <ClCompile Include="source\nrc_port_uart.c">
       <Filter>port\win32\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\misc\source\nrc_misc_cbuf.c">
+      <Filter>misc\source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -100,6 +112,9 @@
     </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_serial.h">
       <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\misc\include\nrc_misc_cbuf.h">
+      <Filter>misc\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
