@@ -46,7 +46,7 @@ s32_t nrc_misc_cbuf_deinit(nrc_misc_cbuf_t cbuf)
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
-    assert(self->type != NRC_MISC_CBUF_TYPE);
+    assert(self->type == NRC_MISC_CBUF_TYPE);
 
     self->type = 0;
 
@@ -61,7 +61,7 @@ bool_t nrc_misc_cbuf_is_empty(nrc_misc_cbuf_t cbuf)
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
-    assert(self->type != NRC_MISC_CBUF_TYPE);
+    assert(self->type == NRC_MISC_CBUF_TYPE);
 
     if (self->bytes == 0) {
         empty = TRUE;
@@ -76,7 +76,7 @@ bool_t nrc_misc_cbuf_is_full(nrc_misc_cbuf_t cbuf)
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
-    assert(self->type != NRC_MISC_CBUF_TYPE);
+    assert(self->type == NRC_MISC_CBUF_TYPE);
 
     if (self->bytes == self->buf_size) {
         full = TRUE;
@@ -92,7 +92,7 @@ u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size)
     u32_t                   read = 0;
 
     assert(self != NULL);
-    assert(self->type != NRC_MISC_CBUF_TYPE);
+    assert(self->type == NRC_MISC_CBUF_TYPE);
 
     if ((buf != NULL) && (buf_size > 0) && (self->bytes > 0)) {
         do {
@@ -108,7 +108,7 @@ u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size)
                 bytes = buf_size;
             }
 
-            memcpy(buf, &self->buf[self->read_index], bytes);
+            memcpy(&buf[read], &self->buf[self->read_index], bytes);
 
             self->read_index = (self->read_index + bytes) % self->buf_size;
             self->bytes -= bytes;
@@ -117,7 +117,7 @@ u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size)
         } while ((read < buf_size) && (self->bytes > 0));
     }
 
-    return bytes;
+    return read;
 }
 
 u32_t nrc_misc_cbuf_write(nrc_misc_cbuf_t cbuf, u8_t *data, u32_t data_size)
@@ -127,11 +127,11 @@ u32_t nrc_misc_cbuf_write(nrc_misc_cbuf_t cbuf, u8_t *data, u32_t data_size)
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
-    assert(self->type != NRC_MISC_CBUF_TYPE);
+    assert(self->type == NRC_MISC_CBUF_TYPE);
 
     if ((data != NULL) && (data_size > 0) && (self->bytes < self->buf_size)) {
         do {
-            if (self->write_index > self->read_index) {
+            if ((self->bytes == 0) || (self->write_index > self->read_index)) {
                 bytes = self->buf_size - self->write_index;
             }
             else {
@@ -161,7 +161,7 @@ s32_t nrc_misc_cbuf_get_read_buf(nrc_misc_cbuf_t cbuf, u8_t **buf, u32_t *buf_si
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
-    assert(self->type != NRC_MISC_CBUF_TYPE);
+    assert(self->type == NRC_MISC_CBUF_TYPE);
     assert(buf != NULL);
     assert(buf_size != NULL);
 
@@ -190,7 +190,7 @@ s32_t nrc_misc_cbuf_read_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
-    assert(self->type != NRC_MISC_CBUF_TYPE);
+    assert(self->type == NRC_MISC_CBUF_TYPE);
     
     assert(self->bytes >= bytes);
     self->bytes -= bytes;
@@ -208,7 +208,7 @@ s32_t nrc_misc_cbuf_get_write_buf(nrc_misc_cbuf_t cbuf, u8_t **buf, u32_t *buf_s
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
-    assert(self->type != NRC_MISC_CBUF_TYPE);
+    assert(self->type == NRC_MISC_CBUF_TYPE);
     assert(buf != NULL);
     assert(buf_size != NULL);
 
@@ -237,7 +237,7 @@ s32_t nrc_misc_cbuf_write_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
-    assert(self->type != NRC_MISC_CBUF_TYPE);
+    assert(self->type == NRC_MISC_CBUF_TYPE);
 
     self->bytes += bytes;
     assert(self->bytes <= self->buf_size);
