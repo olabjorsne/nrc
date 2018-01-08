@@ -155,14 +155,13 @@ u32_t nrc_misc_cbuf_write(nrc_misc_cbuf_t cbuf, u8_t *data, u32_t data_size)
     return written;
 }
 
-s32_t nrc_misc_cbuf_get_read_buf(nrc_misc_cbuf_t cbuf, u8_t **buf, u32_t *buf_size)
+u8_t* nrc_misc_cbuf_get_read_buf(nrc_misc_cbuf_t cbuf, u32_t *buf_size)
 {
-    s32_t                   result = NRC_R_OK;
+    u8_t                    *buf = NULL;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
     assert(self->type == NRC_MISC_CBUF_TYPE);
-    assert(buf != NULL);
     assert(buf_size != NULL);
 
     if (self->bytes > 0) {
@@ -172,21 +171,18 @@ s32_t nrc_misc_cbuf_get_read_buf(nrc_misc_cbuf_t cbuf, u8_t **buf, u32_t *buf_si
         else {
             *buf_size = self->buf_size - self->read_index;
         }
-        *buf = &self->buf[self->read_index];
+        buf = &self->buf[self->read_index];
     }
     else {
-        *buf = NULL;
+        buf = NULL;
         *buf_size = 0;
-
-        result = NRC_R_ERROR;
     }
 
-    return result;
+    return buf;
 }
 
-s32_t nrc_misc_cbuf_read_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
+void nrc_misc_cbuf_read_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
 {
-    s32_t                   result = NRC_R_OK;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
@@ -198,42 +194,36 @@ s32_t nrc_misc_cbuf_read_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
     self->read_index = (self->read_index + bytes);
     assert(self->read_index <= self->buf_size);
     self->read_index %= self->buf_size;
-    
-    return result;
 }
 
-s32_t nrc_misc_cbuf_get_write_buf(nrc_misc_cbuf_t cbuf, u8_t **buf, u32_t *buf_size)
+u8_t* nrc_misc_cbuf_get_write_buf(nrc_misc_cbuf_t cbuf, u32_t *buf_size)
 {
-    s32_t                   result = NRC_R_OK;
+    u8_t                    *buf = NULL;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
     assert(self->type == NRC_MISC_CBUF_TYPE);
-    assert(buf != NULL);
     assert(buf_size != NULL);
 
     if (self->bytes < self->buf_size) {
-        if (self->write_index > self->read_index) {
+        if ((self->bytes == 0) || (self->write_index > self->read_index)) {
             *buf_size = self->buf_size - self->write_index;
         }
         else {
             *buf_size = self->read_index - self->write_index;
         }
-        *buf = &self->buf[self->write_index];
+        buf = &self->buf[self->write_index];
     }
     else {
-        *buf = NULL;
+        buf = NULL;
         *buf_size = 0;
-
-        result = NRC_R_ERROR;
     }
 
-    return result;
+    return buf;
 }
 
-s32_t nrc_misc_cbuf_write_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
+void nrc_misc_cbuf_write_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
 {
-    s32_t                   result = NRC_R_OK;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
     assert(self != NULL);
@@ -245,8 +235,6 @@ s32_t nrc_misc_cbuf_write_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
     self->write_index += bytes;
     assert(self->write_index <= self->buf_size);
     self->write_index %= self->buf_size;
-
-    return result;
 }
 
 

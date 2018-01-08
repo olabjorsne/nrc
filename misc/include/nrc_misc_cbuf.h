@@ -31,14 +31,14 @@ bool_t nrc_misc_cbuf_is_full(nrc_misc_cbuf_t cbuf);
 
 u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size);
 
-s32_t nrc_misc_cbuf_get_read_buf(nrc_misc_cbuf_t cbuf, u8_t **buf, u32_t *buf_size);
+u8_t* nrc_misc_cbuf_get_read_buf(nrc_misc_cbuf_t cbuf, u32_t *buf_size);
 
-s32_t nrc_misc_cbuf_read_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes);
+void nrc_misc_cbuf_read_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes);
 
 u32_t nrc_misc_cbuf_write(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size);
 
-s32_t nrc_misc_cbuf_get_write_buf(nrc_misc_cbuf_t cbuf, u8_t **buf, u32_t *buf_size);
+u8_t* nrc_misc_cbuf_get_write_buf(nrc_misc_cbuf_t cbuf, u32_t *buf_size);
 
-s32_t nrc_misc_cbuf_write_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes);
+void nrc_misc_cbuf_write_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes);
 
 #endif
