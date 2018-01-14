@@ -62,7 +62,7 @@ int main(int argc, char** argv)
     ok = test_cbuf_read_write_buf();
 #endif
 
-#if 1
+#if 0
 #include "test_port_uart_echo.h"
     ok = test_port_uart_echo(3);
 #endif

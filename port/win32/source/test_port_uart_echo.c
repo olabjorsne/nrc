@@ -43,7 +43,7 @@ static void write_complete(nrc_port_uart_t uart, s32_t result, u32_t bytes)
 }
 static void error(nrc_port_uart_t uart, s32_t error)
 {
-    exit(error);
+    assert(FALSE);
 }
 
 bool_t test_port_uart_echo(u8_t port)
@@ -62,4 +62,6 @@ bool_t test_port_uart_echo(u8_t port)
 
     result = nrc_port_uart_open(port, pars, fcn, &uart);
     assert(result == NRC_PORT_RES_OK);
+
+    return result;
 }
