@@ -78,6 +78,9 @@
     <ClCompile Include="..\..\kernel\source\nrc_node_factory.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
+    <ClCompile Include="source\test_port_uart_echo.c">
+      <Filter>port\win32\source</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\kernel\source\jsmn.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
@@ -139,6 +142,9 @@
     </ClInclude>
     <ClInclude Include="..\..\misc\include\test_cbuf.h">
       <Filter>misc\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\test_port_uart_echo.h">
+      <Filter>port\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
