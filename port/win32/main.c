@@ -56,7 +56,18 @@ int main(int argc, char** argv)
     ok = test_all();
 #endif
 
+#if 0
+#include "test_cbuf.h"
+    ok = test_cbuf_read_write();
+    ok = test_cbuf_read_write_buf();
+#endif
+
+#if 1
+#include "test_port_uart_echo.h"
+    ok = test_port_uart_echo(3);
+#endif
+
     while (1) {
-        Sleep(1000);
+        SleepEx(1000, TRUE);
     }
 }
