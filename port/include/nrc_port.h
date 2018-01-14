@@ -29,6 +29,7 @@
 #define NRC_PORT_RES_OUT_OF_MEM             (-6)
 #define NRC_PORT_RES_INVALID_STATE          (-7)
 #define NRC_PORT_RES_RESOURCE_UNAVAILABLE   (-8)
+#define NRC_PORT_RES_READ_FAILURE           (-9)
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,11 +51,21 @@ typedef void(*nrc_port_thread_fcn_t)(void);
 typedef void(*nrc_port_timeout_fcn_t)(nrc_port_timer_t timer_id, void *tag);
 
 
+/** @brief Initialises the nrc_port component
+ *
+ *  Must be called before any other function of the component is called.
+ *
+ *  @return NRC_PORT_RES_OK if successful.
+ */
 s32_t nrc_port_init(void);
 
-/**
- * Memory and Heap
- */
+ /** @brief Allocate buffer from heap
+  *
+  *  Mainly for memory allocated/freed at start/end of program execution.
+  *
+  *  @param size Number of bytes to allocate
+  *  @return Allocated buffer. NULL if out of memory.
+  */
 u8_t* nrc_port_heap_alloc(u32_t size);
 void nrc_port_heap_free(void *buf);
 

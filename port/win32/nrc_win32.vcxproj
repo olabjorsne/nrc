@@ -153,6 +153,7 @@
     <ClCompile Include="main.c" />
     <ClCompile Include="source\nrc_port.c" />
     <ClCompile Include="source\nrc_port_uart.c" />
+    <ClCompile Include="source\test_port_uart_echo.c" />
     <ClCompile Include="test_port.c" />
   </ItemGroup>
   <ItemGroup>
@@ -172,6 +173,7 @@
     <ClInclude Include="..\include\nrc_port.h" />
     <ClInclude Include="..\include\nrc_port_uart.h" />
     <ClInclude Include="..\include\test_port.h" />
+    <ClInclude Include="..\include\test_port_uart_echo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
