@@ -64,7 +64,7 @@ s32_t nrc_port_uart_open(
     nrc_port_uart_t                     *uart)
 {
     s32_t   result = NRC_PORT_RES_OK;
-    u8_t    file_name[32];
+    u8_t    file_name[64];
     s32_t   len;
 
     HANDLE                  hPort;
@@ -74,15 +74,14 @@ s32_t nrc_port_uart_open(
     struct nrc_port_uart    *self = NULL;
 
     assert(uart != NULL);
+    assert((callback.data_available != NULL) && (callback.write_complete != NULL) && (callback.error != NULL));
     *uart = NULL;
 
-    len = snprintf(file_name, 32, "\\\\.\\COM%d", port);
-    //len = snprintf(file_name, 32, "\\\\.\\COM3");
+    len = snprintf(file_name, 64, "\\\\.\\COM%d", port);
     assert(len < 32);
 
     hPort = CreateFileA(file_name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (hPort == INVALID_HANDLE_VALUE) {
-        DWORD err = GetLastError();
         result = NRC_PORT_RES_RESOURCE_UNAVAILABLE;
     }
 
@@ -119,8 +118,11 @@ s32_t nrc_port_uart_open(
         case NRC_PORT_UART_PARITY_ODD:
             dcb.Parity = ODDPARITY;
             break;
-        default:
+        case NRC_PORT_UART_PARITY_NONE:
             dcb.Parity = NOPARITY;
+            break;
+        default:
+            result = NRC_PORT_RES_INVALID_IN_PARAM;
             break;
         }
         
@@ -136,9 +138,11 @@ s32_t nrc_port_uart_open(
             dcb.fOutxCtsFlow = FALSE;
         }
 
-        ok = SetCommState(hPort, &dcb);
-        if (ok == FALSE) {
-            result = NRC_PORT_RES_INVALID_IN_PARAM;
+        if (result == NRC_PORT_RES_OK) {
+            ok = SetCommState(hPort, &dcb);
+            if (ok == FALSE) {
+                result = NRC_PORT_RES_INVALID_IN_PARAM;
+            }
         }
     }
 
@@ -167,6 +171,8 @@ s32_t nrc_port_uart_open(
     if (result == NRC_PORT_RES_OK) {
         self = (struct nrc_port_uart*)nrc_port_heap_alloc(sizeof(struct nrc_port_uart));
         if (self != NULL) {
+            memset(self, 0, sizeof(struct nrc_port_uart));
+
             self->rx_state = NRC_PORT_UART_S_IDLE;
             self->tx_state = NRC_PORT_UART_S_IDLE;
             self->callback = callback;
@@ -175,6 +181,7 @@ s32_t nrc_port_uart_open(
             self->type = NRC_PORT_UART_TYPE;
 
             result = nrc_port_mutex_init(&self->mutex);
+            assert(result == NRC_PORT_RES_OK);
 
             if (result == NRC_PORT_RES_OK) {
                 result = nrc_misc_cbuf_init(self->rx_buf, NRC_PORT_UART_BUF_SIZE, &self->cbuf);
@@ -200,8 +207,7 @@ s32_t nrc_port_uart_open(
             self->rx_state = NRC_PORT_UART_S_READING;
         }
         else {
-            DWORD err = GetLastError();
-            result = NRC_PORT_RES_ERROR;
+            result = NRC_PORT_RES_READ_FAILURE;
         }
     }
 
@@ -234,6 +240,8 @@ s32_t nrc_port_uart_close(nrc_port_uart_t uart)
 
     ok = CloseHandle(self->hPort);
 
+    self->type = 0;
+
     result = nrc_port_mutex_unlock(self->mutex);
     assert(result == NRC_PORT_RES_OK);
 
@@ -251,6 +259,8 @@ s32_t nrc_port_uart_write(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
     
     assert(self != NULL);
     assert(self->type == NRC_PORT_UART_TYPE);
+    assert(buf != NULL);
+    assert(buf_size > 0);
 
     result2 = nrc_port_mutex_lock(self->mutex, 0);
     assert(result2 == NRC_PORT_RES_OK);
@@ -285,9 +295,12 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
     struct nrc_port_uart    *self = (struct nrc_port_uart*)uart;
     u32_t                   read_bytes = 0;
     s32_t                   result;
+    BOOL                    ok;
 
     assert(self != NULL);
     assert(self->type == NRC_PORT_UART_TYPE);
+    assert(buf != NULL);
+    assert(buf_size > 0);
 
     result = nrc_port_mutex_lock(self->mutex, 0);
     assert(result == NRC_PORT_RES_OK);
@@ -296,6 +309,24 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
 
     if (read_bytes == 0) {
         self->notify_data_available = TRUE;
+    }
+
+    if (self->rx_state == NRC_PORT_UART_S_IDLE) {
+        u8_t    *wbuf;
+        u32_t   wbuf_size;
+
+        wbuf = nrc_misc_cbuf_get_write_buf(self->cbuf, &wbuf_size);
+
+        if ((wbuf != NULL) && (wbuf_size > 0)) {
+            self->rx_overlapped.Offset = 0;
+            self->rx_overlapped.OffsetHigh = 0;
+            self->rx_overlapped.hEvent = self;
+
+            ok = ReadFileEx(self->hPort, wbuf, wbuf_size, &self->rx_overlapped, read_complete);
+            assert(ok == TRUE);
+
+            self->rx_state = NRC_PORT_UART_S_READING;
+        }
     }
 
     result = nrc_port_mutex_unlock(self->mutex);
@@ -324,7 +355,6 @@ static VOID CALLBACK write_complete(
         assert(self != NULL);
         assert(self->type == NRC_PORT_UART_TYPE);
         assert(self->tx_state == NRC_PORT_UART_S_WRITING);
-        assert(self->callback.write_complete != NULL);
 
         self->tx_state = NRC_PORT_UART_S_IDLE;
 
