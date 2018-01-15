@@ -347,6 +347,7 @@ static struct nrc_cfg_node_struct* get_node_by_id(nrc_cfg_t* config, const s8_t 
         if (strcmp(node->id, cfg_id) == 0) {
             return node;
         }
+        node = node->next;
     }
     return NULL;
 }
