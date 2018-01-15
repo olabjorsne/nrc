@@ -129,7 +129,7 @@ s32_t nrc_os_init(void)
 
 s32_t nrc_os_deinit(void)
 {
-    s32_t result = NRC_PORT_RES_NOT_SUPPORTED;
+    s32_t result = NRC_R_NOT_SUPPORTED;
 
     //TODO: Dealloc all nodes, messages, events, etc..
     
@@ -143,12 +143,14 @@ s32_t nrc_os_start(bool_t kernal_nodes_only)
     switch (_os.state) {
     case NRC_OS_S_INITIALIZED:
         if (kernal_nodes_only == TRUE) {
+            // Init and start kernal nodes only
             init_registered_nodes(TRUE);
             start_registered_nodes(TRUE);
 
             _os.state = NRC_OS_S_STARTED_KERNAL;
         }
         else {
+            // Init and start all nodes
             init_registered_nodes(TRUE);
             init_registered_nodes(FALSE);
             start_registered_nodes(TRUE);
@@ -164,6 +166,7 @@ s32_t nrc_os_start(bool_t kernal_nodes_only)
 
     case NRC_OS_S_STARTED_KERNAL:
         if (kernal_nodes_only == FALSE) {
+            // Init and start all remaining nodes
             init_registered_nodes(FALSE);
             start_registered_nodes(FALSE);
 
@@ -185,17 +188,19 @@ s32_t nrc_os_start(bool_t kernal_nodes_only)
 
 s32_t nrc_os_stop(bool_t application_nodes_only)
 {
-    s32_t result = NRC_PORT_RES_NOT_SUPPORTED;
+    s32_t result = NRC_R_NOT_SUPPORTED;
 
     switch (_os.state) {
     case NRC_OS_S_STARTED:
         if (application_nodes_only == TRUE) {
+            // Stop and deinit application nodes (not kernal nodes)
             stop_registered_nodes(FALSE);
             deinit_registered_nodes(FALSE);
 
             _os.state = NRC_OS_S_STARTED_KERNAL;
         }
         else {
+            // Stop and deinit all nodes
             stop_registered_nodes(FALSE);
             stop_registered_nodes(TRUE);
             deinit_registered_nodes(FALSE);
@@ -207,6 +212,7 @@ s32_t nrc_os_stop(bool_t application_nodes_only)
 
     case NRC_OS_S_STARTED_KERNAL:
         if (application_nodes_only == FALSE) {
+            // Stop and deinit remaining nodes
             stop_registered_nodes(TRUE); 
             deinit_registered_nodes(TRUE);
 
@@ -248,7 +254,7 @@ nrc_node_t nrc_os_node_alloc(u32_t size)
 
 s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_register_node_pars pars)
 {
-    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
+    s32_t result = NRC_R_INVALID_IN_PARAM;
 
     if ((node != NULL) && (pars.api != NULL) && (pars.cfg_id != NULL) &&
         (pars.api->init != NULL) && (pars.api->deinit != NULL) && (pars.api->start != NULL) && (pars.api->stop != NULL)) {
@@ -265,7 +271,7 @@ s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_re
 
             insert_node(os_node_hdr);
 
-            result = NRC_PORT_RES_OK;
+            result = NRC_R_OK;
         }
     }
 
@@ -277,7 +283,6 @@ nrc_node_t nrc_os_node_get(const s8_t *cfg_id)
     nrc_node_t  node = NULL;
 
     if (cfg_id != NULL) {
-
         bool_t                  found = FALSE;
         struct nrc_os_node_hdr  *hdr = _os.node_list;
 
@@ -356,7 +361,7 @@ void nrc_os_msg_free(nrc_msg_t msg)
 
 s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
 {
-    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
+    s32_t result = NRC_R_INVALID_IN_PARAM;
 
     if ((to != NULL) && (msg != NULL) && (prio < S8_MAX_VALUE)) {
 
@@ -369,12 +374,15 @@ s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
             os_msg_hdr->to_node = os_node_hdr;
 
             if ((_os.msg_list == NULL) || (os_msg_hdr->prio < _os.msg_list->prio)) {
+                // Insert new message first in list
                 os_msg_hdr->next = _os.msg_list;
                 _os.msg_list = os_msg_hdr;
             }
             else {
                 struct nrc_os_msg_hdr *msg = _os.msg_list;
 
+                // Find location where new message shall be inserted.
+                // After msg and before msg->next
                 while ((msg->next != NULL) && (os_msg_hdr->prio >= msg->next->prio)) {
                     msg = msg->next;
                 }
@@ -382,6 +390,7 @@ s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
                 msg->next = os_msg_hdr;
             }
 
+            // Signal to inform thread that a new msg is available
             result = nrc_port_sema_signal(_os.sema);
             assert(result == NRC_PORT_RES_OK);
 
@@ -394,7 +403,7 @@ s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
 
 s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
 {
-    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
+    s32_t result = NRC_R_INVALID_IN_PARAM;
 
     if ((to != NULL) && (event_mask != 0) && (prio < S8_MAX_VALUE)) {
 
@@ -402,19 +411,24 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
 
         if (node->type == NRC_OS_NODE_TYPE) {
 
+            // Disable IRQ during insertion of event
             result = nrc_port_irq_disable();
             assert(result == NRC_PORT_RES_OK);
 
+            // Set event bit(s)
             node->evt = node->evt | event_mask;
 
+            // If new event is higher prio than previous ones make sure to update place in list
             if (prio < node->prio) {
                 node->prio = prio;
                 increased_node_prio(node);
             }
 
+            // Enable IRQs again
             result = nrc_port_irq_enable();
             assert(result == NRC_PORT_RES_OK);
 
+            // Signal thread that a new event is available
             result = nrc_port_sema_signal(_os.sema);
             assert(result == NRC_PORT_RES_OK);
         }
@@ -443,11 +457,15 @@ static void insert_node(struct nrc_os_node_hdr* node)
 
     if (_os.node_list == NULL) {
         _os.node_list = node;
+
+        node->next = NULL;
+        node->previous = NULL;
     }
     else {
         struct nrc_os_node_hdr *pos = _os.node_list;
         struct nrc_os_node_hdr *prev_pos = NULL;
 
+        // Find correct location after prev_pos and before pos
         while ((pos != NULL) && (pos->prio <= node->prio)) {
             prev_pos = pos;
             pos = pos->next;
@@ -470,14 +488,11 @@ static void insert_node(struct nrc_os_node_hdr* node)
         else {
             //Place node after prev_pos
             assert(prev_pos != NULL);
+            assert(prev_pos->next == NULL);
 
-            node->next = prev_pos->next;
+            node->next = NULL;
             prev_pos->next = node;
             node->previous = prev_pos;
-
-            if (node->next != NULL) {
-                node->next->previous = node;
-            }
         }
     }
 }
@@ -517,16 +532,22 @@ static void nrc_os_thread_fcn(void)
     struct nrc_os_node_hdr  *msg_node = NULL;
 
     while (_os.state > NRC_OS_S_INITIALIZED) {
+        // Wait for msg or event
         result = nrc_port_sema_wait(_os.sema, 0);
         assert(result == NRC_PORT_RES_OK);
 
         do {
+            // Get prio of highest priority msg (if any)
             msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
 
+            // Get node event with higher prio than highest prio msg (if any)
             result = nrc_port_irq_disable();
+            // Node list is sorted with highest event priority first
             if ((_os.node_list->prio < S8_MAX_VALUE) && (_os.node_list->prio <= msg_prio)) {
                 evt_node = _os.node_list;
                 evt = _os.node_list->evt;
+
+                // Clear event and re-order node to back of list
                 clear_evt(evt_node);
             }
             else {
@@ -534,6 +555,7 @@ static void nrc_os_thread_fcn(void)
             }
             result = nrc_port_irq_enable();
 
+            // If there is an event with highest prio, call node recv_evt function
             if (evt_node != NULL) {
                 if (evt_node->api->recv_evt != NULL) {
                     evt_node->api->recv_evt((evt_node + 1), evt);
@@ -542,11 +564,15 @@ static void nrc_os_thread_fcn(void)
                     NRC_LOGI("nrc_os", "Receiving node %s has no recv_evt fcn", evt_node->cfg_id);
                 }
             }
+            // Else if there is a msg with highest prio, call node recv_msg function
             else if (msg_prio < S8_MAX_VALUE) {
+                // Msg with highest prio is first in list
+
+                // Extract first msg
                 msg = _os.msg_list;
                 _os.msg_list = msg->next;
 
-                msg_node = (struct nrc_os_node_hdr*)(msg->to_node);
+                msg_node = msg->to_node;
 
                 if (msg_node->api->recv_msg != NULL) {
                     msg_node->api->recv_msg((msg_node + 1), (msg + 1));
