@@ -447,6 +447,9 @@ static void extract_node(struct nrc_os_node_hdr* node)
     if (node->previous != NULL) {
         node->previous->next = node->next;
     }
+    else {
+        _os.node_list = node->next;
+    }
     node->next = NULL;
     node->previous = NULL;
 }
