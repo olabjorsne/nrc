@@ -100,7 +100,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_LONG_HANDLES_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\nodes\include;$(ProjectDir)..\..\misc\include;$(ProjectDir)..\..\port\include;$(ProjectDir)..\..\kernel\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\nodes\include;$(ProjectDir)..\..\test\misc;$(ProjectDir)..\..\test\port;$(ProjectDir)..\..\misc\include;$(ProjectDir)..\..\port\include;$(ProjectDir)..\..\kernel\include</AdditionalIncludeDirectories>
       <StructMemberAlignment>1Byte</StructMemberAlignment>
     </ClCompile>
     <Link>
@@ -139,22 +139,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\kernel\source\jsmn.c" />
     <ClCompile Include="..\..\kernel\source\nrc_cfg.c" />
     <ClCompile Include="..\..\kernel\source\nrc_host.c" />
     <ClCompile Include="..\..\kernel\source\nrc_log.c" />
     <ClCompile Include="..\..\kernel\source\nrc_node_factory.c" />
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="..\..\kernel\source\nrc_timer.c" />
+    <ClCompile Include="..\..\misc\source\jsmn.c" />
     <ClCompile Include="..\..\misc\source\nrc_misc_cbuf.c" />
-    <ClCompile Include="..\..\misc\source\test_cbuf.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_debug.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_inject.c" />
+    <ClCompile Include="..\..\test\misc\test_cbuf.c" />
+    <ClCompile Include="..\..\test\port\test_port.c" />
+    <ClCompile Include="..\..\test\port\test_port_uart_echo.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="source\nrc_port.c" />
     <ClCompile Include="source\nrc_port_uart.c" />
-    <ClCompile Include="source\test_port_uart_echo.c" />
-    <ClCompile Include="test_port.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_cfg.h" />
@@ -167,13 +167,19 @@
     <ClInclude Include="..\..\kernel\include\nrc_serial.h" />
     <ClInclude Include="..\..\kernel\include\nrc_timer.h" />
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
-    <ClInclude Include="..\..\misc\include\test_cbuf.h" />
-    <ClInclude Include="..\..\kernel\source\jsmn.h" />    
+    <ClInclude Include="..\..\misc\include\jsmn.h" />
+    <ClInclude Include="..\..\misc\include\nrc_misc_cbuf.h" />
     <ClInclude Include="..\..\nodes\include\nrc_node_factory.h" />
+    <ClInclude Include="..\..\test\misc\test_cbuf.h" />
+    <ClInclude Include="..\..\test\port\test_port.h" />
+    <ClInclude Include="..\..\test\port\test_port_uart_echo.h" />
     <ClInclude Include="..\include\nrc_port.h" />
     <ClInclude Include="..\include\nrc_port_uart.h" />
-    <ClInclude Include="..\include\test_port.h" />
-    <ClInclude Include="..\include\test_port_uart_echo.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\test\flows\test_flow_1_mqtt.json" />
+    <None Include="..\..\test\flows\test_flow_2_inject_debug.json" />
+    <None Include="..\..\test\flows\test_flow_3_links.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

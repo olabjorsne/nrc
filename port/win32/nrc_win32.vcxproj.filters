@@ -40,6 +40,18 @@
     <Filter Include="misc\source">
       <UniqueIdentifier>{e62db790-c74c-4858-b917-66d40e37b2f1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{da5660d0-ebc8-4501-847c-8e696777e264}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\port">
+      <UniqueIdentifier>{f2490e1e-a709-4c55-acb7-67b44cb97289}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\misc">
+      <UniqueIdentifier>{9e189ad4-de1f-40aa-bd4a-1ccadb5ac666}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\flows">
+      <UniqueIdentifier>{138dc08e-05ea-495b-9fae-76e059ce73d3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\kernel\source\nrc_os.c">
@@ -49,9 +61,6 @@
       <Filter>port\win32</Filter>
     </ClCompile>
     <ClCompile Include="source\nrc_port.c">
-      <Filter>port\win32\source</Filter>
-    </ClCompile>
-    <ClCompile Include="test_port.c">
       <Filter>port\win32\source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\kernel\source\nrc_log.c">
@@ -72,16 +81,7 @@
     <ClCompile Include="..\..\misc\source\nrc_misc_cbuf.c">
       <Filter>misc\source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\misc\source\test_cbuf.c">
-      <Filter>misc\source</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\kernel\source\nrc_node_factory.c">
-      <Filter>kernel\source</Filter>
-    </ClCompile>
-    <ClCompile Include="source\test_port_uart_echo.c">
-      <Filter>port\win32\source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\kernel\source\jsmn.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\kernel\source\nrc_cfg.c">
@@ -89,6 +89,18 @@
     </ClCompile>
     <ClCompile Include="..\..\kernel\source\nrc_host.c">
       <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\misc\source\jsmn.c">
+      <Filter>misc\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\misc\test_cbuf.c">
+      <Filter>test\misc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\port\test_port.c">
+      <Filter>test\port</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\port\test_port_uart_echo.c">
+      <Filter>test\port</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -113,9 +125,6 @@
     <ClInclude Include="..\include\nrc_port.h">
       <Filter>port\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\test_port.h">
-      <Filter>port\include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_log.h">
       <Filter>kernel\include</Filter>
     </ClInclude>
@@ -125,26 +134,40 @@
     <ClInclude Include="..\..\nodes\include\nrc_node_factory.h">
       <Filter>nodes\include</Filter>
     </ClInclude>
-       <ClInclude Include="..\..\kernel\source\jsmn.h">
-      <Filter>kernel\source</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_host.h">
       <Filter>kernel\include</Filter>
-    </ClInclude> 
+    </ClInclude>
     <ClInclude Include="..\include\nrc_port_uart.h">
       <Filter>port\include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_serial.h">
       <Filter>kernel\include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\misc\include\jsmn.h">
+      <Filter>misc\include</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\misc\include\nrc_misc_cbuf.h">
       <Filter>misc\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\misc\include\test_cbuf.h">
-      <Filter>misc\include</Filter>
+    <ClInclude Include="..\..\test\misc\test_cbuf.h">
+      <Filter>test\misc</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\test_port_uart_echo.h">
-      <Filter>port\include</Filter>
+    <ClInclude Include="..\..\test\port\test_port.h">
+      <Filter>test\port</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\test\port\test_port_uart_echo.h">
+      <Filter>test\port</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\test\flows\test_flow_1_mqtt.json">
+      <Filter>test\flows</Filter>
+    </None>
+    <None Include="..\..\test\flows\test_flow_2_inject_debug.json">
+      <Filter>test\flows</Filter>
+    </None>
+    <None Include="..\..\test\flows\test_flow_3_links.json">
+      <Filter>test\flows</Filter>
+    </None>
   </ItemGroup>
 </Project>
