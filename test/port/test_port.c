@@ -88,14 +88,14 @@ bool_t test_sema_timeout(u32_t ms)
 
     result = nrc_port_sema_init(0, &sema);
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         time1 = nrc_port_timer_get_time_ms();
 
         result = nrc_port_sema_wait(sema, ms);
 
         time2 = nrc_port_timer_get_time_ms();
 
-        if (result == NRC_PORT_RES_TIMEOUT) {
+        if (result == NRC_R_TIMEOUT) {
             ok = validate_time(time1, time2, ms);
         }
     }
@@ -125,25 +125,25 @@ bool_t test_sema_and_thread(u32_t ms, u32_t sema_count)
 
     result = nrc_port_sema_init(sema_count, &_sema);
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_thread_init(NRC_PORT_THREAD_PRIO_NORMAL, 4096, sema_thread_fcn, &_thread_id);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         time1 = nrc_port_timer_get_time_ms();
         result = nrc_port_thread_start(_thread_id);
     }
 
-    for (i = 0; (i < sema_count) && (result == NRC_PORT_RES_OK); i++) {
+    for (i = 0; (i < sema_count) && (result == NRC_R_OK); i++) {
         result = nrc_port_sema_wait(_sema, 0);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_sema_wait(_sema, 0);
         time2 = nrc_port_timer_get_time_ms();
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         ok = validate_time(time1, time2, ms);
     }
 
@@ -166,17 +166,17 @@ bool_t test_timeout(u32_t ms)
 
     result = nrc_port_sema_init(0, &_sema);
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         time_begin = nrc_port_timer_get_time_ms();
         result = nrc_port_timer_after(ms, 0, timeout_fcn, &timer);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_sema_wait(_sema, 0);
         time_end = nrc_port_timer_get_time_ms();
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         ok = validate_time(time_begin, time_end, ms);
     }
 
@@ -200,84 +200,84 @@ bool_t test_timeout_after_and_cancel(void)
 
     result = nrc_port_sema_init(0, &_sema);
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_timer_after(2050, (void*)1, timeout_fcn, &timer1);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_timer_after(2000, (void*)2, timeout_fcn, &timer2);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_timer_after(1000, (void*)4, timeout_fcn, &timer4);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_timer_after(3000, (void*)8, timeout_fcn, &timer8);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_timer_after(1100, (void*)16, timeout_fcn, &timer16);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_timer_after(4000, (void*)32, timeout_fcn, &timer32);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_timer_after(5000, (void*)64, timeout_fcn, &timer64);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_timer_cancel(timer64);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_sema_wait(_sema, 0);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         if (_bit_mask != 4)
         {
-            result = NRC_PORT_RES_ERROR;
+            result = NRC_R_ERROR;
         }
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         nrc_port_timer_cancel(timer16);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_sema_wait(_sema, 0);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         if (_bit_mask != (4 + 2))
         {
-            result = NRC_PORT_RES_ERROR;
+            result = NRC_R_ERROR;
         }
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         nrc_port_timer_cancel(timer1);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_sema_wait(_sema, 0);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         if (_bit_mask != (4 + 2 + 8))
         {
-            result = NRC_PORT_RES_ERROR;
+            result = NRC_R_ERROR;
         }
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_sema_wait(_sema, 0);
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         if (_bit_mask != (4 + 2 + 8 + 32))
         {
-            result = NRC_PORT_RES_ERROR;
+            result = NRC_R_ERROR;
         }
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_sema_wait(_sema, 5000);
-        if (result == NRC_PORT_RES_TIMEOUT) {
-            result = NRC_PORT_RES_OK;
+        if (result == NRC_R_TIMEOUT) {
+            result = NRC_R_OK;
         }
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         if (_bit_mask != (4 + 2 + 8 + 32))
         {
-            result = NRC_PORT_RES_ERROR;
+            result = NRC_R_ERROR;
         }
         else {
             ok = TRUE;
@@ -303,60 +303,60 @@ bool_t test_mutex(void)
 
     result = nrc_port_sema_init(0, &_sema);
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_mutex_init(&_mutex);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_mutex_lock(_mutex, 0);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_thread_init(NRC_PORT_THREAD_PRIO_NORMAL, 4096, mutex_thread_fcn, &_thread_id);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_thread_start(_thread_id);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_sema_wait(_sema, 100);
-        if (result == NRC_PORT_RES_TIMEOUT) {
-            result = NRC_PORT_RES_OK;
+        if (result == NRC_R_TIMEOUT) {
+            result = NRC_R_OK;
         }
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_mutex_lock(_mutex, 10);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         if (_bit_mask != 0) {
-            result = NRC_PORT_RES_ERROR;
+            result = NRC_R_ERROR;
         }
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_mutex_unlock(_mutex);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_mutex_unlock(_mutex);
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         result = nrc_port_sema_wait(_sema, 10);
-        if (result == NRC_PORT_RES_TIMEOUT) {
-            result = NRC_PORT_RES_OK;
+        if (result == NRC_R_TIMEOUT) {
+            result = NRC_R_OK;
         }
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         if (_bit_mask == 1) {
             ok = TRUE;
         }
     }
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
 
     }
 

@@ -48,7 +48,7 @@ static bool_t _initialized = FALSE;
 
 s32_t nrc_port_uart_init(void)
 {
-    s32_t result = NRC_PORT_RES_OK;
+    s32_t result = NRC_R_OK;
 
     if (_initialized == FALSE) {
         _initialized = TRUE;
@@ -63,7 +63,7 @@ s32_t nrc_port_uart_open(
     struct nrc_port_uart_callback_fcn   callback,
     nrc_port_uart_t                     *uart)
 {
-    s32_t   result = NRC_PORT_RES_OK;
+    s32_t   result = NRC_R_OK;
     u8_t    file_name[64];
     s32_t   len;
 
@@ -82,19 +82,19 @@ s32_t nrc_port_uart_open(
 
     hPort = CreateFileA(file_name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (hPort == INVALID_HANDLE_VALUE) {
-        result = NRC_PORT_RES_RESOURCE_UNAVAILABLE;
+        result = NRC_R_UNAVAILABLE_RESOURCE;
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         memset(&dcb, 0, sizeof(dcb));
 
         ok = GetCommState(hPort, &dcb);
         if (ok == FALSE) {
-            result = NRC_PORT_RES_RESOURCE_UNAVAILABLE;
+            result = NRC_R_UNAVAILABLE_RESOURCE;
         }
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         dcb.BaudRate = pars.baud_rate;
         dcb.ByteSize = pars.data_bits;
         
@@ -106,7 +106,7 @@ s32_t nrc_port_uart_open(
             dcb.StopBits = TWOSTOPBITS;
             break;
         default:
-            result = NRC_PORT_RES_INVALID_IN_PARAM;
+            result = NRC_R_INVALID_IN_PARAM;
             break;
         }
 
@@ -122,7 +122,7 @@ s32_t nrc_port_uart_open(
             dcb.Parity = NOPARITY;
             break;
         default:
-            result = NRC_PORT_RES_INVALID_IN_PARAM;
+            result = NRC_R_INVALID_IN_PARAM;
             break;
         }
         
@@ -138,24 +138,24 @@ s32_t nrc_port_uart_open(
             dcb.fOutxCtsFlow = FALSE;
         }
 
-        if (result == NRC_PORT_RES_OK) {
+        if (result == NRC_R_OK) {
             ok = SetCommState(hPort, &dcb);
             if (ok == FALSE) {
-                result = NRC_PORT_RES_INVALID_IN_PARAM;
+                result = NRC_R_INVALID_IN_PARAM;
             }
         }
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         memset(&timeouts, 0, sizeof(COMMTIMEOUTS));
 
         ok = GetCommTimeouts(hPort, &timeouts);
         if (ok == FALSE) {
-            result = NRC_PORT_RES_RESOURCE_UNAVAILABLE;
+            result = NRC_R_UNAVAILABLE_RESOURCE;
         }
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         timeouts.ReadIntervalTimeout = 50;
         timeouts.ReadTotalTimeoutConstant = 0;
         timeouts.ReadTotalTimeoutMultiplier = 0;
@@ -164,11 +164,11 @@ s32_t nrc_port_uart_open(
 
         ok = SetCommTimeouts(hPort, &timeouts);
         if (ok == FALSE) {
-            result = NRC_PORT_RES_INVALID_IN_PARAM;
+            result = NRC_R_INVALID_IN_PARAM;
         }
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         self = (struct nrc_port_uart*)nrc_port_heap_alloc(sizeof(struct nrc_port_uart));
         if (self != NULL) {
             memset(self, 0, sizeof(struct nrc_port_uart));
@@ -181,18 +181,18 @@ s32_t nrc_port_uart_open(
             self->type = NRC_PORT_UART_TYPE;
 
             result = nrc_port_mutex_init(&self->mutex);
-            assert(result == NRC_PORT_RES_OK);
+            assert(result == NRC_R_OK);
 
-            if (result == NRC_PORT_RES_OK) {
+            if (result == NRC_R_OK) {
                 result = nrc_misc_cbuf_init(self->rx_buf, NRC_PORT_UART_BUF_SIZE, &self->cbuf);
             }
         }
         else {
-            result = NRC_PORT_RES_OUT_OF_MEM;
+            result = NRC_R_OUT_OF_MEM;
         }
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         u32_t   buf_size = 0;
         u8_t    *buf = nrc_misc_cbuf_get_write_buf(self->cbuf, &buf_size);
 
@@ -207,11 +207,11 @@ s32_t nrc_port_uart_open(
             self->rx_state = NRC_PORT_UART_S_READING;
         }
         else {
-            result = NRC_PORT_RES_READ_FAILURE;
+            result = NRC_R_ERROR;
         }
     }
 
-    if (result == NRC_PORT_RES_OK) {
+    if (result == NRC_R_OK) {
         *uart = self;
     }
     else {
@@ -229,21 +229,21 @@ s32_t nrc_port_uart_open(
 s32_t nrc_port_uart_close(nrc_port_uart_t uart)
 {
     struct nrc_port_uart    *self = (struct nrc_port_uart*)uart;
-    s32_t                   result = NRC_PORT_RES_OK;
+    s32_t                   result = NRC_R_OK;
     BOOL                    ok;
 
     assert(self != NULL);
     assert(self->type == NRC_PORT_UART_TYPE);
 
     result = nrc_port_mutex_lock(self->mutex, 0);
-    assert(result == NRC_PORT_RES_OK);
+    assert(result == NRC_R_OK);
 
     ok = CloseHandle(self->hPort);
 
     self->type = 0;
 
     result = nrc_port_mutex_unlock(self->mutex);
-    assert(result == NRC_PORT_RES_OK);
+    assert(result == NRC_R_OK);
 
     nrc_port_heap_free(self);
 
@@ -253,7 +253,7 @@ s32_t nrc_port_uart_close(nrc_port_uart_t uart)
 s32_t nrc_port_uart_write(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
 {
     struct nrc_port_uart    *self = (struct nrc_port_uart*)uart;
-    s32_t                   result = NRC_PORT_RES_OK;
+    s32_t                   result = NRC_R_OK;
     s32_t                   result2;
     BOOL                    ok;
     
@@ -263,7 +263,7 @@ s32_t nrc_port_uart_write(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
     assert(buf_size > 0);
 
     result2 = nrc_port_mutex_lock(self->mutex, 0);
-    assert(result2 == NRC_PORT_RES_OK);
+    assert(result2 == NRC_R_OK);
 
     switch (self->tx_state) {
     case NRC_PORT_UART_S_IDLE:
@@ -276,16 +276,16 @@ s32_t nrc_port_uart_write(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
             self->tx_state = NRC_PORT_UART_S_WRITING;
         }
         else {
-            result = NRC_PORT_RES_ERROR;
+            result = NRC_R_ERROR;
         }
         break;
     default:
-        result = NRC_PORT_RES_INVALID_STATE;
+        result = NRC_R_INVALID_STATE;
         break;
     }
 
     result2 = nrc_port_mutex_unlock(self->mutex);
-    assert(result2 == NRC_PORT_RES_OK);
+    assert(result2 == NRC_R_OK);
 
     return result;
 }
@@ -303,7 +303,7 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
     assert(buf_size > 0);
 
     result = nrc_port_mutex_lock(self->mutex, 0);
-    assert(result == NRC_PORT_RES_OK);
+    assert(result == NRC_R_OK);
 
     read_bytes = nrc_misc_cbuf_read(self->cbuf, buf, buf_size);
 
@@ -330,7 +330,7 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
     }
 
     result = nrc_port_mutex_unlock(self->mutex);
-    assert(result == NRC_PORT_RES_OK);
+    assert(result == NRC_R_OK);
 
     return read_bytes;
 }
@@ -350,7 +350,7 @@ static VOID CALLBACK write_complete(
         self = (struct nrc_port_uart*)lpOverlapped->hEvent;
 
         result = nrc_port_mutex_lock(self->mutex, 0);
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
 
         assert(self != NULL);
         assert(self->type == NRC_PORT_UART_TYPE);
@@ -359,17 +359,17 @@ static VOID CALLBACK write_complete(
         self->tx_state = NRC_PORT_UART_S_IDLE;
 
         if (dwErrorCode == 0) {
-            notify_result = NRC_PORT_RES_OK;
+            notify_result = NRC_R_OK;
             notify_bytes = dwNumberOfBytesTransfered;
         }
         else {
-            notify_result = NRC_PORT_RES_ERROR;
+            notify_result = NRC_R_ERROR;
             notify_bytes = 0;
         }
         notify_fcn = self->callback.write_complete;
 
         result = nrc_port_mutex_unlock(self->mutex);
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
 
         notify_fcn(self, notify_result, notify_bytes);
     }
@@ -397,7 +397,7 @@ static VOID CALLBACK read_complete(
         assert(self->rx_state == NRC_PORT_UART_S_READING);
 
         result = nrc_port_mutex_lock(self->mutex, 0);
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
 
         self->rx_state = NRC_PORT_UART_S_IDLE;
 
@@ -423,17 +423,17 @@ static VOID CALLBACK read_complete(
                 }
                 else {
                     error = self->callback.error;
-                    error_code = NRC_PORT_RES_READ_FAILURE;
+                    error_code = NRC_R_ERROR;
                 }
             }
         }
         else {
             error = self->callback.error;
-            error_code = NRC_PORT_RES_READ_FAILURE;
+            error_code = NRC_R_ERROR;
         }
 
         result = nrc_port_mutex_unlock(self->mutex);
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
 
         if (data_available != NULL) {
             data_available(self);

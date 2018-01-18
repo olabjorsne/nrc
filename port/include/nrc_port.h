@@ -20,17 +20,6 @@
 
 #include "nrc_types.h"
 
-#define NRC_PORT_RES_OK                     (0)
-#define NRC_PORT_RES_ERROR                  (-1)
-#define NRC_PORT_RES_TIMEOUT                (-2)
-#define NRC_PORT_RES_NOT_SUPPORTED          (-3)
-#define NRC_PORT_RES_INVALID_IN_PARAM       (-4)
-#define NRC_PORT_RES_NOT_FOUND              (-5)
-#define NRC_PORT_RES_OUT_OF_MEM             (-6)
-#define NRC_PORT_RES_INVALID_STATE          (-7)
-#define NRC_PORT_RES_RESOURCE_UNAVAILABLE   (-8)
-#define NRC_PORT_RES_READ_FAILURE           (-9)
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,7 +44,7 @@ typedef void(*nrc_port_timeout_fcn_t)(nrc_port_timer_t timer_id, void *tag);
  *
  *  Must be called before any other function of the component is called.
  *
- *  @return NRC_PORT_RES_OK if successful.
+ *  @return NRC_R_OK if successful.
  */
 s32_t nrc_port_init(void);
 
@@ -67,13 +56,45 @@ s32_t nrc_port_init(void);
   *  @return Allocated buffer. NULL if out of memory.
   */
 u8_t* nrc_port_heap_alloc(u32_t size);
+
+/** @brief Free buffer from heap
+ *
+ *  Free buffer previously allocated with nrc_port_heap_alloc.
+ *
+ *  @param buf Buffer to free
+ *  @return void
+ */
 void nrc_port_heap_free(void *buf);
 
+/** @brief Allocate  fast buffer from heap
+ *
+ *  Mainly for memory allocated/freed many times during program execution.
+ *  Faster and lower risk of fragementation but with risk of allocating more
+ *  memory than requested. Typically used for messages.
+ *
+ *  @param size Number of bytes to allocate
+ *  @return Allocated buffer. NULL if out of memory.
+ */
 u8_t* nrc_port_heap_fast_alloc(u32_t size);
+
+/** @brief Free fast buffer to heap
+ *
+ *  Free buffer previously allocated with nrc_port_heap_fast_alloc.
+ *
+ *  @param buf Buffer to free
+ *  @return Void
+ */
 void nrc_port_heap_fast_free(void *buf);
 
-/**
- * Thread
+/** @brief Creates and initializes a thread
+ *
+ *  Thread in suspended state until nrc_port_thread_start is called.
+ *
+ *  @param priority Priority of the thread (lower number is higher prio)
+ *  @param stack_size Size of the thread stack in bytes.
+ *  @param thread_fcn Function that will be called when thread is started.
+ *  @param thread_id Output parameter where the thread identifier is stored.
+ *  @return NRC_R_OK if call is successful.
  */
 s32_t nrc_port_thread_init(
     enum nrc_port_thread_prio   priority,
@@ -81,36 +102,112 @@ s32_t nrc_port_thread_init(
     nrc_port_thread_fcn_t       thread_fcn,
     nrc_port_thread_t           *thread_id);
 
+/** @brief Start thread
+ *
+ *  Start a thread previously created with nrc_port_thread_init.
+ *
+ *  @param thread_id Thread identifier
+ *  @return NRC_R_OK is successful
+ */
 s32_t nrc_port_thread_start(nrc_port_thread_t thread_id);
 
-/**
- * Mutex
+/** @brief Creates and initializes a mutex
+ *
+ *  @param mutex Output parameter where the mutex identifier is stored.
+ *  @return NRC_R_OK if call is successful.
  */
 s32_t nrc_port_mutex_init(nrc_port_mutex_t *mutex);
+
+/** @brief Locks the mutex
+ *
+ *  Locks the mutex until the nrc_port_mutex_unlock is called.
+ *
+ *  @param mutex Mutex to lock
+ *  @param timeout Maximum time in ms to wait for mutex to be released.
+ *  If set to 0, the call will not timeout and it is blocked until mutex is released.
+ *  @return NRC_R_OK is successful. If timeout, NRC_R_TIMEOUT is returned.
+ */
 s32_t nrc_port_mutex_lock(nrc_port_mutex_t mutex, u32_t timeout);
+
+/** @brief Unlocks the mutex
+ *
+ *  Unlocks the mutex previously locked with nrc_port_mutex_lock.
+ *
+ *  @param mutex Mutex to unlock
+ *  @return NRC_R_OK is successful
+ */
 s32_t nrc_port_mutex_unlock(nrc_port_mutex_t mutex);
 
-/**
- * Semaphore
+/** @brief Creates and initializes a semaphore
+ *
+ *  @param count Start count value for semaphore
+ *  @param sema Output parameter where the semaphore identifier is stored
+ *  @return NRC_R_OK is successful
  */
 s32_t nrc_port_sema_init(u32_t count, nrc_port_sema_t *sema);
+
+/** @brief Signals the semaphore
+ *
+ *  @param sema Semaphore to signal
+ *  @return NRC_R_OK is successful
+ */
 s32_t nrc_port_sema_signal(nrc_port_sema_t sema);
+
+/** @brief Wait for semaphore
+ *
+ *  Waits for semaphore until count is > 0 or until timeout has elapsed.
+ *  A timeout of 0 causes the call to wait indefinately until count is increased.
+ *
+ *  @param sema Semaphore to wait for
+ *  @param timeout Timeout in ms until call returns. If 0 wait for indefinately.
+ *  @return NRC_R_OK is successful or NRC_R_TIMEOUT if timeout elapses.
+ */
 s32_t nrc_port_sema_wait(nrc_port_sema_t sema, u32_t timeout);
 
-/**
- * Timer
- */
+/** @brief Start one-shot timer
+*
+*  @param timeout_ms Time in ms before timer elapses
+*  @param tag User defined variable that is returned in the callback
+*  @param timeout_fcn Callback function called when the timer elapses
+*  @param timer Out parameter used to return the timer handle
+*  @return NRC_R_OK is successful
+*/
 s32_t nrc_port_timer_after(u32_t timeout_ms, void *tag, nrc_port_timeout_fcn_t timeout_fcn, nrc_port_timer_t *timer);
+
+/** @brief Cancel timer
+ *
+ *  Cancels a timer previously started with nrc_port_timer_after.
+ *
+ *  @param timer Timer handle
+ *  @return NRC_R_OK is successful
+ */
 s32_t nrc_port_timer_cancel(nrc_port_timer_t timer);
-u64_t nrc_port_timer_get_time_ms(void);
+
+/** @brief Get timer resolution
+ *
+ *  @return Timer resolution in ms
+ */
 u32_t nrc_port_timer_get_res_ms(void);
 
-/**
- * IRQ Disable/Enable
- * 
- * Only for interrupts
+/** @brief Get system time
+ *
+ *  Total time since power on
+ *
+ *  @return Time in ms
+ */
+u64_t nrc_port_timer_get_time_ms(void);
+
+
+/** @brief Disable HW interrupts
+ *
+ *  @return NRC_R_OK if successful
  */
 s32_t nrc_port_irq_disable(void);
+
+/** @brief Enable HW interrupts
+ 
+ *  @return NRC_R_OK if successful
+ */
 s32_t nrc_port_irq_enable(void);
 
 /**

@@ -36,13 +36,13 @@ static struct nrc_timer _timer = { NRC_TIMER_S_INVALID };
 
 s32_t nrc_timer_init(void)
 {
-    s32_t result = NRC_PORT_RES_OK;
+    s32_t result = NRC_R_OK;
 
     if (_timer.state == NRC_TIMER_S_INVALID) {
 
         result = nrc_port_init();
 
-        if (result == NRC_PORT_RES_OK) {
+        if (result == NRC_R_OK) {
             _timer.state = NRC_TIMER_S_INITIALISED;
         }
     }
@@ -52,7 +52,7 @@ s32_t nrc_timer_init(void)
 
 s32_t nrc_timer_after(u32_t timeout, struct nrc_timer_pars *pars)
 {
-    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
+    s32_t result = NRC_R_INVALID_IN_PARAM;
 
     if (pars != 0) {
         result = nrc_port_timer_after(timeout, pars, timeout_fcn, &pars->timer);

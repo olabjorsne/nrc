@@ -63,7 +63,7 @@ static const s8_t *TAG = "main";
 
 s32_t nrc_port_init(void)
 {
-    s32_t result = NRC_PORT_RES_OK;
+    s32_t result = NRC_R_OK;
 
     if (_port.state == NRC_PORT_S_INVALID) {
 
@@ -77,7 +77,7 @@ s32_t nrc_port_init(void)
 
         _port.time_start = GetTickCount64();
 
-        if (result == NRC_PORT_RES_OK) {
+        if (result == NRC_R_OK) {
             _port.state = NRC_PORT_S_INITIALISED;
         }
     }
@@ -119,7 +119,7 @@ s32_t nrc_port_thread_init(
     nrc_port_thread_t           *thread_id)
 {
     HANDLE  handle;
-    s32_t   result = NRC_PORT_RES_OK;
+    s32_t   result = NRC_R_OK;
 
     assert(thread_id != NULL);
 
@@ -139,7 +139,7 @@ s32_t nrc_port_thread_init(
         *thread_id = (nrc_port_thread_t)handle;
     }
     else {
-        result = NRC_PORT_RES_ERROR;
+        result = NRC_R_ERROR;
         *thread_id = 0;
     }
 
@@ -147,13 +147,13 @@ s32_t nrc_port_thread_init(
 }
 s32_t nrc_port_thread_start(nrc_port_thread_t thread_id)
 {
-    s16_t   result = NRC_PORT_RES_OK;
+    s16_t   result = NRC_R_OK;
     DWORD   win_result;
     
     win_result = ResumeThread((HANDLE)thread_id);
 
     if (win_result == -1) {
-        result = NRC_PORT_RES_ERROR;
+        result = NRC_R_ERROR;
     }
 
 	return result;
@@ -161,7 +161,7 @@ s32_t nrc_port_thread_start(nrc_port_thread_t thread_id)
 
 s32_t nrc_port_mutex_init(nrc_port_mutex_t *mutex)
 {
-    s32_t   result = NRC_PORT_RES_OK;
+    s32_t   result = NRC_R_OK;
     HANDLE  handle;
     
     assert(mutex != NULL);
@@ -172,7 +172,7 @@ s32_t nrc_port_mutex_init(nrc_port_mutex_t *mutex)
         *mutex = (nrc_port_mutex_t)handle;
     }
     else {
-        result = NRC_PORT_RES_ERROR;
+        result = NRC_R_ERROR;
         *mutex = 0;
     }
 
@@ -190,26 +190,26 @@ s32_t nrc_port_mutex_lock(nrc_port_mutex_t mutex, u32_t timeout)
     win_result = WaitForSingleObject((HANDLE)mutex, timeout);
 
     if (win_result == WAIT_OBJECT_0) {
-        result = NRC_PORT_RES_OK;
+        result = NRC_R_OK;
     }
     else if (win_result == WAIT_TIMEOUT) {
-        result = NRC_PORT_RES_TIMEOUT;
+        result = NRC_R_TIMEOUT;
     }
     else {
-        result = NRC_PORT_RES_ERROR;
+        result = NRC_R_ERROR;
     }
 
     return result;
 }
 s32_t nrc_port_mutex_unlock(nrc_port_mutex_t mutex)
 {
-    s32_t   result = NRC_PORT_RES_OK;
+    s32_t   result = NRC_R_OK;
     BOOL    ok;
 
     ok = ReleaseMutex((HANDLE)mutex);
 
     if (!ok) {
-        result = NRC_PORT_RES_ERROR;
+        result = NRC_R_ERROR;
     }
 
     return result;
@@ -217,7 +217,7 @@ s32_t nrc_port_mutex_unlock(nrc_port_mutex_t mutex)
 
 s32_t nrc_port_sema_init(u32_t count, nrc_port_sema_t *sema)
 {
-    s32_t       result = NRC_PORT_RES_OK;
+    s32_t       result = NRC_R_OK;
     HANDLE      handle;
 
     assert(sema != NULL);
@@ -232,7 +232,7 @@ s32_t nrc_port_sema_init(u32_t count, nrc_port_sema_t *sema)
         *sema = (nrc_port_sema_t)handle;
     }
     else {
-        result = NRC_PORT_RES_ERROR;
+        result = NRC_R_ERROR;
         *sema = 0;
     }
 
@@ -240,14 +240,14 @@ s32_t nrc_port_sema_init(u32_t count, nrc_port_sema_t *sema)
 }
 s32_t nrc_port_sema_signal(nrc_port_sema_t sema)
 {
-    s32_t   result = NRC_PORT_RES_OK;
+    s32_t   result = NRC_R_OK;
     BOOL    ok;
     LONG    cnt;
     
     ok = ReleaseSemaphore((HANDLE)sema, 1, &cnt);
 
     if (!ok) {
-        result = NRC_PORT_RES_ERROR;
+        result = NRC_R_ERROR;
     }
 
 	return result;
@@ -264,13 +264,13 @@ s32_t nrc_port_sema_wait(nrc_port_sema_t sema, u32_t timeout)
     win_result = WaitForSingleObject((HANDLE)sema, timeout);
 
     if(win_result == WAIT_OBJECT_0) {
-        result = NRC_PORT_RES_OK;
+        result = NRC_R_OK;
     }
     else if (win_result == WAIT_TIMEOUT) {
-        result = NRC_PORT_RES_TIMEOUT;
+        result = NRC_R_TIMEOUT;
     }
     else {
-        result = NRC_PORT_RES_ERROR;
+        result = NRC_R_ERROR;
     }
 
 	return result;
@@ -335,7 +335,7 @@ static void timer_thread_fcn(void)
 
 s32_t nrc_port_timer_after(u32_t timeout_ms, void *tag, nrc_port_timeout_fcn_t fcn, nrc_port_timer_t *timer_id)
 {
-    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
+    s32_t result = NRC_R_INVALID_IN_PARAM;
 
     if (timer_id != 0) {
 
@@ -357,10 +357,10 @@ s32_t nrc_port_timer_after(u32_t timeout_ms, void *tag, nrc_port_timeout_fcn_t f
 
             result = nrc_port_mutex_unlock(_port.timer_mutex);
 
-            result = NRC_PORT_RES_OK;
+            result = NRC_R_OK;
         }
         else {
-            result = NRC_PORT_RES_OUT_OF_MEM;
+            result = NRC_R_OUT_OF_MEM;
         }
     }
 
@@ -369,13 +369,13 @@ s32_t nrc_port_timer_after(u32_t timeout_ms, void *tag, nrc_port_timeout_fcn_t f
 
 s32_t nrc_port_timer_cancel(nrc_port_timer_t timer_id)
 {
-    s32_t result = NRC_PORT_RES_INVALID_IN_PARAM;
+    s32_t result = NRC_R_INVALID_IN_PARAM;
 
     if (timer_id != 0) {
 
         struct nrc_port_timer *timer = (struct nrc_port_timer*)timer_id;
 
-        result = NRC_PORT_RES_OK;
+        result = NRC_R_OK;
 
         result = nrc_port_mutex_lock(_port.timer_mutex, 0);
         if (_port.timer_list != 0) {
@@ -448,7 +448,7 @@ s32_t nrc_port_vprintf(const char *format, va_list argptr)
 extern s8_t *flows_file;
 s32_t nrc_port_get_config(u8_t **config, u32_t *size)
 {
-    s32_t status = NRC_PORT_RES_ERROR;
+    s32_t status = NRC_R_ERROR;
     FILE *stream;
     errno_t err;
     
@@ -458,14 +458,14 @@ s32_t nrc_port_get_config(u8_t **config, u32_t *size)
     if (flows_file) {
         err = fopen_s(&stream, flows_file, "r");
         if (err == 0) {
-            status = NRC_PORT_RES_OK;
+            status = NRC_R_OK;
         }
         else {
             NRC_LOGE("nrc_port", "Flows file : %s could not be opened");
-            status = NRC_PORT_RES_NOT_FOUND;
+            status = NRC_R_NOT_FOUND;
         }
 
-        if (status == NRC_PORT_RES_OK) {
+        if (status == NRC_R_OK) {
             s32_t i = 0;
             s8_t data = 0;
             do 

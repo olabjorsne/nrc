@@ -19,6 +19,7 @@
 
 #include "nrc_types.h"
 #include "nrc_defs.h"
+//#include "nrc_node.h"
 
 #define NRC_MSG_TYPE_INVALID        (0) //Shall not be used
 #define NRC_MSG_TYPE_EMPTY          (1)
@@ -55,10 +56,11 @@ struct nrc_msg_buf {
     u8_t                buf[NRC_EMTPY_ARRAY];
 };
 
-typedef u32_t(*nrc_msg_read_t)(u8_t *buf, u32_t buf_size);
+typedef u32_t(*nrc_msg_read_t)(void *node, u8_t *buf, u32_t buf_size);
 
 struct nrc_msg_data_available {
     struct nrc_msg_hdr  hdr;
+    void                *node;
     nrc_msg_read_t      read;
 };
 

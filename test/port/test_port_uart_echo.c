@@ -16,7 +16,7 @@ static bool_t transfer(void)
 
     if (bytes > 0) {
         result = nrc_port_uart_write(uart, buf, bytes);
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
 
         ok = TRUE;
     }
@@ -52,7 +52,7 @@ bool_t test_port_uart_echo(u8_t port)
     struct nrc_port_uart_callback_fcn fcn = {data_available, write_complete, error};
 
     result = nrc_port_uart_init();
-    assert(result == NRC_PORT_RES_OK);
+    assert(result == NRC_R_OK);
 
     pars.baud_rate = 115200;
     pars.data_bits = 8;
@@ -61,7 +61,7 @@ bool_t test_port_uart_echo(u8_t port)
     pars.stop_bits = 1;
 
     result = nrc_port_uart_open(port, pars, fcn, &uart);
-    assert(result == NRC_PORT_RES_OK);
+    assert(result == NRC_R_OK);
 
     return result;
 }

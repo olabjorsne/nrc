@@ -102,17 +102,17 @@ s32_t nrc_os_init(void)
         memset(&_os, 0, sizeof(struct nrc_os));
 
         result = nrc_port_init();
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
 
         result = nrc_port_sema_init(0, &_os.sema);
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
 
         result = nrc_port_thread_init(
             NRC_PORT_THREAD_PRIO_NORMAL,
             NRC_OS_STACK_SIZE,
             nrc_os_thread_fcn,
             &(_os.thread));
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
 
         _os.state = NRC_OS_S_INITIALIZED;
         result = NRC_R_OK;
@@ -161,7 +161,7 @@ s32_t nrc_os_start(bool_t kernal_nodes_only)
 
         // Start msg and event handling thread
         result = nrc_port_thread_start(_os.thread);
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
         break;
 
     case NRC_OS_S_STARTED_KERNAL:
@@ -392,9 +392,9 @@ s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
 
             // Signal to inform thread that a new msg is available
             result = nrc_port_sema_signal(_os.sema);
-            assert(result == NRC_PORT_RES_OK);
+            assert(result == NRC_R_OK);
 
-            result = NRC_PORT_RES_OK;
+            result = NRC_R_OK;
         }
     }
 
@@ -413,7 +413,7 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
 
             // Disable IRQ during insertion of event
             result = nrc_port_irq_disable();
-            assert(result == NRC_PORT_RES_OK);
+            assert(result == NRC_R_OK);
 
             // Set event bit(s)
             node->evt = node->evt | event_mask;
@@ -426,11 +426,11 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
 
             // Enable IRQs again
             result = nrc_port_irq_enable();
-            assert(result == NRC_PORT_RES_OK);
+            assert(result == NRC_R_OK);
 
             // Signal thread that a new event is available
             result = nrc_port_sema_signal(_os.sema);
-            assert(result == NRC_PORT_RES_OK);
+            assert(result == NRC_R_OK);
         }
     }
     
@@ -537,7 +537,7 @@ static void nrc_os_thread_fcn(void)
     while (_os.state > NRC_OS_S_INITIALIZED) {
         // Wait for msg or event
         result = nrc_port_sema_wait(_os.sema, 0);
-        assert(result == NRC_PORT_RES_OK);
+        assert(result == NRC_R_OK);
 
         do {
             // Get prio of highest priority msg (if any)

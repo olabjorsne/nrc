@@ -204,10 +204,10 @@ static s32_t get_array_size(nrc_cfg_t* config, s32_t i)
 static s32_t keycmp(nrc_cfg_t* config, jsmntok_t t, const s8_t* key)
 {
     if (memcmp(key, &config->json_data[t.start], t.end - t.start) == 0) {
-        return NRC_PORT_RES_OK;
+        return NRC_R_OK;
     }
     else {
-        return NRC_PORT_RES_ERROR;
+        return NRC_R_ERROR;
     }
 }
 
@@ -244,13 +244,13 @@ static s32_t parse_node(nrc_cfg_t *config, jsmntok_t t[], s32_t i)
     
     i++;
     while (t[i].end < end && t[i].type != JSMN_UNDEFINED ) {
-        if (keycmp(config, t[i], "type") == NRC_PORT_RES_OK) {
+        if (keycmp(config, t[i], "type") == NRC_R_OK) {
             type_token = i;
         }
-        else if (keycmp(config, t[i], "id") == NRC_PORT_RES_OK) {
+        else if (keycmp(config, t[i], "id") == NRC_R_OK) {
             id_token = i;
         }
-        else if (keycmp(config, t[i], "name") == NRC_PORT_RES_OK) {
+        else if (keycmp(config, t[i], "name") == NRC_R_OK) {
             name_token = i;
         }
         i = next_key(t, i);
@@ -298,7 +298,7 @@ static s32_t parse_nodes(nrc_cfg_t *config)
     s32_t status = NRC_R_OK;
 
     if (config->json_tokens[0].type != JSMN_ARRAY) {
-        return NRC_PORT_RES_INVALID_IN_PARAM;
+        return NRC_R_INVALID_IN_PARAM;
     }
 
     s32_t end = config->json_tokens[0].end;
@@ -319,7 +319,7 @@ s32_t nrc_cfg_deinit(void)
     //    nrc_port_heap_free(config->json_tokens);
     //}
     memset(&config, 0, sizeof(config));
-    return NRC_PORT_RES_OK; 
+    return NRC_R_OK;
 }
 
 s32_t nrc_cfg_get_node(nrc_cfg_t* config, u32_t index, const s8_t **cfg_type, const s8_t **cfg_id, const s8_t **cfg_name)
@@ -620,6 +620,6 @@ s32_t nrc_cfg_get_str_from_array(nrc_cfg_t* config, const s8_t *cfg_id, const s8
 
 s32_t nrc_cfg_get_int_from_array(nrc_cfg_t* config, const s8_t *cfg_type, const s8_t *cfg_id, const s8_t *cfg_arr_name, u8_t index, s32_t *value)
 { 
-    return NRC_PORT_RES_ERROR; 
+    return NRC_R_ERROR; 
 }
 
