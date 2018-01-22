@@ -33,6 +33,7 @@ extern "C" {
 #define NRC_R_OUT_OF_MEM            (-6)
 #define NRC_R_INVALID_STATE         (-7)
 #define NRC_R_UNAVAILABLE_RESOURCE  (-8)
+#define NRC_R_INVALID_CFG           (-9)
 
 #define OK(x) ((x==NRC_R_OK))
 
