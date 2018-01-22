@@ -23,24 +23,34 @@
 
 typedef void* nrc_serial_t;
 
-struct nrc_serial_usr {
-    u32_t                   evt;
+struct nrc_serial_reader {
+    u32_t                   data_available_evt;
+    u32_t                   error_evt;
     nrc_node_t              node;
+};
+
+struct nrc_serial_writer {
+    u32_t       write_complete_evt;
+    u32_t       error_evt;
+    nrc_node_t  node;
 };
 
 s32_t nrc_serial_init(void);
 
-s32_t nrc_serial_open(
-    s8_t                    *port_name,
-    void                    *port_settings,
-    struct nrc_serial_usr   *data_available,
-    struct nrc_serial_usr   *write_complete,
-    nrc_serial_t            *port);
+s32_t nrc_serial_open_reader(
+    const s8_t                  *cfg_id_settings,
+    struct nrc_serial_reader    reader_notification,
+    nrc_serial_t                *serial);
 
-s32_t nrc_serial_close(nrc_serial_t port);
+s32_t nrc_serial_close_reader(nrc_serial_t serial);
 
-u32_t nrc_serial_read(nrc_serial_t port, u8_t *buf, u32_t buf_size);
+u32_t nrc_serial_read(nrc_serial_t serial, u8_t *buf, u32_t buf_size);
 
-u32_t nrc_serial_write(nrc_serial_t port, u8_t *buf, u32_t buf_size);
+s32_t nrc_serial_get_read_error(nrc_serial_t serial);
+
+
+//u32_t nrc_serial_write(nrc_serial_t serial, u8_t *buf, u32_t buf_size);
+
+
 
 #endif

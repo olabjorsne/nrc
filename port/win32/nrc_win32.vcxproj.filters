@@ -102,6 +102,9 @@
     <ClCompile Include="..\..\test\port\test_port_uart_echo.c">
       <Filter>test\port</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_serial.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">

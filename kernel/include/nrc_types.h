@@ -49,6 +49,7 @@ extern "C" {
 #endif
 
 #define S8_MAX_VALUE  (0x7F)
+#define U8_MAX_VALUE  (0xFF)
 #define S32_MAX_VALUE (0x7FFFFFFF)
 #define U32_MAX_VALUE (0xFFFFFFFF)
 
