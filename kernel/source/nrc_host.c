@@ -63,14 +63,14 @@ s32_t nrc_host_start(void)
                 n_pars.cfg_id = f_pars.cfg_id;
                 s32_t res = nrc_os_node_register(FALSE, node, n_pars);
                 if (OK(res)) {
-                    NRC_LOGI(TAG, "Node added: type=\"%s\", name=\"%s\", id=\"%s\"", f_pars.cfg_type, f_pars.cfg_name, f_pars.cfg_id);
+                    NRC_LOGI(TAG, "Node added: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
                 }
                 else {
-                    NRC_LOGE(TAG, "Failed to add node (error=%d): type=\"%s\", name=\"%s\", id=\"%s\"", res, f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
+                    NRC_LOGE(TAG, "Failed to add node (error=%d): type=\"%s\", id=\"%s\", name=\"%s\"", res, f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
                 }
             }
             else {
-                NRC_LOGE(TAG, "Node not supported: type=\"%s\", name=\"%s\", id=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
+                NRC_LOGE(TAG, "Node not supported: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
             }
         }
     }            
