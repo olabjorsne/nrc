@@ -43,10 +43,8 @@ int main(int argc, char** argv)
     }
     nrc_os_init();
 
-    nrc_node_inject_register();
-    nrc_node_debug_register();
-    nrc_node_serial_in_register();
-
+    nrc_port_register_nodes();
+ 
     nrc_cfg_init();
     nrc_host_init();
 

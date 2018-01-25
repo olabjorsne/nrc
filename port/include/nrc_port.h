@@ -48,6 +48,15 @@ typedef void(*nrc_port_timeout_fcn_t)(nrc_port_timer_t timer_id, void *tag);
  */
 s32_t nrc_port_init(void);
 
+/** @brief Registers node types supported by the port to node factory
+*
+*  Must be called before nodes can be created using nrc_factory_create() function
+*
+*  @return None
+*/
+void nrc_port_register_nodes(void);
+
+
  /** @brief Allocate buffer from heap
   *
   *  Mainly for memory allocated/freed at start/end of program execution.

@@ -156,6 +156,7 @@
     <ClCompile Include="..\..\test\port\test_port_uart_echo.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="source\nrc_port.c" />
+    <ClCompile Include="source\nrc_port_nodes.c" />
     <ClCompile Include="source\nrc_port_uart.c" />
   </ItemGroup>
   <ItemGroup>
