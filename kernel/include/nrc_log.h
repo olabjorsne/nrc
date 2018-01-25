@@ -25,13 +25,17 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Log level used in NRC_LOGx macros 
+ */
 typedef enum {
-    NRC_LOG_NONE,
-    NRC_LOG_ERROR, 
-    NRC_LOG_WARNING,
-    NRC_LOG_INFO,
-    NRC_LOG_DEBUG,
-    NRC_LOG_VERBOSE
+    NRC_LOG_NONE,       /*!< No log output */
+    NRC_LOG_ERROR,      /*!< Errors events, unrecoverable (unsupported configuration, system error, ...) */
+    NRC_LOG_WARNING,    /*!< Error events, recoverable */
+    NRC_LOG_INFO,       /*!< Information messages which describe normal flow (config info, connections, system events, ...) */
+    NRC_LOG_DEBUG,      /*!< Detailed information only interesting for debug (handles, pointers, sizes, ...) */ 
+    NRC_LOG_VERBOSE     /*!< Debug info flooding log output */
+
 } nrc_log_level;
 
 #ifndef NRC_LOG_LEVEL
@@ -45,9 +49,6 @@ void nrc_log_write(nrc_log_level level, const char* tag, const char* format, ...
 #define NRC_LOGI(tag, ...)  if (NRC_LOG_LEVEL >= NRC_LOG_INFO)		{ nrc_log_write(NRC_LOG_INFO,	 tag, __VA_ARGS__); }
 #define NRC_LOGD(tag, ...)  if (NRC_LOG_LEVEL >= NRC_LOG_DEBUG)		{ nrc_log_write(NRC_LOG_DEBUG,   tag, __VA_ARGS__); }
 #define NRC_LOGV(tag, ...)  if (NRC_LOG_LEVEL >= NRC_LOG_VERBOSE)	{ nrc_log_write(NRC_LOG_VERBOSE, tag, __VA_ARGS__); }
-
-// TODO
-//void nrc_log_level_set(const char* tag, nrc_log_level level);
 
 #ifdef __cplusplus
 }
