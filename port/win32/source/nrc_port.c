@@ -24,6 +24,8 @@
 
 #include "nrc_log.h"
 
+static const s8_t *TAG = "nrc_port";
+
 #define NRC_PORT_TIMER_TYPE         (0xAAAAAAAA)
 #define NRC_PORT_TIMER_RES_MS       (32)
 #define NRC_PORT_MAX_CONFIG_SIZE    (10000)
@@ -59,7 +61,6 @@ static void timer_thread_fcn(void);
 s32_t nrc_port_thread_start(nrc_port_thread_t thread_id);
 
 static struct nrc_port _port = {0};
-static const s8_t *TAG = "main";
 
 s32_t nrc_port_init(void)
 {
@@ -443,6 +444,13 @@ u32_t nrc_port_timestamp_in_ms(void)
 s32_t nrc_port_vprintf(const char *format, va_list argptr)
 {
     return vprintf(format, argptr);
+}
+
+void nrc_port_error_handler(s8_t *file, u32_t line)
+{
+    NRC_LOGE(TAG, "Error handled called. File:%s Line:%d", file, line);
+    NRC_LOGE(TAG, "nrc will exit");
+    exit(1);
 }
 
 extern s8_t *flows_file;

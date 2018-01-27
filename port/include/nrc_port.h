@@ -223,7 +223,10 @@ s32_t nrc_port_irq_enable(void);
  * Used by log macros
  */
 s32_t nrc_port_vprintf(const char * format, va_list argptr);
+
 u32_t nrc_port_timestamp_in_ms(void);
+
+void nrc_port_error_handler(s8_t *file, u32_t line);
 
 s32_t nrc_port_get_config(u8_t **config, u32_t *size);
 

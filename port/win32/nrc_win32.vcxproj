@@ -178,6 +178,7 @@
     <ClInclude Include="..\..\test\port\test_port_uart_echo.h" />
     <ClInclude Include="..\include\nrc_port.h" />
     <ClInclude Include="..\include\nrc_port_uart.h" />
+    <ClInclude Include="nrc_assert.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\test\flows\test_flow_1_mqtt.json" />
