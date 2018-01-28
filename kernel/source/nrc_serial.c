@@ -257,7 +257,7 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
         result = nrc_cfg_get_str(curr_config, cfg_id, "type", &cfg_type);
 
         if (result == NRC_R_OK) {
-            if ((cfg_type == NULL) || (strcmp("serial-port", cfg_type) != 0)) {
+            if ((cfg_type == NULL) || (strcmp("serial", cfg_type) != 0)) {
                 result = NRC_R_INVALID_CFG;
             }
         }

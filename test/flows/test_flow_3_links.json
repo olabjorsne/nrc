@@ -86,7 +86,7 @@
     },
     {
         "id": "2fc5d057.91e46",
-        "type": "serial-port",
+        "type": "serial",
         "z": "",
         "serialport": "COM3",
         "serialbaud": "115200",
@@ -97,7 +97,8 @@
     },
     {
         "id": "a1e2db35.72fbb8",
-        "type": "serial-port-in",
+        "type": "serial-in",
+        "topic":  "in data",
         "z": "2fece17d.8912de",
         "name": "COM3_In",
         "serial-port": "2fc5d057.91e46",
