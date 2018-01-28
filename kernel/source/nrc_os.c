@@ -17,6 +17,7 @@
 #include "nrc_os.h"
 #include "nrc_port.h"
 #include "nrc_log.h"
+#include "nrc_cfg.h"
 #include <assert.h>
 #include <string.h>
 
@@ -52,6 +53,9 @@ struct nrc_os_node_hdr {
     struct nrc_node_api *api;
     const s8_t          *cfg_id;
 
+    u32_t               wire_cnt;
+    nrc_node_t          *wire;
+
     bool_t              kernal_node;
 
     u32_t               evt;
@@ -79,10 +83,13 @@ static void init_registered_nodes(bool_t kernal_nodes_only);
 static void stop_registered_nodes(bool_t application_nodes_only);
 static void deinit_registered_nodes(bool_t application_nodes_only);
 
+static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id);
+
 static void nrc_os_thread_fcn(void);
 
 static struct nrc_os    _os;
 static bool_t           _created = FALSE;
+static const s8_t       *_tag = "nrc_os";
 
 s32_t nrc_os_init(void)
 {
@@ -270,8 +277,6 @@ s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_re
             os_node_hdr->evt = 0;
 
             insert_node(os_node_hdr);
-
-            result = NRC_R_OK;
         }
     }
 
@@ -359,7 +364,7 @@ void nrc_os_msg_free(nrc_msg_t msg)
     }
 }
 
-s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
+s32_t nrc_os_send_msg_to(nrc_node_t to, nrc_msg_t msg, s8_t prio)
 {
     s32_t result = NRC_R_INVALID_IN_PARAM;
 
@@ -395,6 +400,44 @@ s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio)
             assert(result == NRC_R_OK);
 
             result = NRC_R_OK;
+        }
+    }
+
+    return result;
+}
+
+s32_t nrc_os_send_msg_from(nrc_node_t from, nrc_msg_t msg, s8_t prio)
+{
+    s32_t                   result = NRC_R_INVALID_IN_PARAM;
+    u32_t                   i;
+    nrc_msg_t               msg_clone = NULL;
+
+    if ((from != NULL) && (msg != NULL)) {
+        struct nrc_os_node_hdr  *node = (struct nrc_os_node_hdr*)from - 1;
+
+        if (node->wire_cnt == 0) {
+            nrc_os_msg_free(msg);
+            result = NRC_R_OK;
+        }
+        else if (node->wire_cnt == 1) {
+            result = nrc_os_send_msg_to(node->wire[0], msg, prio);
+        }
+        else {
+            // Send cloned messages to all wires but one
+            for (i = 0; i < (node->wire_cnt - 1); i++) {
+                    msg_clone = nrc_os_msg_clone(msg);
+                    if (msg_clone != NULL) {
+                        result = nrc_os_send_msg_to(node->wire[i], msg_clone, prio);
+                        if (!OK(result)) {
+                            NRC_LOGW(_tag, "send_msg_from: Error %d", result);
+                        }
+                    }
+                    else {
+                        NRC_LOGW(_tag, "send_msg_from: Out of memory");
+                    }               
+            }
+            // Send original message to last wire
+            result = nrc_os_send_msg_to(node->wire[node->wire_cnt - 1], msg, prio);
         }
     }
 
@@ -592,11 +635,20 @@ static void nrc_os_thread_fcn(void)
 
 static void init_registered_nodes(bool_t kernal_node)
 {
-    struct nrc_os_node_hdr *hdr = _os.node_list;
+    s32_t                   result;
+    struct nrc_os_node_hdr  *hdr = _os.node_list;
 
     while (hdr != NULL) {
         if (kernal_node == hdr->kernal_node) {
-            hdr->api->init(hdr + 1);
+            result = get_wires(hdr, hdr->cfg_id);
+            if (!OK(result)) {
+                NRC_LOGE(_tag, "init_registered_nodes: Failed get_wires %s", hdr->cfg_id);
+            }
+
+            result = hdr->api->init(hdr + 1);
+            if (!OK(result)) {
+                NRC_LOGE(_tag, "init_registered_nodes: Failed node init %s", hdr->cfg_id);
+            }
         }
         hdr = hdr->next;
     }
@@ -635,5 +687,56 @@ static void stop_registered_nodes(bool_t kernal_node)
         }
         hdr = hdr->next;
     }
+}
+
+static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
+{
+    s32_t       result = NRC_R_OK;
+    u32_t       i;
+    s8_t        *cfg_wire = NULL;
+    u32_t       cnt = 0;
+    u32_t       max_wires = 0;
+    nrc_node_t  *wire = NULL;
+
+    if ((node != NULL) && (cfg_node_id != NULL)) {
+        // Free previously allocated wires
+        if (node->wire != NULL) {
+            nrc_port_heap_free(node->wire);
+        }
+        node->wire_cnt = 0;
+
+        // Get number of new wires
+        while (OK(result)) {
+            result = nrc_cfg_get_str_from_array(curr_config, cfg_node_id, "wires", max_wires, &cfg_wire);
+            if (OK(result)) {
+                max_wires++;
+            }
+        }
+
+        // Allocate wire arrary
+        node->wire = (nrc_node_t*)nrc_port_heap_alloc(max_wires * sizeof(nrc_node_t));
+        assert(node->wire != NULL);
+
+        // Read wires from nrc_cfg
+        result = NRC_R_OK;
+        for (i = 0; (i < max_wires) && OK(result); i++) {
+            result = nrc_cfg_get_str_from_array(curr_config, cfg_node_id, "wires", i, &cfg_wire);
+            if (OK(result)) {
+                wire = nrc_os_node_get(cfg_wire);
+                if (wire != NULL) {
+                    node->wire[cnt] = wire;
+                    cnt++;
+                }
+            }
+        }
+        node->wire_cnt = cnt; // Might be lower than max_wires if nodes are not (yet) registered
+
+        result = NRC_R_OK;
+    }
+    else {
+        result = NRC_R_INVALID_IN_PARAM;
+    }
+
+    return result;
 }
 

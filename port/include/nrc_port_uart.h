@@ -41,14 +41,12 @@ struct nrc_port_uart_pars {
     enum nrc_port_uart_flow_ctrl    flow_ctrl;
 };
 
-typedef void(*nrc_port_uart_data_available_t)(nrc_port_uart_t uart);
+typedef void(*nrc_port_uart_data_available_t)(nrc_port_uart_t uart, s32_t result);
 typedef void(*nrc_port_uart_write_complete_t)(nrc_port_uart_t uart, s32_t result, u32_t bytes);
-typedef void(*nrc_port_uart_error_t)(nrc_port_uart_t uart, s32_t error);
 
 struct nrc_port_uart_callback_fcn {
     nrc_port_uart_data_available_t    data_available;
     nrc_port_uart_write_complete_t    write_complete;
-    nrc_port_uart_error_t             error;
 };
 
 s32_t nrc_port_uart_init(void);
@@ -64,5 +62,9 @@ s32_t nrc_port_uart_close(nrc_port_uart_t uart);
 s32_t nrc_port_uart_write(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size);
 
 u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size);
+
+u32_t nrc_port_uart_get_bytes(nrc_port_uart_t uart);
+
+s32_t nrc_port_uart_clear(nrc_port_uart_t uart);
 
 #endif

@@ -29,6 +29,10 @@ bool_t nrc_misc_cbuf_is_empty(nrc_misc_cbuf_t cbuf);
 
 bool_t nrc_misc_cbuf_is_full(nrc_misc_cbuf_t cbuf);
 
+u32_t nrc_misc_cbuf_get_bytes(nrc_misc_cbuf_t cbuf);
+
+s32_t nrc_misc_cbuf_clear(nrc_misc_cbuf_t cbuf);
+
 u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size);
 
 u8_t* nrc_misc_cbuf_get_read_buf(nrc_misc_cbuf_t cbuf, u32_t *buf_size);

@@ -46,7 +46,8 @@ nrc_msg_t nrc_os_msg_alloc(u32_t size);
 nrc_msg_t nrc_os_msg_clone(nrc_msg_t msg);
 void nrc_os_msg_free(nrc_msg_t msg);
 
-s32_t nrc_os_send_msg(nrc_node_t to, nrc_msg_t msg, s8_t prio);
+s32_t nrc_os_send_msg_to(nrc_node_t to, nrc_msg_t msg, s8_t prio);
+s32_t nrc_os_send_msg_from(nrc_node_t from, nrc_msg_t msg, s8_t prio);
 s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio);
 
 #ifdef __cplusplus
