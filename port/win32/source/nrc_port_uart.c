@@ -74,7 +74,7 @@ s32_t nrc_port_uart_open(
     struct nrc_port_uart    *self = NULL;
 
     assert(uart != NULL);
-    assert((callback.data_available != NULL) && (callback.write_complete != NULL) && (callback.error != NULL));
+    assert((callback.data_available != NULL) && (callback.write_complete != NULL));
     *uart = NULL;
 
     len = snprintf(file_name, 64, "\\\\.\\COM%d", port);
@@ -335,6 +335,16 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
     return read_bytes;
 }
 
+u32_t nrc_port_uart_get_bytes(nrc_port_uart_t uart)
+{
+    struct nrc_port_uart    *self = (struct nrc_port_uart*)uart;
+
+    assert(self != NULL);
+    assert(self->type == NRC_PORT_UART_TYPE);
+
+    return nrc_misc_cbuf_get_bytes(self->cbuf);
+}
+
 static VOID CALLBACK write_complete(
     _In_    DWORD        dwErrorCode,
     _In_    DWORD        dwNumberOfBytesTransfered,
@@ -385,9 +395,7 @@ static VOID CALLBACK read_complete(
     u32_t                           buf_size;
     u8_t                            *buf;
     BOOL                            ok;
-    nrc_port_uart_data_available_t  data_available = NULL;
-    nrc_port_uart_error_t           error = NULL;
-    s32_t                           error_code;
+    s32_t                           error_code = NRC_R_OK;
 
     if (lpOverlapped != NULL) {
         self = (struct nrc_port_uart*)lpOverlapped->hEvent;
@@ -403,43 +411,36 @@ static VOID CALLBACK read_complete(
 
         nrc_misc_cbuf_write_buf_consumed(self->cbuf, dwNumberOfBytesTransfered);
 
-        if (dwErrorCode == 0) {
-            if (self->notify_data_available == TRUE) {
-                self->notify_data_available = FALSE;
-                data_available = self->callback.data_available;
+        buf = nrc_misc_cbuf_get_write_buf(self->cbuf, &buf_size);
+
+        if ((buf != NULL) && (buf_size > 0)) {
+
+            self->rx_overlapped.Offset = 0;
+            self->rx_overlapped.OffsetHigh = 0;
+            self->rx_overlapped.hEvent = self;
+
+            ok = ReadFileEx(self->hPort, buf, buf_size, &self->rx_overlapped, read_complete);
+            if (ok == TRUE) {
+                self->rx_state = NRC_PORT_UART_S_READING;
             }
-
-            buf = nrc_misc_cbuf_get_write_buf(self->cbuf, &buf_size);
-
-            if ((buf != NULL) && (buf_size > 0)) {
-
-                self->rx_overlapped.Offset = 0;
-                self->rx_overlapped.OffsetHigh = 0;
-                self->rx_overlapped.hEvent = self;
-
-                ok = ReadFileEx(self->hPort, buf, buf_size, &self->rx_overlapped, read_complete);
-                if (ok == TRUE) {
-                    self->rx_state = NRC_PORT_UART_S_READING;
-                }
-                else {
-                    error = self->callback.error;
-                    error_code = NRC_R_ERROR;
-                }
+            else {
+                error_code = NRC_R_ERROR;
             }
-        }
-        else {
-            error = self->callback.error;
-            error_code = NRC_R_ERROR;
         }
 
         result = nrc_port_mutex_unlock(self->mutex);
         assert(result == NRC_R_OK);
 
-        if (data_available != NULL) {
-            data_available(self);
+        if (dwErrorCode != 0) {
+            error_code = NRC_R_ERROR;
         }
-        if (error != NULL) {
-            error(self, error_code);
+
+        if ((error_code == NRC_R_OK) && (self->notify_data_available == TRUE)) {
+            self->notify_data_available = FALSE;
+            self->callback.data_available(self, error_code);
+        }
+        else if (error_code != NRC_R_OK) {
+            self->callback.data_available(self, error_code);
         }
     }
 }
