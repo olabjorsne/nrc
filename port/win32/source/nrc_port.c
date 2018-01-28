@@ -409,10 +409,13 @@ u32_t nrc_port_timer_get_res_ms(void)
 
 u64_t nrc_port_timer_get_time_ms(void)
 {
+    u64_t time = 0;
 
-    u64_t now = GetTickCount64();
-
-    return (now - _port.time_start);
+    if (_port.state == NRC_PORT_S_INITIALISED) {
+        time = GetTickCount64() - _port.time_start;
+    }
+ 
+    return time;
 }
 
 s32_t nrc_port_irq_disable(void)
@@ -429,17 +432,6 @@ s32_t nrc_port_irq_enable(void)
     return nrc_port_mutex_unlock(_port.irq_mutex);
 }
 
-u32_t nrc_port_timestamp_in_ms(void)
-{
-    s32_t timestamp = 0;
-    if (_port.state == NRC_PORT_S_INITIALISED) {
-        timestamp = (u32_t)(GetTickCount64() - _port.time_start);
-    }
-    else {
-        timestamp = 0;
-    }
-    return timestamp;
-}
 
 s32_t nrc_port_vprintf(const char *format, va_list argptr)
 {

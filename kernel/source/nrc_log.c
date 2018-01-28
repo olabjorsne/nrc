@@ -41,7 +41,7 @@ void nrc_log_print(const char* format, ...)
 void nrc_log_write(nrc_log_level level, const char* tag, const char* format, ...)
 {
     s32_t d, h, m, s, ms;
-    s32_t time = nrc_port_timestamp_in_ms();
+    s32_t time = (s32_t)nrc_port_timer_get_time_ms();
     d = time / (1000*60*60*24);
     time -= d * (1000 * 60 * 60 * 24);
     h = time / (1000 * 60 * 60);
@@ -59,3 +59,5 @@ void nrc_log_write(nrc_log_level level, const char* tag, const char* format, ...
     nrc_port_vprintf(format, list);
     va_end(list);
 }
+
+
