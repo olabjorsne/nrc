@@ -187,16 +187,12 @@ static s32_t get_array_size(nrc_cfg_t* config, s32_t i)
     s32_t end = t[i].end;
     s32_t size = 0;
 
-    i++;
-    assert(t[i].type == JSMN_ARRAY);
-    i++;
-    assert(t[i].type == JSMN_ARRAY);
-    end = t[i].end;
+    if ((t[i + 1].type == JSMN_ARRAY) && (t[i + 2].type == JSMN_ARRAY)) {
+        end = t[i + 2].end;
 
-    i++;
-
-    while (t[i + size].end < end && t[i + size].type == JSMN_STRING) {
-        size++;
+        while (t[i + 3 + size].end < end && t[i + 3 + size].type == JSMN_STRING) {
+            size++;
+        }
     }
     return size;
 }
@@ -610,6 +606,7 @@ s32_t nrc_cfg_get_str_from_array(nrc_cfg_t* config, const s8_t *cfg_id, const s8
     if (param ) {
         if (index < ((struct nrc_param_array_str*)param->value)->size) {
             *str = ((struct nrc_param_array_str*)param->value)->value[index];
+            status = NRC_R_OK;
         }
         else {
             status = NRC_R_ERROR;
