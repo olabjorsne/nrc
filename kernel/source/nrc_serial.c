@@ -325,7 +325,7 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
     }
     if (result == NRC_R_OK) {
         const s8_t *cfg_flow_ctrl = NULL;
-        result = nrc_cfg_get_str(curr_config, cfg_id, "flowcontrol", &cfg_flow_ctrl);
+        result = nrc_cfg_get_str(curr_config, cfg_id, "flowctrl", &cfg_flow_ctrl);
 
         if (result == NRC_R_OK) {
             if (strcmp("none", cfg_flow_ctrl) == 0) {
