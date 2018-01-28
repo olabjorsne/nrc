@@ -252,7 +252,7 @@ static s32_t parse_node(nrc_cfg_t *config, jsmntok_t t[], s32_t i)
         i = next_key(t, i);
     }
 
-    if (type_token && id_token && name_token) {
+    if (type_token && id_token) {
         struct nrc_cfg_node_struct* node = node_alloc();
         if (node) {
             s32_t len = 0;
@@ -267,11 +267,15 @@ static s32_t parse_node(nrc_cfg_t *config, jsmntok_t t[], s32_t i)
             get_value(config, id_token, node->id);
             node->id[len] = 0;
 
-            len = get_value_len(config, name_token);
-            node->name = (s8_t*)nrc_port_heap_alloc(len + 1);
-            get_value(config, name_token, node->name);
-            node->name[len] = 0;
-
+            if (name_token) {
+                len = get_value_len(config, name_token);
+                node->name = (s8_t*)nrc_port_heap_alloc(len + 1);
+                get_value(config, name_token, node->name);
+                node->name[len] = 0;
+            }
+            else {
+                node->name = NULL;
+            }
             node->token_id = node_token;
 
             node_add(config, node);
