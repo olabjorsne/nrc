@@ -238,7 +238,7 @@ static s32_t nrc_node_inject_recv_evt(nrc_node_t slf, u32_t event_mask)
                 if (hdr != NULL) {
                     hdr->topic = self->topic;
                     hdr->type = NRC_MSG_TYPE_EMPTY;
-                    result = nrc_os_send_msg(self->wire[0], hdr, 16);
+                    result = nrc_os_send_msg_to(self->wire[0], hdr, 16);
                 }
 
                 result = NRC_R_OK;
