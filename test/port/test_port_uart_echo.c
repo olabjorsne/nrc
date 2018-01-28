@@ -25,7 +25,7 @@ static bool_t transfer(void)
 }
 
 
-static void data_available(nrc_port_uart_t uart)
+static void data_available(nrc_port_uart_t uart, s32_t result)
 {
     if(uart_tx == FALSE) {
         if (transfer() == TRUE) {
@@ -41,15 +41,11 @@ static void write_complete(nrc_port_uart_t uart, s32_t result, u32_t bytes)
         uart_tx = FALSE;
     }
 }
-static void error(nrc_port_uart_t uart, s32_t error)
-{
-    assert(FALSE);
-}
 
 bool_t test_port_uart_echo(u8_t port)
 {
     s32_t result;
-    struct nrc_port_uart_callback_fcn fcn = {data_available, write_complete, error};
+    struct nrc_port_uart_callback_fcn fcn = {data_available, write_complete};
 
     result = nrc_port_uart_init();
     assert(result == NRC_R_OK);
