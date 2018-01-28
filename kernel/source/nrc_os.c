@@ -277,8 +277,6 @@ s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_re
             os_node_hdr->evt = 0;
 
             insert_node(os_node_hdr);
-
-            result = get_wires(os_node_hdr, pars.cfg_id);
         }
     }
 
@@ -425,8 +423,6 @@ s32_t nrc_os_send_msg_from(nrc_node_t from, nrc_msg_t msg, s8_t prio)
             result = nrc_os_send_msg_to(node->wire[0], msg, prio);
         }
         else {
-            result = NRC_R_OK;
-
             // Send cloned messages to all wires but one
             for (i = 0; i < (node->wire_cnt - 1); i++) {
                     msg_clone = nrc_os_msg_clone(msg);
@@ -639,11 +635,20 @@ static void nrc_os_thread_fcn(void)
 
 static void init_registered_nodes(bool_t kernal_node)
 {
-    struct nrc_os_node_hdr *hdr = _os.node_list;
+    s32_t                   result;
+    struct nrc_os_node_hdr  *hdr = _os.node_list;
 
     while (hdr != NULL) {
         if (kernal_node == hdr->kernal_node) {
-            hdr->api->init(hdr + 1);
+            result = get_wires(hdr, hdr->cfg_id);
+            if (!OK(result)) {
+                NRC_LOGE(_tag, "init_registered_nodes: Failed get_wires %s", hdr->cfg_id);
+            }
+
+            result = hdr->api->init(hdr + 1);
+            if (!OK(result)) {
+                NRC_LOGE(_tag, "init_registered_nodes: Failed node init %s", hdr->cfg_id);
+            }
         }
         hdr = hdr->next;
     }
@@ -688,7 +693,7 @@ static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
 {
     s32_t       result = NRC_R_OK;
     u32_t       i;
-    const s8_t  *cfg_wire = NULL;
+    s8_t        *cfg_wire = NULL;
     u32_t       cnt = 0;
     u32_t       max_wires = 0;
     nrc_node_t  *wire = NULL;
@@ -713,6 +718,7 @@ static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
         assert(node->wire != NULL);
 
         // Read wires from nrc_cfg
+        result = NRC_R_OK;
         for (i = 0; (i < max_wires) && OK(result); i++) {
             result = nrc_cfg_get_str_from_array(curr_config, cfg_node_id, "wires", i, &cfg_wire);
             if (OK(result)) {
@@ -727,10 +733,10 @@ static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
 
         result = NRC_R_OK;
     }
-    {
+    else {
         result = NRC_R_INVALID_IN_PARAM;
     }
 
-    return cnt;
+    return result;
 }
 

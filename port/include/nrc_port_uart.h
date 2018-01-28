@@ -65,4 +65,6 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size);
 
 u32_t nrc_port_uart_get_bytes(nrc_port_uart_t uart);
 
+s32_t nrc_port_uart_clear(nrc_port_uart_t uart);
+
 #endif

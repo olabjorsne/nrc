@@ -48,6 +48,8 @@ u32_t nrc_serial_read(nrc_serial_t serial, u8_t *buf, u32_t buf_size);
 
 u32_t nrc_serial_get_bytes(nrc_serial_t serial);
 
+s32_t nrc_serial_clear(nrc_serial_t serial);
+
 s32_t nrc_serial_get_read_error(nrc_serial_t serial);
 
 

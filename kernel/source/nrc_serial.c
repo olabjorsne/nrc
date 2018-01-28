@@ -202,6 +202,18 @@ u32_t nrc_serial_get_bytes(nrc_serial_t serial)
     return bytes;
 }
 
+s32_t nrc_serial_clear(nrc_serial_t serial)
+{
+    s32_t               result = NRC_R_INVALID_IN_PARAM;
+    struct nrc_serial   *self = (struct nrc_serial*)serial;
+
+    if ((self != NULL) && (self->type == NRC_SERIAL_TYPE)) {
+        result = nrc_port_uart_clear(self->uart);
+    }
+
+    return result;
+}
+
 s32_t nrc_serial_get_read_error(nrc_serial_t serial)
 {
     s32_t error = NRC_R_OK;

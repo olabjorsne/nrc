@@ -396,10 +396,7 @@ static s32_t send_data(struct nrc_node_serial_in *self)
             }
             else {
                 // No memory left; clear data
-                u8_t    buf[12];
-                while (bytes_to_read > 0) {
-                    bytes_to_read = nrc_serial_read(self->serial, buf, 12);
-                }
+                nrc_serial_clear(self->serial);
                 NRC_LOGW(_tag, "send_data(%s): Out of memory", self->hdr.cfg_id);
                 result = NRC_R_OUT_OF_MEM;
             }

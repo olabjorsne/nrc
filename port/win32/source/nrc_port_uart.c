@@ -345,6 +345,16 @@ u32_t nrc_port_uart_get_bytes(nrc_port_uart_t uart)
     return nrc_misc_cbuf_get_bytes(self->cbuf);
 }
 
+s32_t nrc_port_uart_clear(nrc_port_uart_t uart)
+{
+    struct nrc_port_uart    *self = (struct nrc_port_uart*)uart;
+
+    assert(self != NULL);
+    assert(self->type == NRC_PORT_UART_TYPE);
+
+    return nrc_misc_cbuf_clear(self->cbuf);
+}
+
 static VOID CALLBACK write_complete(
     _In_    DWORD        dwErrorCode,
     _In_    DWORD        dwNumberOfBytesTransfered,

@@ -95,6 +95,22 @@ u32_t nrc_misc_cbuf_get_bytes(nrc_misc_cbuf_t cbuf)
     return self->bytes;
 }
 
+s32_t nrc_misc_cbuf_clear(nrc_misc_cbuf_t cbuf)
+{
+    s32_t                   result = NRC_R_INVALID_IN_PARAM;
+    struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
+
+    if ((self != NULL) && (self->type == NRC_MISC_CBUF_TYPE)) {
+        self->read_index = 0;
+        self->write_index = 0;
+        self->bytes = 0;
+
+        result = NRC_R_OK;
+    }
+
+    return result;
+}
+
 u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size)
 {
     u32_t                   bytes = 0;
