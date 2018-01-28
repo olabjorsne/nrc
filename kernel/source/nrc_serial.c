@@ -17,9 +17,12 @@
 #include "nrc_serial.h"
 #include "nrc_port_uart.h"
 #include "nrc_cfg.h"
+#include "nrc_os.h"
+#include "nrc_log.h"
 #include <string.h>
 
 #define NRC_SERIAL_TYPE (0x1438B4AA)
+#define NRC_SERIAL_PRIO (8) //TODO: Priority should be configurable
 
 enum nrc_serial_state {
     NRC_SERIAL_S_CLOSED = 0,
@@ -36,28 +39,30 @@ struct nrc_serial {
     nrc_port_uart_t             uart;
 
     struct nrc_port_uart_pars   pars;
+    s8_t                        priority;
 
     bool_t                      open;
 
-    enum nrc_serial_state       rx_state;
     struct nrc_serial_reader    reader;
 
     enum nrc_serial_state       tx_state;
     struct nrc_serial_writer    writer;
+    u32_t                       bytes_written;
 
     u32_t                       type;
 };
 
 static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_pars *pars);
-static struct nrc_serial* get_serial(const s8_t *cfg_id_settings);
+static struct nrc_serial* get_serial_from_cfg(const s8_t *cfg_id_settings);
+static struct nrc_serial* get_serial_from_uart(nrc_port_uart_t uart);
 
-static void data_available(nrc_port_uart_t uart);
+static void data_available(nrc_port_uart_t uart, s32_t result);
 static void write_complete(nrc_port_uart_t uart, s32_t result, u32_t bytes);
-static void error(nrc_port_uart_t uart, s32_t error);
 
 static bool_t                               _initialized = FALSE;
 static struct nrc_serial                    *_serial = NULL;
 static struct nrc_port_uart_callback_fcn    _callback;
+static const s8_t                           *_tag = "nrc_serial";
 
 s32_t nrc_serial_init(void)
 {
@@ -71,7 +76,6 @@ s32_t nrc_serial_init(void)
 
         _callback.data_available = data_available;
         _callback.write_complete = write_complete;
-        _callback.error = error;
 
         result = nrc_port_uart_init();
     }
@@ -92,12 +96,11 @@ s32_t nrc_serial_open_reader(
 
         *serial_id = NULL;
 
-        serial = get_serial(cfg_id_settings);
+        serial = get_serial_from_cfg(cfg_id_settings);
 
         if (serial != NULL) {
             if (serial->reader.node == NULL) {
                 serial->reader = reader;
-                serial->rx_state = NRC_SERIAL_S_IDLE;
             }
             else {
                 result = NRC_R_UNAVAILABLE_RESOURCE;
@@ -111,7 +114,6 @@ s32_t nrc_serial_open_reader(
 
                 serial->cfg_id_settings = cfg_id_settings;
                 serial->reader = reader;
-                serial->rx_state = NRC_SERIAL_S_IDLE;
                 serial->open = FALSE;
 
                 serial->next = _serial;
@@ -122,7 +124,7 @@ s32_t nrc_serial_open_reader(
             }
         }
 
-        if (result == NRC_R_OK) {
+        if ((result == NRC_R_OK) && (serial->open == FALSE)) {
             result = get_settings(cfg_id_settings, &serial->port, &serial->pars);
         }
 
@@ -131,7 +133,7 @@ s32_t nrc_serial_open_reader(
 
             if (result == NRC_R_OK) {
                 serial->open = TRUE;
-                serial->rx_state = NRC_SERIAL_S_IDLE;
+                serial->priority = NRC_SERIAL_PRIO; //TODO: Configurable
                 serial->tx_state = NRC_SERIAL_S_IDLE;
             }
         }
@@ -158,7 +160,6 @@ s32_t nrc_serial_close_reader(nrc_serial_t serial)
     if ((self != NULL) && (self->type == NRC_SERIAL_TYPE)) {
         if ((self->open == TRUE) && (self->reader.node != NULL)) {
             memset(&self->reader, 0, sizeof(struct nrc_serial_reader));
-            self->rx_state = NRC_SERIAL_S_IDLE;
 
             if (self->writer.node == NULL) {
                 self->open = FALSE;
@@ -189,18 +190,43 @@ u32_t nrc_serial_read(nrc_serial_t serial, u8_t *buf, u32_t buf_size)
     return read_bytes;
 }
 
+u32_t nrc_serial_get_bytes(nrc_serial_t serial)
+{
+    u32_t               bytes = 0;
+    struct nrc_serial   *self = (struct nrc_serial*)serial;
+
+    if ((self != NULL) && (self->type == NRC_SERIAL_TYPE)) {
+        bytes = nrc_port_uart_get_bytes(self->uart);
+    }
+
+    return bytes;
+}
+
 s32_t nrc_serial_get_read_error(nrc_serial_t serial)
 {
     s32_t error = NRC_R_OK;
 
+    //TODO:
+
     return error;
 }
 
-static struct nrc_serial* get_serial(const s8_t *cfg_id_settings)
+static struct nrc_serial* get_serial_from_cfg(const s8_t *cfg_id_settings)
 {
     struct nrc_serial* serial = _serial;
 
     while ((serial != NULL) && (serial->cfg_id_settings != cfg_id_settings)) {
+        serial = serial->next;
+    }
+
+    return serial;
+}
+
+static struct nrc_serial* get_serial_from_uart(nrc_port_uart_t uart)
+{
+    struct nrc_serial* serial = _serial;
+
+    while ((serial != NULL) && (serial->uart != uart)) {
         serial = serial->next;
     }
 
@@ -305,15 +331,48 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
     return result;
 }
 
-static void data_available(nrc_port_uart_t uart)
+static void data_available(nrc_port_uart_t uart, s32_t result)
 {
+    struct nrc_serial *serial = get_serial_from_uart(uart);
 
+    if ((serial != NULL) && (serial->type == NRC_SERIAL_TYPE) &&
+        (serial->open == TRUE) && (serial->reader.node != NULL)) {
+
+        u32_t evt = serial->reader.data_available_evt;
+
+        if (result != NRC_R_OK) {
+            evt |= serial->reader.error_evt;
+        }
+        
+        nrc_os_send_evt(serial->reader.node, evt, serial->priority);
+    }
+    else {
+        NRC_LOGD(_tag, "data_available: invalid uart or no reader");
+    }
 }
 static void write_complete(nrc_port_uart_t uart, s32_t result, u32_t bytes)
 {
+    struct nrc_serial *self = get_serial_from_uart(uart);
 
-}
-static void error(nrc_port_uart_t uart, s32_t error)
-{
+    if ((self != NULL) && (self->type == NRC_SERIAL_TYPE) && (self->open == TRUE) &&
+        (self->writer.node != NULL) && (self->tx_state == NRC_SERIAL_S_BUSY)) {
 
+        u32_t evt = self->writer.write_complete_evt;
+
+        if (result != NRC_R_OK) {
+            evt |= self->writer.error_evt;
+        }
+
+        if (self->bytes_written != bytes) {
+            NRC_LOGD(_tag, "write_complete: Not correct number of bytes written (%d != %d)", self->bytes_written, bytes);
+        }
+
+        self->bytes_written = 0;
+        self->tx_state = NRC_SERIAL_S_IDLE;
+
+        nrc_os_send_evt(self->writer.node, evt, self->priority);
+    }
+    else {
+        NRC_LOGD(_tag, "write_complete: invalid uart, state or no writer");
+    }
 }
