@@ -150,6 +150,7 @@
     <ClCompile Include="..\..\misc\source\nrc_misc_cbuf.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_debug.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_inject.c" />
+    <ClCompile Include="..\..\nodes\source\nrc_node_serial_port_in.c" />
     <ClCompile Include="..\..\test\misc\test_cbuf.c" />
     <ClCompile Include="..\..\test\port\test_port.c" />
     <ClCompile Include="..\..\test\port\test_port_uart_echo.c" />
