@@ -41,9 +41,9 @@ enum nrc_cfg_type
     NRC_CFG_E_INT_ARRAY
 };
 
-struct nrc_param_struct
+struct nrc_param
 {
-    struct nrc_param_struct*    next;
+    struct nrc_param*           next;
     u32_t                       token_id;
     enum nrc_cfg_type           type;   // Remove - only strings will be stored in list
     s8_t*                       name;   // Use the name in the json confing to save memory    
@@ -62,20 +62,20 @@ struct nrc_param_array_int
     s32_t   value[];
 };
 
-struct nrc_cfg_node_struct
+struct nrc_cfg_node
 {
-    struct nrc_cfg_node_struct* next;
+    struct nrc_cfg_node*        next;
     u32_t                       token_id;
     s8_t*                       type;
     s8_t*                       id;
     s8_t*                       name;
-    struct nrc_param_struct*    params; // List of parsed parameters
+    struct nrc_param*           params; // List of parsed parameters
 };
 
 struct nrc_cfg_t
 {
     const s8_t*                     json_data;           // json formatted flow configuration
-    struct nrc_cfg_node_struct*     nodes;               // list of all nodes
+    struct nrc_cfg_node*            nodes;               // list of all nodes
     jsmn_parser                     json_parser;
     jsmntok_t                       json_tokens[1000];
     u32_t                           n_tokens;
@@ -95,12 +95,12 @@ static s32_t get_value_len(nrc_cfg_t* config, s32_t i);
 static s32_t get_value(nrc_cfg_t* config, s32_t i, s8_t buf[]);
 static const s8_t* get_value_ref(nrc_cfg_t* config, s32_t i);
 
-static struct nrc_cfg_node_struct* node_alloc(void);
-static void node_add(nrc_cfg_t *config, struct nrc_cfg_node_struct* node);
-static struct nrc_cfg_node_struct* get_node_by_id(nrc_cfg_t* config, const s8_t *cfg_id);
-static s32_t get_node_cfg_value_by_name(nrc_cfg_t* config, struct nrc_cfg_node_struct* node, const s8_t *name, const s8_t **value, s32_t* value_len);
-static struct nrc_param_struct* get_node_cfg_from_list(nrc_cfg_t* config, struct nrc_cfg_node_struct *node, const s8_t *cfg_param_name);
-static struct nrc_param_struct* add_node_str_cfg(nrc_cfg_t* config, struct nrc_cfg_node_struct* node, const s8_t *name, s8_t *value, s32_t value_len);
+static struct nrc_cfg_node* node_alloc(void);
+static void node_add(nrc_cfg_t *config, struct nrc_cfg_node* node);
+static struct nrc_cfg_node* get_node_by_id(nrc_cfg_t* config, const s8_t *cfg_id);
+static s32_t get_node_cfg_value_by_name(nrc_cfg_t* config, struct nrc_cfg_node* node, const s8_t *name, const s8_t **value, s32_t* value_len);
+static struct nrc_param* get_node_cfg_from_list(nrc_cfg_t* config, struct nrc_cfg_node *node, const s8_t *cfg_param_name);
+static struct nrc_param* add_node_str_cfg(nrc_cfg_t* config, struct nrc_cfg_node* node, const s8_t *name, s8_t *value, s32_t value_len);
 
 
 s32_t nrc_cfg_init(void)
@@ -213,22 +213,22 @@ static s32_t keycmp(nrc_cfg_t* config, jsmntok_t t, const s8_t* key)
     }
 }
 
-static struct nrc_cfg_node_struct* node_alloc()
+static struct nrc_cfg_node* node_alloc()
 {
-    struct nrc_cfg_node_struct* node = (struct nrc_cfg_node_struct*)nrc_port_heap_alloc(sizeof(struct nrc_cfg_node_struct));
+    struct nrc_cfg_node* node = (struct nrc_cfg_node*)nrc_port_heap_alloc(sizeof(struct nrc_cfg_node));
     if (node) {
-        memset(node, 0, sizeof(struct nrc_cfg_node_struct));
+        memset(node, 0, sizeof(struct nrc_cfg_node));
     }
     return node;
 }
 
-static void node_add(nrc_cfg_t *config, struct nrc_cfg_node_struct* node)
+static void node_add(nrc_cfg_t *config, struct nrc_cfg_node* node)
 {
     if (config->nodes == NULL) {
         config->nodes = node;
     }
     else {
-        struct nrc_cfg_node_struct* node_list = config->nodes;
+        struct nrc_cfg_node* node_list = config->nodes;
         while (node_list->next != NULL) {
             node_list = node_list->next;
         }
@@ -245,7 +245,7 @@ static s32_t parse_node(nrc_cfg_t *config, jsmntok_t t[], s32_t i)
     s32_t end = t[i].end;
     
     i++;
-    while (t[i].end < end && t[i].type != JSMN_UNDEFINED ) {
+    while ((t[i].end < end) && (t[i].type != JSMN_UNDEFINED)) {
         if (keycmp(config, t[i], "type") == NRC_R_OK) {
             type_token = i;
         }
@@ -259,7 +259,7 @@ static s32_t parse_node(nrc_cfg_t *config, jsmntok_t t[], s32_t i)
     }
 
     if (type_token && id_token) {
-        struct nrc_cfg_node_struct* node = node_alloc();
+        struct nrc_cfg_node* node = node_alloc();
         if (node) {
             s32_t len = 0;
 
@@ -331,7 +331,7 @@ s32_t nrc_cfg_deinit(void)
 s32_t nrc_cfg_get_node(u32_t index, const s8_t **cfg_type, const s8_t **cfg_id, const s8_t **cfg_name)
 {
     s32_t status = NRC_R_ERROR;
-    struct nrc_cfg_node_struct* node = _config->nodes;
+    struct nrc_cfg_node* node = _config->nodes;
     for (u32_t i = 0; i < index && node != NULL; i++) {
         node = node->next;
     }
@@ -344,11 +344,11 @@ s32_t nrc_cfg_get_node(u32_t index, const s8_t **cfg_type, const s8_t **cfg_id, 
     return status;
 }
 
-static struct nrc_cfg_node_struct* get_node_by_id(nrc_cfg_t* config, const s8_t *cfg_id)
+static struct nrc_cfg_node* get_node_by_id(nrc_cfg_t* config, const s8_t *cfg_id)
 {
     assert(config);
 
-    struct nrc_cfg_node_struct* node = config->nodes;
+    struct nrc_cfg_node* node = config->nodes;
     while (node != NULL) {
         if (strcmp(node->id, cfg_id) == 0) {
             return node;
@@ -358,7 +358,7 @@ static struct nrc_cfg_node_struct* get_node_by_id(nrc_cfg_t* config, const s8_t 
     return NULL;
 }
 
-static s32_t get_node_cfg_value_by_name(nrc_cfg_t* config, struct nrc_cfg_node_struct* node, const s8_t *name, const s8_t **value, s32_t* value_len)
+static s32_t get_node_cfg_value_by_name(nrc_cfg_t* config, struct nrc_cfg_node* node, const s8_t *name, const s8_t **value, s32_t* value_len)
 {
     s32_t status = NRC_R_ERROR;
     jsmntok_t* t = config->json_tokens; 
@@ -368,7 +368,7 @@ static s32_t get_node_cfg_value_by_name(nrc_cfg_t* config, struct nrc_cfg_node_s
     assert(node);
     assert(name);
     i++;
-    while (t[i].end < end && t[i].type != JSMN_UNDEFINED) {
+    while ((t[i].end < end) && (t[i].type != JSMN_UNDEFINED)) {
         if (keycmp(config, t[i], name) == NRC_R_OK) {
             *value = get_value_ref(config, i);
             *value_len = get_value_len(config, i);
@@ -381,7 +381,7 @@ static s32_t get_node_cfg_value_by_name(nrc_cfg_t* config, struct nrc_cfg_node_s
 }
 
 
-static s32_t get_node_cfg_array_str_by_name(nrc_cfg_t* config, struct nrc_cfg_node_struct* node, const s8_t *name, struct nrc_param_array_str** array_str)
+static s32_t get_node_cfg_array_str_by_name(nrc_cfg_t* config, struct nrc_cfg_node* node, const s8_t *name, struct nrc_param_array_str** array_str)
 {
     s32_t status = NRC_R_ERROR;
     jsmntok_t* t = config->json_tokens;
@@ -392,7 +392,7 @@ static s32_t get_node_cfg_array_str_by_name(nrc_cfg_t* config, struct nrc_cfg_no
     assert(node);
     assert(name);
     i++;
-    while (t[i].end < end && t[i].type != JSMN_UNDEFINED) {
+    while ((t[i].end < end) && (t[i].type != JSMN_UNDEFINED)) {
         if (keycmp(config, t[i], name) == NRC_R_OK) {
             s32_t size = get_array_size(config, i);
             if (size > 0) {
@@ -419,14 +419,14 @@ static s32_t get_node_cfg_array_str_by_name(nrc_cfg_t* config, struct nrc_cfg_no
 }
 
 
-static struct nrc_param_struct* get_node_cfg_from_list(nrc_cfg_t* config, struct nrc_cfg_node_struct *node, const s8_t *name)
+static struct nrc_param* get_node_cfg_from_list(nrc_cfg_t* config, struct nrc_cfg_node *node, const s8_t *name)
 {
     s32_t status = NRC_R_ERROR;
 
     assert(config);
     assert(node);
 
-    struct nrc_param_struct* param = node->params;
+    struct nrc_param* param = node->params;
 
     while (param != NULL) {
         if (strcmp(param->name, name) == 0) {
@@ -437,12 +437,12 @@ static struct nrc_param_struct* get_node_cfg_from_list(nrc_cfg_t* config, struct
     return param;
 }
 
-static struct nrc_param_struct* add_node_str_cfg(nrc_cfg_t* config, struct nrc_cfg_node_struct* node, const s8_t *name, s8_t *value, s32_t value_len)
+static struct nrc_param* add_node_str_cfg(nrc_cfg_t* config, struct nrc_cfg_node* node, const s8_t *name, s8_t *value, s32_t value_len)
 {
     assert(config);
     assert(node);
 
-    struct nrc_param_struct* new_param = (struct nrc_param_struct*)nrc_port_heap_alloc(sizeof(struct nrc_param_struct));
+    struct nrc_param* new_param = (struct nrc_param*)nrc_port_heap_alloc(sizeof(struct nrc_param));
     new_param->type = NRC_CFG_E_STRING;
     new_param->name = (s8_t*)nrc_port_heap_alloc((u32_t)strlen(name) + 1);
     memcpy(new_param->name, name, strlen(name) + 1);
@@ -455,7 +455,7 @@ static struct nrc_param_struct* add_node_str_cfg(nrc_cfg_t* config, struct nrc_c
         node->params = new_param;
     }
     else {
-        struct nrc_param_struct* end_param = node->params;
+        struct nrc_param* end_param = node->params;
         while (end_param->next != NULL) {
             end_param = end_param->next;
         }
@@ -465,12 +465,12 @@ static struct nrc_param_struct* add_node_str_cfg(nrc_cfg_t* config, struct nrc_c
     return new_param;
 }
 
-static struct nrc_param_struct* add_node_int_cfg(nrc_cfg_t* config, struct nrc_cfg_node_struct* node, const s8_t *name, s8_t *value, s32_t value_len)
+static struct nrc_param* add_node_int_cfg(nrc_cfg_t* config, struct nrc_cfg_node* node, const s8_t *name, s8_t *value, s32_t value_len)
 {
     assert(config);
     assert(node); 
 
-    struct nrc_param_struct* new_param = (struct nrc_param_struct*)nrc_port_heap_alloc(sizeof(struct nrc_param_struct));
+    struct nrc_param* new_param = (struct nrc_param*)nrc_port_heap_alloc(sizeof(struct nrc_param));
     new_param->type = NRC_CFG_E_INT;
     new_param->name = (s8_t*)nrc_port_heap_alloc((u32_t)strlen(name) + 1);
     memcpy(new_param->name, name, strlen(name) + 1);
@@ -488,7 +488,7 @@ static struct nrc_param_struct* add_node_int_cfg(nrc_cfg_t* config, struct nrc_c
         node->params = new_param;
     }
     else {
-        struct nrc_param_struct* end_param = node->params;
+        struct nrc_param* end_param = node->params;
         while (end_param->next != NULL) {
             end_param = end_param->next;
         }
@@ -499,12 +499,12 @@ static struct nrc_param_struct* add_node_int_cfg(nrc_cfg_t* config, struct nrc_c
 }
 
 
-static struct nrc_param_struct* add_node_str_array_cfg(nrc_cfg_t* config, struct nrc_cfg_node_struct* node, const  s8_t *name, struct nrc_param_array_str* array_str)
+static struct nrc_param* add_node_str_array_cfg(nrc_cfg_t* config, struct nrc_cfg_node* node, const  s8_t *name, struct nrc_param_array_str* array_str)
 {
     assert(config);
     assert(node);
 
-    struct nrc_param_struct* new_param = (struct nrc_param_struct*)nrc_port_heap_alloc(sizeof(struct nrc_param_struct));
+    struct nrc_param* new_param = (struct nrc_param*)nrc_port_heap_alloc(sizeof(struct nrc_param));
     new_param->type = NRC_CFG_E_STRING_ARRAY;
     new_param->name = (s8_t*)nrc_port_heap_alloc((u32_t)strlen(name) + 1);
     memcpy(new_param->name, name, strlen(name) + 1);
@@ -516,7 +516,7 @@ static struct nrc_param_struct* add_node_str_array_cfg(nrc_cfg_t* config, struct
         node->params = new_param;
     }
     else {
-        struct nrc_param_struct* end_param = node->params;
+        struct nrc_param* end_param = node->params;
         while (end_param->next != NULL) {
             end_param = end_param->next;
         }
@@ -531,8 +531,8 @@ s32_t nrc_cfg_get_str(const s8_t *cfg_id, const s8_t *cfg_param_name, const s8_t
     s32_t status = NRC_R_NOT_FOUND;
     s8_t *value = NULL;
     s32_t value_len = 0;
-    struct nrc_cfg_node_struct* node = NULL;
-    struct nrc_param_struct*  param = NULL;
+    struct nrc_cfg_node* node = NULL;
+    struct nrc_param*  param = NULL;
    
     assert(_config);
 
@@ -561,8 +561,8 @@ s32_t nrc_cfg_get_int(const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *int
     s32_t status = NRC_R_NOT_FOUND;
     s8_t *value = NULL;
     s32_t value_len = 0;
-    struct nrc_cfg_node_struct* node = NULL;
-    struct nrc_param_struct* param = NULL;
+    struct nrc_cfg_node* node = NULL;
+    struct nrc_param* param = NULL;
 
     assert(_config);
 
@@ -590,8 +590,8 @@ s32_t nrc_cfg_get_str_from_array(const s8_t *cfg_id, const s8_t *cfg_arr_name, u
     s32_t status = NRC_R_NOT_FOUND;
     s8_t *value = NULL;
     s32_t value_len = 0;
-    struct nrc_cfg_node_struct* node = NULL;
-    struct nrc_param_struct*  param = NULL;
+    struct nrc_cfg_node* node = NULL;
+    struct nrc_param*  param = NULL;
 
     assert(_config);
 
