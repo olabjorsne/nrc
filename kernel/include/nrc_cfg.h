@@ -26,20 +26,115 @@ extern "C" {
 
 typedef struct nrc_cfg_t nrc_cfg_t;
 
-//Hack to publish the current configuration
-extern nrc_cfg_t* curr_config;
+/**
+ * @brief Initialize configuration class
+ *
+ * @return NRC_R_OK is return if operation succeeds
+ */
+ s32_t nrc_cfg_init(void);
 
-s32_t nrc_cfg_init(void);
 
-nrc_cfg_t * nrc_cfg_create(const u8_t *p_config, u32_t config_size);
-void nrc_cfg_destroy(nrc_cfg_t* config);
+/**
+ * @brief Create a configuration object from a json formated flow configuration.  
+ *        The configuration data is used by the configuration object.
+ *        and must be available as long as the configuration is active.
+ *
+ * @param flow_config json formattted configuration
+ * @param config_size Length of configuration data
+ *
+ * @return A configuration object is returned if parsing of the json flow succeeds, NULL if parsing fails.
+ */
+nrc_cfg_t * nrc_cfg_create(const u8_t *flow_config, u32_t config_size);
 
-s32_t nrc_cfg_get_node(nrc_cfg_t* config, u32_t index, const s8_t **cfg_type, const s8_t **cfg_id, const s8_t **cfg_name);
+/**
+ * @brief Free a configuration  
+ *
+ * @param config configuration too be freed 
+ *
+ * @return None
+ */
+ void nrc_cfg_destroy(nrc_cfg_t* config);
 
-s32_t nrc_cfg_get_str(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_param_name, const  s8_t **str);
-s32_t nrc_cfg_get_int(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *value);
-s32_t nrc_cfg_get_str_from_array(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_arr_name, u8_t index, const s8_t **str);
-s32_t nrc_cfg_get_int_from_array(nrc_cfg_t* config, const s8_t *cfg_type, const s8_t *cfg_id, s8_t const *cfg_arr_name, u8_t index, s32_t *value);
+/**
+ * @brief Set actvie configuration. 
+ *
+ * @param config Configuration object
+ *
+ * @return NRC_R_OK is return if operation succeeds
+ */
+ s32_t nrc_cfg_set_active(nrc_cfg_t* config);
+
+
+/**
+ * @brief Iterator for reading node basic node configuration.
+ *  
+ * Nodes are numbered from 0 and up. To read all node configurations, 
+ * call this function repeatedly until NRC_R_ERROR is returned. 
+ * Data is read from the active configuration.
+ *
+ * @param index Node index 
+ * @param cfg_type (out) Pointer to node type string 
+ * @param cfg_id (out) Pointer to node id string
+ * @param cfg_name (out) Pointer to node name string
+ *
+ * @return NRC_R_OK is return if id exists, NRC_R_ERROR if not 
+ */
+ s32_t nrc_cfg_get_node(u32_t index, const s8_t **cfg_type, const s8_t **cfg_id, const s8_t **cfg_name);
+
+/**
+ * @brief Get configuration string value  
+ *
+ * Value is read from the active configuration.
+ *
+ * @param cfg_id The id of the node
+ * @param cfg_param_name The name of the configuration 
+ * @param str (out) Configuration string value
+ *
+ * @return NRC_R_OK is return if operation succeeds
+ */
+ s32_t nrc_cfg_get_str(const s8_t *cfg_id, const s8_t *cfg_param_name, const  s8_t **str);
+
+ /**
+ * @brief Get configuration integer value
+ *
+ * Value is read from the active configuration.
+ *
+ * @param cfg_id The id of the node
+ * @param cfg_param_name The name of the configuration
+ * @param value (out) Configuration integer value
+ *
+ * @return NRC_R_OK is return if operation succeeds
+ */
+s32_t nrc_cfg_get_int(const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *value);
+
+/**
+ * @brief Get string value from string array configuratoin 
+ *
+ * Value is read from the active configuration.
+ *
+ * @param cfg_id The id of the node
+ * @param cfg_array_name The name of the array configuration
+ * @param index index in the array
+ * @param str Configuration string value 
+ *
+ * @return NRC_R_OK is return if operation succeeds
+ */
+ s32_t nrc_cfg_get_str_from_array(const s8_t *cfg_id, const s8_t *cfg_arr_name, u8_t index, const s8_t **str);
+
+
+ /**
+ * @brief Get integer value from integer array configuratoin
+ *
+ * Value is read from the active configuration.
+ *
+ * @param cfg_id The id of the node
+ * @param cfg_array_name The name of the array configuration
+ * @param index index in the array
+ * @param str (out) Configuration integer value
+ *
+ * @return NRC_R_OK is return if operation succeeds
+ */
+ s32_t nrc_cfg_get_int_from_array(const s8_t *cfg_type, const s8_t *cfg_id, s8_t const *cfg_arr_name, u8_t index, s32_t *value);
 
 #ifdef __cplusplus
 }

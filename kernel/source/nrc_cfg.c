@@ -83,7 +83,7 @@ struct nrc_cfg_t
 };
 
 static const s8_t *TAG = "config";
-static struct nrc_cfg_t config;
+static struct nrc_cfg_t *_config = NULL;
 
 static s32_t parse_nodes(nrc_cfg_t *config);
 static s32_t parse_node(nrc_cfg_t *config, jsmntok_t t[], s32_t i);
@@ -154,6 +154,12 @@ nrc_cfg_t* nrc_cfg_create(const u8_t *p_config, u32_t config_size)
     }
 
     return config;
+}
+
+s32_t nrc_cfg_set_active(nrc_cfg_t* current_config)
+{
+    _config = current_config;
+    return NRC_R_OK;
 }
 
 static s32_t next_key(jsmntok_t t[], s32_t i)
@@ -318,14 +324,14 @@ s32_t nrc_cfg_deinit(void)
     //if (config->json_tokens != NULL) {
     //    nrc_port_heap_free(config->json_tokens);
     //}
-    memset(&config, 0, sizeof(config));
+    memset(&_config, 0, sizeof(_config));
     return NRC_R_OK;
 }
 
-s32_t nrc_cfg_get_node(nrc_cfg_t* config, u32_t index, const s8_t **cfg_type, const s8_t **cfg_id, const s8_t **cfg_name)
+s32_t nrc_cfg_get_node(u32_t index, const s8_t **cfg_type, const s8_t **cfg_id, const s8_t **cfg_name)
 {
     s32_t status = NRC_R_ERROR;
-    struct nrc_cfg_node_struct* node = config->nodes;
+    struct nrc_cfg_node_struct* node = _config->nodes;
     for (u32_t i = 0; i < index && node != NULL; i++) {
         node = node->next;
     }
@@ -478,7 +484,6 @@ static struct nrc_param_struct* add_node_int_cfg(nrc_cfg_t* config, struct nrc_c
     
     new_param->next = NULL;
     
-
     if (node->params == NULL) {
         node->params = new_param;
     }
@@ -521,9 +526,7 @@ static struct nrc_param_struct* add_node_str_array_cfg(nrc_cfg_t* config, struct
     return new_param;
 }
 
-
-
-s32_t nrc_cfg_get_str(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_param_name, const s8_t **str)
+s32_t nrc_cfg_get_str(const s8_t *cfg_id, const s8_t *cfg_param_name, const s8_t **str)
 {
     s32_t status = NRC_R_NOT_FOUND;
     s8_t *value = NULL;
@@ -531,18 +534,18 @@ s32_t nrc_cfg_get_str(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_par
     struct nrc_cfg_node_struct* node = NULL;
     struct nrc_param_struct*  param = NULL;
    
-    assert(config);
+    assert(_config);
 
-    node = get_node_by_id(config, cfg_id);
+    node = get_node_by_id(_config, cfg_id);
     if (node == NULL) {
         return status;
     }
 
-    param = get_node_cfg_from_list(config, node, cfg_param_name);
+    param = get_node_cfg_from_list(_config, node, cfg_param_name);
     if (param == NULL) {
-        status = get_node_cfg_value_by_name(config, node, cfg_param_name, &value, &value_len);
+        status = get_node_cfg_value_by_name(_config, node, cfg_param_name, &value, &value_len);
         if (OK(status)) {
-            param = add_node_str_cfg(config, node, cfg_param_name, value, value_len);
+            param = add_node_str_cfg(_config, node, cfg_param_name, value, value_len);
             assert(param);
         }
     }
@@ -553,7 +556,7 @@ s32_t nrc_cfg_get_str(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_par
     return status; 
 }
 
-s32_t nrc_cfg_get_int(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *int_value)
+s32_t nrc_cfg_get_int(const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *int_value)
 {
     s32_t status = NRC_R_NOT_FOUND;
     s8_t *value = NULL;
@@ -561,18 +564,18 @@ s32_t nrc_cfg_get_int(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_par
     struct nrc_cfg_node_struct* node = NULL;
     struct nrc_param_struct* param = NULL;
 
-    assert(config);
+    assert(_config);
 
-    node = get_node_by_id(config, cfg_id);
+    node = get_node_by_id(_config, cfg_id);
     if (node == NULL) {
         return status;
     }
 
-    param = get_node_cfg_from_list(config, node, cfg_param_name);
+    param = get_node_cfg_from_list(_config, node, cfg_param_name);
     if (param == NULL) {
-        status = get_node_cfg_value_by_name(config, node, cfg_param_name, &value, &value_len);
+        status = get_node_cfg_value_by_name(_config, node, cfg_param_name, &value, &value_len);
         if (OK(status)) {
-            param = add_node_int_cfg(config, node, cfg_param_name, value, value_len);
+            param = add_node_int_cfg(_config, node, cfg_param_name, value, value_len);
             assert(param);
         }
     }
@@ -582,7 +585,7 @@ s32_t nrc_cfg_get_int(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_par
     }
     return status;
 }
-s32_t nrc_cfg_get_str_from_array(nrc_cfg_t* config, const s8_t *cfg_id, const s8_t *cfg_arr_name, u8_t index, const s8_t **str)
+s32_t nrc_cfg_get_str_from_array(const s8_t *cfg_id, const s8_t *cfg_arr_name, u8_t index, const s8_t **str)
 { 
     s32_t status = NRC_R_NOT_FOUND;
     s8_t *value = NULL;
@@ -590,19 +593,19 @@ s32_t nrc_cfg_get_str_from_array(nrc_cfg_t* config, const s8_t *cfg_id, const s8
     struct nrc_cfg_node_struct* node = NULL;
     struct nrc_param_struct*  param = NULL;
 
-    assert(config);
+    assert(_config);
 
-    node = get_node_by_id(config, cfg_id);
+    node = get_node_by_id(_config, cfg_id);
     if (node == NULL) {
         return status;
     }
 
-    param = get_node_cfg_from_list(config, node, cfg_arr_name);
+    param = get_node_cfg_from_list(_config, node, cfg_arr_name);
     if (param == NULL) {
         struct nrc_param_array_str* array_str = NULL;
-        status = get_node_cfg_array_str_by_name(config, node, cfg_arr_name, &array_str);
+        status = get_node_cfg_array_str_by_name(_config, node, cfg_arr_name, &array_str);
         if (OK(status) && array_str != NULL) {
-            param = add_node_str_array_cfg(config, node, cfg_arr_name, array_str);
+            param = add_node_str_array_cfg(_config, node, cfg_arr_name, array_str);
             assert(param);
         }
     }
@@ -619,7 +622,7 @@ s32_t nrc_cfg_get_str_from_array(nrc_cfg_t* config, const s8_t *cfg_id, const s8
     return status;
 }
 
-s32_t nrc_cfg_get_int_from_array(nrc_cfg_t* config, const s8_t *cfg_type, const s8_t *cfg_id, const s8_t *cfg_arr_name, u8_t index, s32_t *value)
+s32_t nrc_cfg_get_int_from_array(const s8_t *cfg_type, const s8_t *cfg_id, const s8_t *cfg_arr_name, u8_t index, s32_t *value)
 { 
     return NRC_R_ERROR; 
 }

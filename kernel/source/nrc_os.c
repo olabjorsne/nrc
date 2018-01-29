@@ -707,7 +707,7 @@ static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
 
         // Get number of new wires
         while (OK(result)) {
-            result = nrc_cfg_get_str_from_array(curr_config, cfg_node_id, "wires", max_wires, &cfg_wire);
+            result = nrc_cfg_get_str_from_array(cfg_node_id, "wires", max_wires, &cfg_wire);
             if (OK(result)) {
                 max_wires++;
             }
@@ -720,7 +720,7 @@ static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
         // Read wires from nrc_cfg
         result = NRC_R_OK;
         for (i = 0; (i < max_wires) && OK(result); i++) {
-            result = nrc_cfg_get_str_from_array(curr_config, cfg_node_id, "wires", i, &cfg_wire);
+            result = nrc_cfg_get_str_from_array(cfg_node_id, "wires", i, &cfg_wire);
             if (OK(result)) {
                 wire = nrc_os_node_get(cfg_wire);
                 if (wire != NULL) {

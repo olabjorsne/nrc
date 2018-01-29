@@ -99,12 +99,12 @@ static s32_t nrc_node_inject_init(nrc_node_t slf)
 
             if (result == NRC_R_OK) {
                 s32_t period_s = 0;
-                result = nrc_cfg_get_int(curr_config, self->hdr.cfg_id, "repeat", &period_s);
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "repeat", &period_s);
                 assert(OK(result));
                 self->period_ms = period_s * 1000;
-                result = nrc_cfg_get_str(curr_config, self->hdr.cfg_id, "topic", &self->topic);
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);
                 assert(OK(result));
-                result = nrc_cfg_get_str(curr_config, self->hdr.cfg_id, "payload", &self->payload_string);
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "payload", &self->payload_string);
                 assert(OK(result));
 
                 self->payload_type = NRC_N_INJECT_TYPE_TIME;
@@ -112,7 +112,7 @@ static s32_t nrc_node_inject_init(nrc_node_t slf)
                 
                 for (s32_t i = 0; i < NRC_N_INJECT_MAX_WIRES && OK(result); i++) {
                     s8_t* wire = NULL;
-                    result = nrc_cfg_get_str_from_array(curr_config, self->hdr.cfg_id, "wires", i, &wire);
+                    result = nrc_cfg_get_str_from_array(self->hdr.cfg_id, "wires", i, &wire);
                     if (OK(result)) {
                         self->wire[i] = nrc_os_node_get(wire);
                     }

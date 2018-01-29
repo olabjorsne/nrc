@@ -254,7 +254,7 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
         result = NRC_R_INVALID_IN_PARAM;
     }
     if (result == NRC_R_OK) {
-        result = nrc_cfg_get_str(curr_config, cfg_id, "type", &cfg_type);
+        result = nrc_cfg_get_str(cfg_id, "type", &cfg_type);
 
         if (result == NRC_R_OK) {
             if ((cfg_type == NULL) || (strcmp("serial", cfg_type) != 0)) {
@@ -264,7 +264,7 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
     }
     if (result == NRC_R_OK) {
         s32_t p;
-        result = nrc_cfg_get_int(curr_config, cfg_id, "port", &p);
+        result = nrc_cfg_get_int(cfg_id, "port", &p);
 
         if (result == NRC_R_OK) {
             if ((p >= 0) && (p <= U8_MAX_VALUE)) {
@@ -276,11 +276,11 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
         }
     }
     if (result == NRC_R_OK) {
-        result = nrc_cfg_get_int(curr_config, cfg_id, "baudrate", &pars->baud_rate);
+        result = nrc_cfg_get_int(cfg_id, "baudrate", &pars->baud_rate);
     }
     if (result == NRC_R_OK) {
         s32_t db;
-        result = nrc_cfg_get_int(curr_config, cfg_id, "databits", &db);
+        result = nrc_cfg_get_int(cfg_id, "databits", &db);
 
         if (result == NRC_R_OK) {
             if ((db >= 7) && (db <= 8)) {
@@ -293,7 +293,7 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
     }
     if (result == NRC_R_OK) {
         const s8_t *cfg_parity = NULL;
-        result = nrc_cfg_get_str(curr_config, cfg_id, "parity", &cfg_parity);
+        result = nrc_cfg_get_str(cfg_id, "parity", &cfg_parity);
 
         if (result == NRC_R_OK) {
             if (strcmp("none", cfg_parity) == 0) {
@@ -312,7 +312,7 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
     }
     if (result == NRC_R_OK) {
         s32_t sb;
-        result = nrc_cfg_get_int(curr_config, cfg_id, "stopbits", &sb);
+        result = nrc_cfg_get_int(cfg_id, "stopbits", &sb);
 
         if (result == NRC_R_OK) {
             if ((sb >= 1) && (sb <= 2)) {
@@ -325,7 +325,7 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
     }
     if (result == NRC_R_OK) {
         const s8_t *cfg_flow_ctrl = NULL;
-        result = nrc_cfg_get_str(curr_config, cfg_id, "flowctrl", &cfg_flow_ctrl);
+        result = nrc_cfg_get_str(cfg_id, "flowcontrol", &cfg_flow_ctrl);
 
         if (result == NRC_R_OK) {
             if (strcmp("none", cfg_flow_ctrl) == 0) {

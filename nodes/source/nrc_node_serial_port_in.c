@@ -140,15 +140,15 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
 
             if (OK(result)) {
                 // Read topic from configuration
-                result = nrc_cfg_get_str(curr_config, self->hdr.cfg_id, "topic", &self->topic);
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);
                 if (OK(result)) {
                     // Get cfg id of serial-port configuration node
-                    result = nrc_cfg_get_str(curr_config, self->hdr.cfg_id, "serial-port", &self->cfg_serial_id);
+                    result = nrc_cfg_get_str(self->hdr.cfg_id, "serial-port", &self->cfg_serial_id);
                 }
                 if (OK(result)) {
                     // Get msg type to send; data available or byte array
                     s8_t *cfg_msg_type = NULL;
-                    result = nrc_cfg_get_str(curr_config, self->hdr.cfg_id, "msgtype", &cfg_msg_type);
+                    result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &cfg_msg_type);
 
                     if (OK(result)) {
                         if (strcmp(cfg_msg_type, "dataavailable") == 0) {

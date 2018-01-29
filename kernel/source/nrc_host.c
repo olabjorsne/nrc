@@ -15,6 +15,7 @@
 */
 
 #include "nrc_types.h"
+#include "nrc_assert.h"
 #include "nrc_node.h"
 #include "nrc_cfg.h"
 #include "nrc_os.h"
@@ -35,8 +36,6 @@ s32_t nrc_host_init(void)
     return NRC_R_OK;
 }
 
-// todo
-nrc_cfg_t* curr_config = NULL;
 
 s32_t nrc_host_start(void)
 {
@@ -46,16 +45,18 @@ s32_t nrc_host_start(void)
     nrc_node_t node;   
     u8_t *json_config;
     u32_t json_config_size;
-    nrc_cfg_t* config;
+    nrc_cfg_t* config = NULL;
 
     status = nrc_port_get_config(&json_config, &json_config_size);
     if (OK(status)) {
         config =  nrc_cfg_create(json_config, json_config_size);
-        curr_config = config;
+        NRC_ASSERT(config);
+        status = nrc_cfg_set_active(config);
+        NRC_ASSERT(status == NRC_R_OK);
     }
 
     for (u32_t i = 0; OK(status); i++) {
-        status = nrc_cfg_get_node(config, i, &f_pars.cfg_type, &f_pars.cfg_id, &f_pars.cfg_name);
+        status = nrc_cfg_get_node(i, &f_pars.cfg_type, &f_pars.cfg_id, &f_pars.cfg_name);
         if (OK(status) && f_pars.cfg_type && f_pars.cfg_id && f_pars.cfg_name) { 
             node = nrc_factory_create(&f_pars);
             if (node) {
