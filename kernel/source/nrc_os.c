@@ -277,6 +277,7 @@ s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_re
             os_node_hdr->evt = 0;
 
             insert_node(os_node_hdr);
+            result = NRC_R_OK;
         }
     }
 
