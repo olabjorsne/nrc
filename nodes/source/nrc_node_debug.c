@@ -28,7 +28,7 @@ static s32_t nrc_node_debug_recv_evt(nrc_node_t self, u32_t event_mask);
 
 static s32_t log_msg(const s8_t *name, nrc_msg_t msg);
 
-const static s8_t* TAG = "debug";
+const static s8_t* _tag = "debug";
 static struct nrc_node_api _api;
 
 static nrc_node_t nrc_node_debug_create(struct nrc_node_factory_pars *pars)
@@ -65,7 +65,7 @@ void nrc_node_debug_register(void)
 {
     s32_t status = nrc_factory_register("debug", nrc_node_debug_create);
     if (!OK(status)) {
-        NRC_LOGE(TAG, "Registration to factory failed")
+        NRC_LOGE(_tag, "Registration to factory failed")
     }
 }
 

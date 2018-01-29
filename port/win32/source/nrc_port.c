@@ -24,7 +24,7 @@
 
 #include "nrc_log.h"
 
-static const s8_t *TAG = "nrc_port";
+static const s8_t *_tag = "nrc_port";
 
 #define NRC_PORT_TIMER_TYPE         (0xAAAAAAAA)
 #define NRC_PORT_TIMER_RES_MS       (32)
@@ -440,8 +440,8 @@ s32_t nrc_port_vprintf(const char *format, va_list argptr)
 
 void nrc_port_error_handler(s8_t *file, u32_t line)
 {
-    NRC_LOGE(TAG, "Error handled called. File:%s Line:%d", file, line);
-    NRC_LOGE(TAG, "nrc will exit");
+    NRC_LOGE(_tag, "Error handled called. File:%s Line:%d", file, line);
+    NRC_LOGE(_tag, "nrc will exit");
     exit(1);
 }
 
@@ -487,11 +487,11 @@ s32_t nrc_port_get_config(u8_t **config, u32_t *size)
         *config = _port.flows_config_buffer;
         *size = _port.flows_config_size;
 
-        NRC_LOGI(TAG, "Config file : \t%s", flows_file);
-        NRC_LOGI(TAG, "Config size : \t%d bytes", _port.flows_config_size);
+        NRC_LOGI(_tag, "Config file : \t%s", flows_file);
+        NRC_LOGI(_tag, "Config size : \t%d bytes", _port.flows_config_size);
     }
     else {
-        NRC_LOGI(TAG, "No config file defined");
+        NRC_LOGI(_tag, "No config file defined");
     }
     return status;
 }

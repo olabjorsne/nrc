@@ -45,7 +45,7 @@ static s32_t nrc_node_inject_stop(nrc_node_t self);
 static s32_t nrc_node_inject_recv_msg(nrc_node_t self, nrc_msg_t msg);
 static s32_t nrc_node_inject_recv_evt(nrc_node_t self, u32_t event_mask);
 
-const static s8_t* TAG = "inject";
+const static s8_t* _tag = "inject";
 static struct nrc_node_api _api;
 
 
@@ -53,7 +53,7 @@ void nrc_node_inject_register(void)
 {
     s32_t status = nrc_factory_register("inject", nrc_node_inject_create);
     if (!OK(status)) {
-        NRC_LOGE(TAG, "Registration to factory failed")
+        NRC_LOGE(_tag, "Registration to factory failed")
     }
 }
 

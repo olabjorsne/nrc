@@ -24,7 +24,7 @@
 #include "nrc_node_factory.h"
 #include <string.h>
 
-static const s8_t *TAG = "config";
+static const s8_t *_tag = "config";
 
 //TBD - host should be a node as well
 //      For a start a it is only parsing the 
@@ -64,14 +64,14 @@ s32_t nrc_host_start(void)
                 n_pars.cfg_id = f_pars.cfg_id;
                 s32_t res = nrc_os_node_register(FALSE, node, n_pars);
                 if (OK(res)) {
-                    NRC_LOGI(TAG, "Node added: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
+                    NRC_LOGI(_tag, "Node added: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
                 }
                 else {
-                    NRC_LOGE(TAG, "Failed to add node (error=%d): type=\"%s\", id=\"%s\", name=\"%s\"", res, f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
+                    NRC_LOGE(_tag, "Failed to add node (error=%d): type=\"%s\", id=\"%s\", name=\"%s\"", res, f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
                 }
             }
             else {
-                NRC_LOGE(TAG, "Node not supported: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
+                NRC_LOGE(_tag, "Node not supported: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
             }
         }
     }            

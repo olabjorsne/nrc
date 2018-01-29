@@ -82,7 +82,7 @@ struct nrc_cfg_t
     u32_t                           config_size;     
 };
 
-static const s8_t *TAG = "config";
+static const s8_t *_tag = "config";
 static struct nrc_cfg_t *_config = NULL;
 
 static s32_t parse_nodes(nrc_cfg_t *config);
@@ -129,23 +129,23 @@ nrc_cfg_t* nrc_cfg_create(const u8_t *p_config, u32_t config_size)
     if (config->n_tokens > 0) {
         s32_t status = parse_nodes(config);
         if (status == NRC_R_OK) {
-            NRC_LOGD(TAG, "Configuration parsed without errors");
+            NRC_LOGD(_tag, "Configuration parsed without errors");
         }
         else {
-            NRC_LOGE(TAG, "Failed to parse nodes");
+            NRC_LOGE(_tag, "Failed to parse nodes");
         }
     }
     else {
         status = NRC_R_ERROR;
-        NRC_LOGE(TAG, "Configuration parsing error");
+        NRC_LOGE(_tag, "Configuration parsing error");
         if (config->n_tokens == JSMN_ERROR_NOMEM) {
-            NRC_LOGE(TAG, "Not enough tokens were provided ");
+            NRC_LOGE(_tag, "Not enough tokens were provided ");
         }
         else if (config->n_tokens == JSMN_ERROR_INVAL) {
-            NRC_LOGE(TAG, "Invalid character inside JSON string");
+            NRC_LOGE(_tag, "Invalid character inside JSON string");
         }
         else if (config->n_tokens == JSMN_ERROR_PART) {
-            NRC_LOGE(TAG, "The string is not a full JSON packet, more bytes expected");
+            NRC_LOGE(_tag, "The string is not a full JSON packet, more bytes expected");
         }
     }
 

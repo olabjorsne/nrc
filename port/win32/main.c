@@ -27,16 +27,16 @@
 #include "nrc_log.h"
 
 
-const s8_t *TAG = "main";
+const s8_t *_tag = "main";
 s8_t *flows_file = NULL;
 
 int main(int argc, char** argv)
 {
     bool_t ok = FALSE;
 
-    NRC_LOGI(TAG, "loading...");
-    NRC_LOGI(TAG, "nrc version : \tv0.01");
-    NRC_LOGI(TAG, "Target      : \twin32");
+    NRC_LOGI(_tag, "loading...");
+    NRC_LOGI(_tag, "nrc version : \tv0.01");
+    NRC_LOGI(_tag, "Target      : \twin32");
 
     if (argc > 1) {
         flows_file = argv[1];

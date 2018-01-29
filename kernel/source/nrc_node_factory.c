@@ -30,7 +30,7 @@ typedef struct
     nrc_node_create_t node_create;
 } nrc_node_factory_t;
 
-static const s8_t *TAG = "node_factory";
+static const s8_t *_tag = "node_factory";
 static nrc_node_factory_t factory[NRC_NODE_FACTORY_MAX_NBR_OF_NODES] = { 0 };
 
 
@@ -63,7 +63,7 @@ s32_t nrc_factory_register(s8_t* cfg_type, nrc_node_create_t node_create)
     s32_t status = NRC_R_ERROR;
 
     if (find_create_function(cfg_type) != NULL) {
-        NRC_LOGE(TAG, "Type \"%s\" already registered to factory", cfg_type);
+        NRC_LOGE(_tag, "Type \"%s\" already registered to factory", cfg_type);
         return status;
     }
 
