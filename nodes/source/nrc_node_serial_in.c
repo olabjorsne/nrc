@@ -4,11 +4,10 @@
 #include "nrc_os.h"
 #include "nrc_log.h"
 #include "nrc_node_factory.h"
-
+#include "nrc_assert.h"
 #include "nrc_serial.h"
 
 #include <string.h>
-#include <assert.h>
 
 // Event bitmask for nrc callbacks
 #define NRC_N_SERIAL_IN_EVT_DATA_AVAIL  (1)
@@ -47,7 +46,7 @@ struct nrc_node_serial_in {
     nrc_serial_t                    serial;         // NRC serial port
     struct nrc_serial_reader        reader;         // Reader notification data
 
-    u32_t                           type;       // Object type check; unique number for every object type
+    u32_t                           type;           // Object type check; unique number for every object type
 };
 
 // Node create function registered in node factory with type string
@@ -76,7 +75,7 @@ void nrc_node_serial_in_register(void)
 {
     s32_t result = nrc_factory_register("serial-in", nrc_node_serial_in_create);
     if (!OK(result)) {
-        NRC_LOGE(_tag, "Registration to factory failed");
+        NRC_LOGE(_tag, "register: error %d", result);
     }
 }
 
@@ -116,14 +115,14 @@ nrc_node_t nrc_node_serial_in_create(struct nrc_node_factory_pars *pars)
 
             self->state = NRC_N_SERIAL_IN_S_CREATED;
 
-            NRC_LOGI(_tag, "create(%s): OK", pars->cfg_id);
+            NRC_LOGI(_tag, "create(%s): ok", pars->cfg_id);
         }
         else {
-            NRC_LOGE(_tag, "create(%s): Out of memory", pars->cfg_id);
+            NRC_LOGE(_tag, "create(%s): out of mem", pars->cfg_id);
         }
     }
     else {
-        NRC_LOGE(_tag, "create: Invalid in parameters");
+        NRC_LOGE(_tag, "create: invalid in parameter");
     }
 
     return self;
@@ -179,11 +178,11 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
 
             if (OK(result)) {
                 self->state = NRC_N_SERIAL_IN_S_INITIALISED;
-                NRC_LOGI(_tag, "init(%s): OK", self->hdr.cfg_id);
+                NRC_LOGI(_tag, "init(%s): ok", self->hdr.cfg_id);
             }
             else {
                 self->state = NRC_N_SERIAL_IN_S_ERROR;
-                NRC_LOGE(_tag, "init(%s): Error %d", self->hdr.cfg_id, result);
+                NRC_LOGE(_tag, "init(%s): error %d", self->hdr.cfg_id, result);
             }
             break;
 
@@ -191,7 +190,7 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
         case NRC_N_SERIAL_IN_S_STARTED:
             // If init is called a second time it means there may be more wires to readout (if needed)
             result = NRC_R_OK;
-            NRC_LOGI(_tag, "init(%s): OK", self->hdr.cfg_id);
+            NRC_LOGI(_tag, "init(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
@@ -202,7 +201,7 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
         }
     }
     else {
-        NRC_LOGE(_tag, "init: Invalid in parameter");
+        NRC_LOGE(_tag, "init: invalid in parameter");
     }
 
     return result;
@@ -220,7 +219,7 @@ static s32_t nrc_node_serial_in_deinit(nrc_node_t slf)
             // Free allocated memory (if any)
 
             self->state = NRC_N_SERIAL_IN_S_CREATED;
-            NRC_LOGI(_tag, "deinit(%s): OK", self->hdr.cfg_id);
+            NRC_LOGI(_tag, "deinit(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
@@ -231,7 +230,7 @@ static s32_t nrc_node_serial_in_deinit(nrc_node_t slf)
         }
     }
     else {
-        NRC_LOGE(_tag, "deinit: Invalid in parameter");
+        NRC_LOGE(_tag, "deinit: invalid in parameter");
     }
 
     return result;
@@ -258,8 +257,12 @@ static s32_t nrc_node_serial_in_start(nrc_node_t slf)
             }
             else {
                 self->state = NRC_N_SERIAL_IN_S_ERROR;
-                NRC_LOGE(_tag, "start(%s): Could not open serial port", self->hdr.cfg_id);
+                NRC_LOGE(_tag, "start(%s): could not open serial %s", self->hdr.cfg_id, self->cfg_serial_id);
             }
+            break;
+
+        case NRC_N_SERIAL_IN_S_STARTED:
+            NRC_LOGI(_tag, "start(%d): already started", self->hdr.cfg_id);
             break;
 
         default:
@@ -284,25 +287,31 @@ static s32_t nrc_node_serial_in_stop(nrc_node_t slf)
     if ((self != NULL) && (self->type == NRC_N_SERIAL_IN_TYPE)) {
         switch (self->state) {
         case NRC_N_SERIAL_IN_S_STARTED:
-            // Stop any ongoing activites, free stored messages, etc..
+            // Stop any ongoing activites, free memory allocated in the start state
             result = nrc_serial_close_reader(self->serial);
             self->serial = NULL;
+
+            // No memory to free
 
             self->state = NRC_N_SERIAL_IN_S_INITIALISED;
             result = NRC_R_OK;
 
-            NRC_LOGI(_tag, "stop(%s): OK", self->hdr.cfg_id);
+            NRC_LOGI(_tag, "stop(%s): result ", self->hdr.cfg_id, result);
+            break;
+
+        case NRC_N_SERIAL_IN_S_INITIALISED:
+            NRC_LOGI(_tag, "stop(%d): already stopped", self->hdr.cfg_id);
             break;
 
         default:
-            NRC_LOGE(_tag, "stop(%s): Invalid state", self->hdr.cfg_id, self->state);
+            NRC_LOGE(_tag, "stop(%s): invalid state", self->hdr.cfg_id, self->state);
             self->state = NRC_N_SERIAL_IN_S_ERROR;
             result = NRC_R_INVALID_STATE;
             break;
         }
     }
     else {
-        NRC_LOGE(_tag, "stop: Invalid in parameter");
+        NRC_LOGE(_tag, "stop: invalid in parameter");
     }
 
     return result;
@@ -323,14 +332,14 @@ static s32_t nrc_node_serial_in_recv_msg(nrc_node_t slf, nrc_msg_t msg)
             break;
         default:
             nrc_os_msg_free(msg);
-            NRC_LOGW(_tag, "recv_msg(%s): Invalid state %d", self->hdr.cfg_id, self->state);
+            NRC_LOGW(_tag, "recv_msg(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
     }
     else {
         nrc_os_msg_free(msg);
-        NRC_LOGE(_tag, "recv_msg: Invalid in parameter");
+        NRC_LOGE(_tag, "recv_msg: invalid in parameter");
     }
 
     return result;
@@ -348,18 +357,18 @@ static s32_t nrc_node_serial_in_recv_evt(nrc_node_t slf, u32_t event_mask)
                 result = send_data(self);
             }
             if ((event_mask | NRC_N_SERIAL_IN_EVT_ERROR) != 0) {
-                NRC_LOGW(_tag, "recv_evt(%s): Serial error %d", self->hdr.cfg_id, nrc_serial_get_read_error(self->serial));
+                NRC_LOGW(_tag, "recv_evt(%s): serial error %d", self->hdr.cfg_id, nrc_serial_get_read_error(self->serial));
             }
             break;
 
         default:
-            NRC_LOGW(_tag, "recv_evt(%s): Invalid state %d", self->hdr.cfg_id, self->state);
+            NRC_LOGW(_tag, "recv_evt(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
     }
     else {
-        NRC_LOGE(_tag, "recv_evt: Invalid in parameter");
+        NRC_LOGE(_tag, "recv_evt: invalid in parameter");
     }
 
     return result;
@@ -369,7 +378,7 @@ static s32_t send_data(struct nrc_node_serial_in *self)
 {
     s32_t result = NRC_R_OK;
 
-    assert(self != NULL);
+    NRC_ASSERT(self != NULL);
     
     if (self->msg_type == NRC_N_SERIAL_IN_MSG_DATA_AVAIL) {
         struct nrc_msg_data_available *msg = NULL;
@@ -386,7 +395,7 @@ static s32_t send_data(struct nrc_node_serial_in *self)
             result = nrc_os_send_msg_from(self, msg, self->prio);
         }
         else {
-            NRC_LOGW(_tag, "send_data(%s): Out of memory", self->hdr.cfg_id);
+            NRC_LOGW(_tag, "send_data(%s): out of mem", self->hdr.cfg_id);
             result = NRC_R_OUT_OF_MEM;
         }
     }
@@ -414,7 +423,7 @@ static s32_t send_data(struct nrc_node_serial_in *self)
             else {
                 // No memory left; clear data
                 nrc_serial_clear(self->serial);
-                NRC_LOGV(_tag, "send_data(%s): Out of memory", self->hdr.cfg_id);
+                NRC_LOGV(_tag, "send_data(%s): out of mem", self->hdr.cfg_id);
                 result = NRC_R_OUT_OF_MEM;
                 bytes_to_read = 0;
             }

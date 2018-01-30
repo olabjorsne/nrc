@@ -105,12 +105,12 @@
     <ClCompile Include="..\..\kernel\source\nrc_serial.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\nodes\source\nrc_node_serial_port_in.c">
-      <Filter>nodes\source</Filter>
-    </ClCompile>
     <ClCompile Include="source\nrc_port_nodes.c">
       <Filter>port\win32\source</Filter>
-    </ClCompile>   
+    </ClCompile>
+    <ClCompile Include="..\..\nodes\source\nrc_node_serial_in.c">
+      <Filter>nodes\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
