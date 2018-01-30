@@ -164,7 +164,7 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
                 if (OK(result)) {
                     // Get node priority
                     s32_t prio;
-                    result = nrc_cfg_get_int(curr_config, self->hdr.cfg_id, "priority", &prio);
+                    result = nrc_cfg_get_int(self->hdr.cfg_id, "priority", &prio);
                     if (OK(result)) {
                         if ((prio >= S8_MIN_VALUE) && (prio <= S8_MAX_VALUE)) {
                             self->prio = (s8_t)prio;
