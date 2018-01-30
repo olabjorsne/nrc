@@ -111,6 +111,9 @@
     <ClCompile Include="..\..\nodes\source\nrc_node_serial_in.c">
       <Filter>nodes\source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\nodes\source\nrc_node_serial_out.c">
+      <Filter>nodes\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">

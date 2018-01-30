@@ -54,8 +54,14 @@ s32_t nrc_serial_clear(nrc_serial_t serial);
 
 s32_t nrc_serial_get_read_error(nrc_serial_t serial);
 
+s32_t nrc_serial_open_writer(
+    const s8_t                  *cfg_id_settings,
+    struct nrc_serial_writer    writer_notification,
+    nrc_serial_t                *serial);
 
-//u32_t nrc_serial_write(nrc_serial_t serial, u8_t *buf, u32_t buf_size);
+s32_t nrc_serial_close_writer(nrc_serial_t serial);
+
+s32_t nrc_serial_write(nrc_serial_t serial, u8_t *buf, u32_t buf_size);
 
 
 
