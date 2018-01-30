@@ -83,7 +83,7 @@ static void init_registered_nodes(bool_t kernal_nodes_only);
 static void stop_registered_nodes(bool_t application_nodes_only);
 static void deinit_registered_nodes(bool_t application_nodes_only);
 
-static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id);
+static s32_t get_wires(struct nrc_os_node_hdr *node);
 
 static void nrc_os_thread_fcn(void);
 
@@ -641,7 +641,7 @@ static void init_registered_nodes(bool_t kernal_node)
 
     while (hdr != NULL) {
         if (kernal_node == hdr->kernal_node) {
-            result = get_wires(hdr, hdr->cfg_id);
+            result = get_wires(hdr);
             if (!OK(result)) {
                 NRC_LOGE(_tag, "init_registered_nodes: Failed get_wires %s", hdr->cfg_id);
             }
@@ -690,7 +690,7 @@ static void stop_registered_nodes(bool_t kernal_node)
     }
 }
 
-static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
+static s32_t get_wires(struct nrc_os_node_hdr *node)
 {
     s32_t       result = NRC_R_OK;
     u32_t       i;
@@ -699,7 +699,7 @@ static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
     u32_t       max_wires = 0;
     nrc_node_t  *wire = NULL;
 
-    if ((node != NULL) && (cfg_node_id != NULL)) {
+    if (node != NULL) {
         // Free previously allocated wires
         if (node->wire != NULL) {
             nrc_port_heap_free(node->wire);
@@ -708,7 +708,7 @@ static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
 
         // Get number of new wires
         while (OK(result)) {
-            result = nrc_cfg_get_str_from_array(cfg_node_id, "wires", max_wires, &cfg_wire);
+            result = nrc_cfg_get_str_from_array(node->cfg_id, "wires", max_wires, &cfg_wire);
             if (OK(result)) {
                 max_wires++;
             }
@@ -721,7 +721,7 @@ static s32_t get_wires(struct nrc_os_node_hdr *node, const s8_t *cfg_node_id)
         // Read wires from nrc_cfg
         result = NRC_R_OK;
         for (i = 0; (i < max_wires) && OK(result); i++) {
-            result = nrc_cfg_get_str_from_array(cfg_node_id, "wires", i, &cfg_wire);
+            result = nrc_cfg_get_str_from_array(node->cfg_id, "wires", i, &cfg_wire);
             if (OK(result)) {
                 wire = nrc_os_node_get(cfg_wire);
                 if (wire != NULL) {

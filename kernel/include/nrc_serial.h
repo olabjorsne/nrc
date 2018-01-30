@@ -27,12 +27,14 @@ struct nrc_serial_reader {
     u32_t                   data_available_evt;
     u32_t                   error_evt;
     nrc_node_t              node;
+    s8_t                    prio;
 };
 
 struct nrc_serial_writer {
     u32_t       write_complete_evt;
     u32_t       error_evt;
     nrc_node_t  node;
+    s8_t        prio;
 };
 
 s32_t nrc_serial_init(void);
