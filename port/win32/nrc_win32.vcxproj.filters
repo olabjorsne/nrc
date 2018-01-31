@@ -114,6 +114,9 @@
     <ClCompile Include="..\..\nodes\source\nrc_node_serial_out.c">
       <Filter>nodes\source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_main.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
@@ -143,9 +146,6 @@
     <ClInclude Include="..\..\kernel\include\nrc_timer.h">
       <Filter>kernel\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\nodes\include\nrc_node_factory.h">
-      <Filter>nodes\include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_host.h">
       <Filter>kernel\include</Filter>
     </ClInclude>
@@ -171,6 +171,9 @@
       <Filter>test\port</Filter>
     </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_assert.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_node_factory.h">
       <Filter>kernel\include</Filter>
     </ClInclude>
   </ItemGroup>
