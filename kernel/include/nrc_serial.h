@@ -63,6 +63,9 @@ s32_t nrc_serial_close_writer(nrc_serial_t serial);
 
 s32_t nrc_serial_write(nrc_serial_t serial, u8_t *buf, u32_t buf_size);
 
+s32_t nrc_serial_get_write_error(nrc_serial_t serial);
+
+
 
 
 #endif

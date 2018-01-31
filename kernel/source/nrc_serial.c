@@ -220,6 +220,29 @@ s32_t nrc_serial_get_read_error(nrc_serial_t serial)
     return error;
 }
 
+s32_t nrc_serial_open_writer(
+    const s8_t                  *cfg_id_settings,
+    struct nrc_serial_writer    writer_notification,
+    nrc_serial_t                *serial)
+{
+    return NRC_R_OK;
+}
+
+s32_t nrc_serial_close_writer(nrc_serial_t serial)
+{
+    return NRC_R_OK;
+}
+
+s32_t nrc_serial_write(nrc_serial_t serial, u8_t *buf, u32_t buf_size)
+{
+    return NRC_R_OK;
+}
+
+s32_t nrc_serial_get_write_error(nrc_serial_t serial)
+{
+    return NRC_R_OK;
+}
+
 static struct nrc_serial* get_serial_from_cfg(const s8_t *cfg_id_settings)
 {
     struct nrc_serial* serial = _serial;
