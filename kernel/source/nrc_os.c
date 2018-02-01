@@ -17,10 +17,13 @@
 #include "nrc_os.h"
 #include "nrc_port.h"
 #include "nrc_log.h"
+#include "nrc_assert.h"
 #include "nrc_cfg.h"
 #include <assert.h>
 #include <string.h>
 
+#include "nrc_factory.h"  // TODO: Move factory functions to nrc_os??
+ 
 #define NRC_OS_STACK_SIZE   (4096)
 #define NRC_OS_NODE_TYPE    (0xA5A5)
 #define NRC_OS_MSG_TYPE     (0x5A5A)
@@ -29,8 +32,12 @@ enum nrc_os_state {
     NRC_OS_S_INVALID = 0,
     NRC_OS_S_CREATED,
     NRC_OS_S_INITIALIZED,
-    NRC_OS_S_STARTED_KERNAL,
     NRC_OS_S_STARTED
+};
+
+struct nrc_os_register_node_pars {
+    struct nrc_node_api *api;
+    const s8_t          *cfg_id;
 };
 
 struct nrc_os_msg_hdr {
@@ -56,8 +63,6 @@ struct nrc_os_node_hdr {
     u32_t               wire_cnt;
     nrc_node_t          *wire;
 
-    bool_t              kernal_node;
-
     u32_t               evt;
     s8_t                prio;
     s8_t                padding[3];
@@ -67,6 +72,8 @@ struct nrc_os_node_hdr {
 
 struct nrc_os {
     enum nrc_os_state           state;
+
+    struct nrc_cfg_t            *flow_cfg;
 
     nrc_port_thread_t           thread;
     nrc_port_sema_t             sema;
@@ -78,12 +85,17 @@ struct nrc_os {
 static void insert_node(struct nrc_os_node_hdr *node);
 static void extract_node(struct nrc_os_node_hdr *node);
 static void increased_node_prio(struct nrc_os_node_hdr *node);
-static void start_registered_nodes(bool_t kernal_nodes_only);
-static void init_registered_nodes(bool_t kernal_nodes_only);
-static void stop_registered_nodes(bool_t application_nodes_only);
-static void deinit_registered_nodes(bool_t application_nodes_only);
+
+static s32_t register_node(nrc_node_t node, struct nrc_os_register_node_pars pars);
+
+static void init_registered_nodes(void);
+static void deinit_registered_nodes(void);
+static void start_registered_nodes(void);
+static void stop_registered_nodes(void);
 
 static s32_t get_wires(struct nrc_os_node_hdr *node);
+
+static s32_t parse_flow_cfg(void);
 
 static void nrc_os_thread_fcn(void);
 
@@ -134,6 +146,7 @@ s32_t nrc_os_init(void)
     return result;
 }
 
+/*
 s32_t nrc_os_deinit(void)
 {
     s32_t result = NRC_R_NOT_SUPPORTED;
@@ -142,57 +155,54 @@ s32_t nrc_os_deinit(void)
     
     return result;
 }
+*/
 
-s32_t nrc_os_start(bool_t kernal_nodes_only)
+s32_t nrc_os_start(struct nrc_cfg_t *flow_cfg)
 {
-    s32_t result = NRC_R_INVALID_STATE;
+    s32_t result = NRC_R_INVALID_IN_PARAM;
 
-    switch (_os.state) {
-    case NRC_OS_S_INITIALIZED:
-        if (kernal_nodes_only == TRUE) {
-            // Init and start kernal nodes only
-            init_registered_nodes(TRUE);
-            start_registered_nodes(TRUE);
+    if (flow_cfg != NULL) {
+        switch (_os.state) {
+        case NRC_OS_S_INITIALIZED:
+            NRC_ASSERT(_os.flow_cfg == NULL);
 
-            _os.state = NRC_OS_S_STARTED_KERNAL;
-        }
-        else {
+            _os.flow_cfg = flow_cfg;
+            result = nrc_cfg_set_active(flow_cfg);
+            NRC_ASSERT(result == NRC_R_OK);
+
+            result = parse_flow_cfg();
+            NRC_ASSERT(result == NRC_R_OK);
+
             // Init and start all nodes
-            init_registered_nodes(TRUE);
-            init_registered_nodes(FALSE);
-            start_registered_nodes(TRUE);
-            start_registered_nodes(FALSE);
+            init_registered_nodes();
+            start_registered_nodes();
 
             _os.state = NRC_OS_S_STARTED;
-        }
 
-        // Start msg and event handling thread
-        result = nrc_port_thread_start(_os.thread);
-        assert(result == NRC_R_OK);
-        break;
+            // Start msg and event handling thread
+            result = nrc_port_thread_start(_os.thread);
+            NRC_ASSERT(result == NRC_R_OK);
+            break;
 
-    case NRC_OS_S_STARTED_KERNAL:
-        if (kernal_nodes_only == FALSE) {
-            // Init and start all remaining nodes
-            init_registered_nodes(FALSE);
-            start_registered_nodes(FALSE);
+        case NRC_OS_S_STARTED:
+            // Stop nodes
 
-            _os.state = NRC_OS_S_STARTED;
-        }
-        else {
+            // De-init nodes
+
+            // Free node objects
+            break;
+
+        default:
             NRC_LOGD("os", "nrc_os_start: invalid state %d", _os.state);
             result = NRC_R_INVALID_STATE;
+            break;
         }
-        break;
-    default:
-        NRC_LOGD("os", "nrc_os_start: invalid state %d", _os.state);
-        result = NRC_R_INVALID_STATE;
-        break;
     }
     
     return result;
 }
 
+/*
 s32_t nrc_os_stop(bool_t application_nodes_only)
 {
     s32_t result = NRC_R_NOT_SUPPORTED;
@@ -238,6 +248,7 @@ s32_t nrc_os_stop(bool_t application_nodes_only)
     
     return result;
 }
+*/
 
 nrc_node_t nrc_os_node_alloc(u32_t size)
 {
@@ -259,7 +270,7 @@ nrc_node_t nrc_os_node_alloc(u32_t size)
     return node_hdr;
 }
 
-s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_register_node_pars pars)
+static s32_t register_node(nrc_node_t node, struct nrc_os_register_node_pars pars)
 {
     s32_t result = NRC_R_INVALID_IN_PARAM;
 
@@ -272,7 +283,6 @@ s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_re
 
             os_node_hdr->api = pars.api;
             os_node_hdr->cfg_id = pars.cfg_id;
-            os_node_hdr->kernal_node = kernal_node;
             os_node_hdr->prio = S8_MAX_VALUE;
             os_node_hdr->evt = 0;
 
@@ -634,58 +644,54 @@ static void nrc_os_thread_fcn(void)
     }
 }
 
-static void init_registered_nodes(bool_t kernal_node)
+static void init_registered_nodes(void)
 {
     s32_t                   result;
     struct nrc_os_node_hdr  *hdr = _os.node_list;
 
     while (hdr != NULL) {
-        if (kernal_node == hdr->kernal_node) {
-            result = get_wires(hdr);
-            if (!OK(result)) {
-                NRC_LOGE(_tag, "init_registered_nodes: Failed get_wires %s", hdr->cfg_id);
-            }
-
-            result = hdr->api->init(hdr + 1);
-            if (!OK(result)) {
-                NRC_LOGE(_tag, "init_registered_nodes: Failed node init %s", hdr->cfg_id);
-            }
+        result = get_wires(hdr);
+        if (!OK(result)) {
+            NRC_LOGE(_tag, "init_registered_nodes: Failed get_wires %s", hdr->cfg_id);
         }
+
+        result = hdr->api->init(hdr + 1);
+        if (!OK(result)) {
+            NRC_LOGE(_tag, "init_registered_nodes: Failed node init %s", hdr->cfg_id);
+        }
+
         hdr = hdr->next;
     }
 }
 
-static void start_registered_nodes(bool_t kernal_node)
+static void start_registered_nodes(void)
 {
     struct nrc_os_node_hdr *hdr = _os.node_list;
 
     while (hdr != NULL) {
-        if (kernal_node == hdr->kernal_node) {
-            hdr->api->start(hdr + 1);
-        }
+        hdr->api->start(hdr + 1);
+
         hdr = hdr->next;
     }
 }
-static void deinit_registered_nodes(bool_t kernal_node)
+static void deinit_registered_nodes(void)
 {
     struct nrc_os_node_hdr *hdr = _os.node_list;
 
     while (hdr != NULL) {
-        if (kernal_node == hdr->kernal_node) {
-            hdr->api->deinit(hdr + 1);
-        }
+        hdr->api->deinit(hdr + 1);
+
         hdr = hdr->next;
     }
 }
 
-static void stop_registered_nodes(bool_t kernal_node)
+static void stop_registered_nodes(void)
 {
     struct nrc_os_node_hdr *hdr = _os.node_list;
 
     while (hdr != NULL) {
-        if (kernal_node == hdr->kernal_node) {
-            hdr->api->stop(hdr + 1);
-        }
+        hdr->api->stop(hdr + 1);
+
         hdr = hdr->next;
     }
 }
@@ -741,3 +747,32 @@ static s32_t get_wires(struct nrc_os_node_hdr *node)
     return result;
 }
 
+static s32_t parse_flow_cfg(void)
+{
+    s32_t                               result = NRC_R_OK;
+    struct nrc_node_factory_pars        f_pars;
+    struct nrc_os_register_node_pars    n_pars;
+    nrc_node_t                          node;
+
+    for (u32_t i = 0; OK(result); i++) {
+        result = nrc_cfg_get_node(i, &f_pars.cfg_type, &f_pars.cfg_id, &f_pars.cfg_name);
+        if (OK(result) && (f_pars.cfg_type != NULL) && (f_pars.cfg_id != NULL) && (f_pars.cfg_name != NULL)) {
+            node = nrc_factory_create_node(&f_pars);
+            if (node) {
+                n_pars.api = f_pars.api;
+                n_pars.cfg_id = f_pars.cfg_id;
+                s32_t res = register_node(node, n_pars);
+                if (OK(res)) {
+                    NRC_LOGI(_tag, "Node added: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
+                }
+                else {
+                    NRC_LOGE(_tag, "Failed to add node (error=%d): type=\"%s\", id=\"%s\", name=\"%s\"", res, f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
+                }
+            }
+            else {
+                NRC_LOGE(_tag, "Node not supported: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
+            }
+        }
+    }
+    return NRC_R_OK;
+}

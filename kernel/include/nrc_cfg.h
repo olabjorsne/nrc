@@ -39,7 +39,7 @@ typedef struct nrc_cfg_t nrc_cfg_t;
  *        The configuration data is used by the configuration object.
  *        and must be available as long as the configuration is active.
  *
- * @param flow_config json formattted configuration
+ * @param flow_config json formatted configuration
  * @param config_size Length of configuration data
  *
  * @return A configuration object is returned if parsing of the json flow succeeds, NULL if parsing fails.

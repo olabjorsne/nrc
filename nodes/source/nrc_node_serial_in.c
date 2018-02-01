@@ -3,7 +3,7 @@
 #include "nrc_cfg.h"
 #include "nrc_os.h"
 #include "nrc_log.h"
-#include "nrc_node_factory.h"
+#include "nrc_factory.h"
 #include "nrc_assert.h"
 #include "nrc_serial.h"
 
@@ -73,7 +73,7 @@ static struct nrc_node_api  _api;               // Node API functions
 // Register node to node factory; called at system start
 void nrc_node_serial_in_register(void)
 {
-    s32_t result = nrc_factory_register("serial-in", nrc_node_serial_in_create);
+    s32_t result = nrc_factory_register_node_type("serial-in", nrc_node_serial_in_create);
     if (!OK(result)) {
         NRC_LOGE(_tag, "register: error %d", result);
     }

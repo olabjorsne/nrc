@@ -4,7 +4,7 @@
 #include "nrc_os.h"
 #include "nrc_timer.h"
 #include "nrc_log.h"
-#include "nrc_node_factory.h"
+#include "nrc_factory.h"
 #include <string.h>
 #include <assert.h>
 
@@ -51,7 +51,7 @@ static struct nrc_node_api _api;
 
 void nrc_node_inject_register(void)
 {
-    s32_t status = nrc_factory_register("inject", nrc_node_inject_create);
+    s32_t status = nrc_factory_register_node_type("inject", nrc_node_inject_create);
     if (!OK(status)) {
         NRC_LOGE(_tag, "Registration to factory failed")
     }

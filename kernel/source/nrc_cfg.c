@@ -22,7 +22,7 @@
 #include "nrc_port.h"
 #include "nrc_cfg.h"
 #include "nrc_log.h"
-#include "nrc_node_factory.h"
+#include "nrc_factory.h"
 #include "jsmn.h"
 
 // TODO - MAX_TOKENS should not be hard coded

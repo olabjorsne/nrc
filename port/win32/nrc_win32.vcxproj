@@ -140,10 +140,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\kernel\source\nrc_cfg.c" />
-    <ClCompile Include="..\..\kernel\source\nrc_host.c" />
     <ClCompile Include="..\..\kernel\source\nrc_log.c" />
     <ClCompile Include="..\..\kernel\source\nrc_main.c" />
-    <ClCompile Include="..\..\kernel\source\nrc_node_factory.c" />
+    <ClCompile Include="..\..\kernel\source\nrc_factory.c" />
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="..\..\kernel\source\nrc_serial.c" />
     <ClCompile Include="..\..\kernel\source\nrc_timer.c" />
@@ -165,11 +164,10 @@
     <ClInclude Include="..\..\kernel\include\nrc_assert.h" />
     <ClInclude Include="..\..\kernel\include\nrc_cfg.h" />
     <ClInclude Include="..\..\kernel\include\nrc_defs.h" />
-    <ClInclude Include="..\..\kernel\include\nrc_host.h" />
     <ClInclude Include="..\..\kernel\include\nrc_log.h" />
     <ClInclude Include="..\..\kernel\include\nrc_msg.h" />
     <ClInclude Include="..\..\kernel\include\nrc_node.h" />
-    <ClInclude Include="..\..\kernel\include\nrc_node_factory.h" />
+    <ClInclude Include="..\..\kernel\include\nrc_factory.h" />
     <ClInclude Include="..\..\kernel\include\nrc_os.h" />
     <ClInclude Include="..\..\kernel\include\nrc_serial.h" />
     <ClInclude Include="..\..\kernel\include\nrc_timer.h" />

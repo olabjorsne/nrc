@@ -14,53 +14,69 @@
 * limitations under the License.
 */
 
-
-//#include <stdio.h>
-
 #include "nrc_types.h"
 #include "nrc_port.h"
 #include "nrc_os.h"
 #include "nrc_cfg.h"
-#include "nrc_host.h"
-#include "test_port.h"
-#include "nrc_node_factory.h"
+#include "nrc_factory.h"
 #include "nrc_log.h"
+#include "nrc_assert.h"
+
+#include "test_port.h"
 
 // TODO: Do we need this?
 extern void nrc_node_inject_register(void);
 extern void nrc_node_debug_register(void);
 extern void nrc_node_serial_in_register(void);
+extern void nrc_node_serial_out_register(void);
 
-const s8_t  *_tag = "main";
-s8_t        *flows_file = NULL;
+static const s8_t   *_tag = "nrc_main";
 
-int nrc_main(int argc, char** argv)
+int nrc_main(const char *cfg, unsigned int cfg_size)
 {
-    bool_t ok = FALSE;
+    bool_t      ok = FALSE;
+    const s8_t  *boot_cfg = NULL;
+    u32_t       boot_cfg_size = 0;
+    nrc_cfg_t*  flow_cfg = NULL;
+    s32_t       result;
 
     NRC_LOGI(_tag, "loading...");
     NRC_LOGI(_tag, "nrc version : \tv0.01");
     NRC_LOGI(_tag, "Target      : \twin32");
 
-    // Extract configuration file (if any)
-    if (argc > 1) {
-        flows_file = argv[1];
+    // Initialize core components
+    result = nrc_port_init();
+    NRC_ASSERT(OK(result));
+    result = nrc_os_init();
+    NRC_ASSERT(OK(result));
+    result = nrc_cfg_init();
+    NRC_ASSERT(OK(result));
+
+    // Get boot flow configuration
+    if ((cfg != NULL) && (cfg_size > 0)) {
+        // Configuration file as nrc_main input argument
+        boot_cfg = cfg;
+        boot_cfg_size = cfg_size;
     }
+    else {
+        // TODO: Start compiled boot flow configuration
+        result = NRC_R_NOT_SUPPORTED;
+    }
+    
+    if (OK(result)) {
+        // Register all node types (classes) that may later be instansiated
+        nrc_node_inject_register();
+        nrc_node_debug_register();
+        nrc_node_serial_in_register();
+        nrc_node_serial_out_register();
 
-    // First, nrc_os must be initialized
-    nrc_os_init();
+        // Install boot flow configuration in nrc_cfg
+        flow_cfg = nrc_cfg_create(boot_cfg, boot_cfg_size);
+        NRC_ASSERT(flow_cfg != NULL);
 
-    // Register all nodes that may be configured
-    nrc_node_inject_register();
-    nrc_node_debug_register();
-    nrc_node_serial_in_register();
-
-    // Start kernal nodes running at power on
-    nrc_cfg_init();
-    nrc_host_init();
-
-    nrc_host_start();
-    nrc_os_start(FALSE);
+        // Start nrc_os with the boot flow configuration
+        nrc_os_start(flow_cfg);
+    }
 
 #if 0
     ok = test_all();
