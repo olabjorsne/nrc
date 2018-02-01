@@ -21,26 +21,20 @@
 #include "nrc_defs.h"
 #include "nrc_node.h"
 #include "nrc_msg.h"
+#include "nrc_cfg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct nrc_os_register_node_pars {
-    struct nrc_node_api *api;
-    const s8_t          *cfg_id;
-};
-
 s32_t nrc_os_init(void);
-s32_t nrc_os_deinit(void);
+//s32_t nrc_os_deinit(void);
 
-s32_t nrc_os_start(bool_t kernal_nodes_only);
-s32_t nrc_os_stop(bool_t application_nodes_only);
+s32_t nrc_os_start(struct nrc_cfg_t *flow_cfg);
+//s32_t nrc_os_stop(void);
 
 nrc_node_t nrc_os_node_alloc(u32_t size);
 nrc_node_t nrc_os_node_get(const s8_t *cfg_id);
-
-s32_t nrc_os_node_register(bool_t kernal_node, nrc_node_t node, struct nrc_os_register_node_pars pars);
 
 nrc_msg_t nrc_os_msg_alloc(u32_t size);
 nrc_msg_t nrc_os_msg_clone(nrc_msg_t msg);

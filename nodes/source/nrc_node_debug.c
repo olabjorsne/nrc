@@ -3,7 +3,7 @@
 #include "nrc_cfg.h"
 #include "nrc_os.h"
 #include "nrc_log.h"
-#include "nrc_node_factory.h"
+#include "nrc_factory.h"
 #include <string.h>
 
 enum nrc_node_debug_state {
@@ -63,7 +63,7 @@ static nrc_node_t nrc_node_debug_create(struct nrc_node_factory_pars *pars)
 
 void nrc_node_debug_register(void)
 {
-    s32_t status = nrc_factory_register("debug", nrc_node_debug_create);
+    s32_t status = nrc_factory_register_node_type("debug", nrc_node_debug_create);
     if (!OK(status)) {
         NRC_LOGE(_tag, "Registration to factory failed")
     }

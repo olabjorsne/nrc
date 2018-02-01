@@ -81,13 +81,7 @@
     <ClCompile Include="..\..\misc\source\nrc_misc_cbuf.c">
       <Filter>misc\source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\kernel\source\nrc_node_factory.c">
-      <Filter>kernel\source</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\kernel\source\nrc_cfg.c">
-      <Filter>kernel\source</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\kernel\source\nrc_host.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\misc\source\jsmn.c">
@@ -105,12 +99,21 @@
     <ClCompile Include="..\..\kernel\source\nrc_serial.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\nodes\source\nrc_node_serial_port_in.c">
-      <Filter>nodes\source</Filter>
-    </ClCompile>
     <ClCompile Include="source\nrc_port_nodes.c">
       <Filter>port\win32\source</Filter>
-    </ClCompile>   
+    </ClCompile>
+    <ClCompile Include="..\..\nodes\source\nrc_node_serial_in.c">
+      <Filter>nodes\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\nodes\source\nrc_node_serial_out.c">
+      <Filter>nodes\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_main.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_factory.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
@@ -140,12 +143,6 @@
     <ClInclude Include="..\..\kernel\include\nrc_timer.h">
       <Filter>kernel\include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\nodes\include\nrc_node_factory.h">
-      <Filter>nodes\include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\kernel\include\nrc_host.h">
-      <Filter>kernel\include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\nrc_port_uart.h">
       <Filter>port\include</Filter>
     </ClInclude>
@@ -168,6 +165,9 @@
       <Filter>test\port</Filter>
     </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_assert.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_factory.h">
       <Filter>kernel\include</Filter>
     </ClInclude>
   </ItemGroup>

@@ -15,7 +15,7 @@
  */
 
 #ifndef _NRC_NODE_FACTORY_H_
-#define _NRC_NODE_FACTORY_H_
+#define _NRC_FACTORY_H_
 
 #include "nrc_types.h"
 #include "nrc_node.h"
@@ -36,8 +36,10 @@ struct nrc_node_factory_pars {
 
 
 typedef nrc_node_t (*nrc_node_create_t)(struct nrc_node_factory_pars *pars);
-s32_t nrc_factory_register(s8_t* cfg_type, nrc_node_create_t node_create);
-nrc_node_t nrc_factory_create(struct nrc_node_factory_pars *pars);
+
+s32_t nrc_factory_register_node_type(s8_t* cfg_type, nrc_node_create_t node_create);
+
+nrc_node_t nrc_factory_create_node(struct nrc_node_factory_pars *pars);
 
 #ifdef __cplusplus
 }

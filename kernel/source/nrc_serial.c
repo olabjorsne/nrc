@@ -22,7 +22,6 @@
 #include <string.h>
 
 #define NRC_SERIAL_TYPE (0x1438B4AA)
-#define NRC_SERIAL_PRIO (8) //TODO: Priority should be configurable
 
 enum nrc_serial_state {
     NRC_SERIAL_S_CLOSED = 0,
@@ -39,7 +38,6 @@ struct nrc_serial {
     nrc_port_uart_t             uart;
 
     struct nrc_port_uart_pars   pars;
-    s8_t                        priority;
 
     bool_t                      open;
 
@@ -133,7 +131,6 @@ s32_t nrc_serial_open_reader(
 
             if (result == NRC_R_OK) {
                 serial->open = TRUE;
-                serial->priority = NRC_SERIAL_PRIO; //TODO: Configurable
                 serial->tx_state = NRC_SERIAL_S_IDLE;
             }
         }
@@ -221,6 +218,29 @@ s32_t nrc_serial_get_read_error(nrc_serial_t serial)
     //TODO:
 
     return error;
+}
+
+s32_t nrc_serial_open_writer(
+    const s8_t                  *cfg_id_settings,
+    struct nrc_serial_writer    writer_notification,
+    nrc_serial_t                *serial)
+{
+    return NRC_R_OK;
+}
+
+s32_t nrc_serial_close_writer(nrc_serial_t serial)
+{
+    return NRC_R_OK;
+}
+
+s32_t nrc_serial_write(nrc_serial_t serial, u8_t *buf, u32_t buf_size)
+{
+    return NRC_R_OK;
+}
+
+s32_t nrc_serial_get_write_error(nrc_serial_t serial)
+{
+    return NRC_R_OK;
 }
 
 static struct nrc_serial* get_serial_from_cfg(const s8_t *cfg_id_settings)
@@ -356,7 +376,7 @@ static void data_available(nrc_port_uart_t uart, s32_t result)
             evt |= serial->reader.error_evt;
         }
         
-        nrc_os_send_evt(serial->reader.node, evt, serial->priority);
+        nrc_os_send_evt(serial->reader.node, evt, serial->reader.prio);
     }
     else {
         NRC_LOGD(_tag, "data_available: invalid uart or no reader");
@@ -382,7 +402,7 @@ static void write_complete(nrc_port_uart_t uart, s32_t result, u32_t bytes)
         self->bytes_written = 0;
         self->tx_state = NRC_SERIAL_S_IDLE;
 
-        nrc_os_send_evt(self->writer.node, evt, self->priority);
+        nrc_os_send_evt(self->writer.node, evt, self->writer.prio);
     }
     else {
         NRC_LOGD(_tag, "write_complete: invalid uart, state or no writer");
