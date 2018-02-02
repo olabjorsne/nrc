@@ -19,7 +19,6 @@
 #include "nrc_log.h"
 #include "nrc_assert.h"
 #include "nrc_cfg.h"
-#include <assert.h>
 #include <string.h>
 
 #include "nrc_factory.h"  // TODO: Move factory functions to nrc_os??
@@ -92,6 +91,8 @@ static void init_registered_nodes(void);
 static void deinit_registered_nodes(void);
 static void start_registered_nodes(void);
 static void stop_registered_nodes(void);
+static void free_registered_nodes(void);
+static void free_messages(void);
 
 static s32_t get_wires(struct nrc_os_node_hdr *node);
 
@@ -114,31 +115,31 @@ s32_t nrc_os_init(void)
 
     switch (_os.state) {
     case NRC_OS_S_CREATED:
-        assert(sizeof(struct nrc_os_msg_hdr) % 4 == 0);
-        assert(sizeof(struct nrc_os_msg_tail) % 4 == 0);
-        assert(sizeof(struct nrc_os_node_hdr) % 4 == 0);
+        NRC_ASSERT(sizeof(struct nrc_os_msg_hdr) % 4 == 0);
+        NRC_ASSERT(sizeof(struct nrc_os_msg_tail) % 4 == 0);
+        NRC_ASSERT(sizeof(struct nrc_os_node_hdr) % 4 == 0);
 
         memset(&_os, 0, sizeof(struct nrc_os));
 
         result = nrc_port_init();
-        assert(result == NRC_R_OK);
+        NRC_ASSERT(result == NRC_R_OK);
 
         result = nrc_port_sema_init(0, &_os.sema);
-        assert(result == NRC_R_OK);
+        NRC_ASSERT(result == NRC_R_OK);
 
         result = nrc_port_thread_init(
             NRC_PORT_THREAD_PRIO_NORMAL,
             NRC_OS_STACK_SIZE,
             nrc_os_thread_fcn,
             &(_os.thread));
-        assert(result == NRC_R_OK);
+        NRC_ASSERT(result == NRC_R_OK);
 
         _os.state = NRC_OS_S_INITIALIZED;
         result = NRC_R_OK;
         break;
 
     default:
-        NRC_LOGD("os", "init: invalid state %d", _os.state);
+        NRC_LOGW(_tag, "init: invalid state %d", _os.state);
         result = NRC_R_INVALID_STATE;
         break;
     }
@@ -146,16 +147,36 @@ s32_t nrc_os_init(void)
     return result;
 }
 
-/*
-s32_t nrc_os_deinit(void)
+static void start_flow(struct nrc_cfg_t *flow_cfg)
 {
-    s32_t result = NRC_R_NOT_SUPPORTED;
+    s32_t result;
 
-    //TODO: Dealloc all nodes, messages, events, etc..
-    
-    return result;
+    _os.flow_cfg = flow_cfg;
+    result = nrc_cfg_set_active(flow_cfg);
+    NRC_ASSERT(result == NRC_R_OK);
+
+    // Parse configuration; instantiate nodes
+    result = parse_flow_cfg();
+    NRC_ASSERT(result == NRC_R_OK);
+
+    // Init and start all nodes
+    init_registered_nodes();
+    start_registered_nodes();
 }
-*/
+
+static void stop_flow(void)
+{
+    // Stop and deinit nodes
+    stop_registered_nodes();
+    deinit_registered_nodes();
+
+    // Free node objects, messages and deactivate configuration
+    free_registered_nodes();
+    free_messages();
+
+    // Deactivate current configuration
+    //nrc_cfg_destroy(_os.flow_cfg); // TODO: function not (yet) implemented
+}
 
 s32_t nrc_os_start(struct nrc_cfg_t *flow_cfg)
 {
@@ -166,16 +187,7 @@ s32_t nrc_os_start(struct nrc_cfg_t *flow_cfg)
         case NRC_OS_S_INITIALIZED:
             NRC_ASSERT(_os.flow_cfg == NULL);
 
-            _os.flow_cfg = flow_cfg;
-            result = nrc_cfg_set_active(flow_cfg);
-            NRC_ASSERT(result == NRC_R_OK);
-
-            result = parse_flow_cfg();
-            NRC_ASSERT(result == NRC_R_OK);
-
-            // Init and start all nodes
-            init_registered_nodes();
-            start_registered_nodes();
+            start_flow(flow_cfg);
 
             _os.state = NRC_OS_S_STARTED;
 
@@ -185,11 +197,8 @@ s32_t nrc_os_start(struct nrc_cfg_t *flow_cfg)
             break;
 
         case NRC_OS_S_STARTED:
-            // Stop nodes
-
-            // De-init nodes
-
-            // Free node objects
+            stop_flow();
+            start_flow(flow_cfg);
             break;
 
         default:
@@ -364,10 +373,10 @@ void nrc_os_msg_free(nrc_msg_t msg)
 
     while (hdr != NULL) {
         os_msg_header = (struct nrc_os_msg_hdr*)msg - 1;
-        assert(os_msg_header->type == NRC_OS_MSG_TYPE);
+        NRC_ASSERT(os_msg_header->type == NRC_OS_MSG_TYPE);
 
         os_msg_tail = (struct nrc_os_msg_tail*)((u8_t*)os_msg_header + os_msg_header->total_size) - 1;
-        assert(os_msg_tail->dead_beef == 0xDEADBEEF);
+        NRC_ASSERT(os_msg_tail->dead_beef == 0xDEADBEEF);
 
         hdr = hdr->next;
 
@@ -408,7 +417,7 @@ s32_t nrc_os_send_msg_to(nrc_node_t to, nrc_msg_t msg, s8_t prio)
 
             // Signal to inform thread that a new msg is available
             result = nrc_port_sema_signal(_os.sema);
-            assert(result == NRC_R_OK);
+            NRC_ASSERT(result == NRC_R_OK);
 
             result = NRC_R_OK;
         }
@@ -467,7 +476,7 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
 
             // Disable IRQ during insertion of event
             result = nrc_port_irq_disable();
-            assert(result == NRC_R_OK);
+            NRC_ASSERT(result == NRC_R_OK);
 
             // Set event bit(s)
             node->evt = node->evt | event_mask;
@@ -480,11 +489,11 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
 
             // Enable IRQs again
             result = nrc_port_irq_enable();
-            assert(result == NRC_R_OK);
+            NRC_ASSERT(result == NRC_R_OK);
 
             // Signal thread that a new event is available
             result = nrc_port_sema_signal(_os.sema);
-            assert(result == NRC_R_OK);
+            NRC_ASSERT(result == NRC_R_OK);
         }
     }
     
@@ -493,7 +502,7 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
 
 static void extract_node(struct nrc_os_node_hdr* node)
 {
-    assert(node != NULL);
+    NRC_ASSERT(node != NULL);
 
     if (node->next != NULL) {
         node->next->previous = node->previous;
@@ -510,7 +519,7 @@ static void extract_node(struct nrc_os_node_hdr* node)
 
 static void insert_node(struct nrc_os_node_hdr* node)
 {
-    assert(node != NULL);
+    NRC_ASSERT(node != NULL);
 
     if (_os.node_list == NULL) {
         _os.node_list = node;
@@ -544,8 +553,8 @@ static void insert_node(struct nrc_os_node_hdr* node)
         }
         else {
             //Place node after prev_pos
-            assert(prev_pos != NULL);
-            assert(prev_pos->next == NULL);
+            NRC_ASSERT(prev_pos != NULL);
+            NRC_ASSERT(prev_pos->next == NULL);
 
             node->next = NULL;
             prev_pos->next = node;
@@ -556,7 +565,7 @@ static void insert_node(struct nrc_os_node_hdr* node)
 
 static void increased_node_prio(struct nrc_os_node_hdr *node)
 {
-    assert(node != NULL);
+    NRC_ASSERT(node != NULL);
 
     if ((node->previous != NULL) && (node->prio < node->previous->prio))
     {
@@ -568,7 +577,7 @@ static void increased_node_prio(struct nrc_os_node_hdr *node)
 
 static void clear_evt(struct nrc_os_node_hdr *node)
 {
-    assert(node != NULL);
+    NRC_ASSERT(node != NULL);
 
     node->evt = 0;
     node->prio = S8_MAX_VALUE;
@@ -591,7 +600,7 @@ static void nrc_os_thread_fcn(void)
     while (_os.state > NRC_OS_S_INITIALIZED) {
         // Wait for msg or event
         result = nrc_port_sema_wait(_os.sema, 0);
-        assert(result == NRC_R_OK);
+        NRC_ASSERT(result == NRC_R_OK);
 
         do {
             // Get prio of highest priority msg (if any)
@@ -685,6 +694,34 @@ static void deinit_registered_nodes(void)
     }
 }
 
+static void free_registered_nodes(void)
+{
+    struct nrc_os_node_hdr *hdr = _os.node_list;
+    struct nrc_os_node_hdr *free_node = NULL;
+
+    while (hdr != NULL) {
+        free_node = hdr;
+        hdr = hdr->next;
+
+        nrc_port_heap_free(free_node);
+    }
+
+    _os.node_list = NULL;
+}
+
+static void free_messages(void)
+{
+    struct nrc_os_msg_hdr *msg = _os.msg_list;
+    struct nrc_os_msg_hdr *free_msg = _os.msg_list;
+
+    while (msg != NULL) {
+        free_msg = msg;
+        msg = msg->next;
+
+        nrc_port_heap_fast_free(free_msg);
+    }
+}
+
 static void stop_registered_nodes(void)
 {
     struct nrc_os_node_hdr *hdr = _os.node_list;
@@ -722,7 +759,7 @@ static s32_t get_wires(struct nrc_os_node_hdr *node)
 
         // Allocate wire arrary
         node->wire = (nrc_node_t*)nrc_port_heap_alloc(max_wires * sizeof(nrc_node_t));
-        assert(node->wire != NULL);
+        NRC_ASSERT(node->wire != NULL);
 
         // Read wires from nrc_cfg
         result = NRC_R_OK;

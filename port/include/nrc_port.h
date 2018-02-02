@@ -223,7 +223,6 @@ u32_t nrc_port_timer_get_res_ms(void);
  */
 u64_t nrc_port_timer_get_time_ms(void);
 
-
 /**
  * @brief Disable HW interrupts
  *
@@ -239,11 +238,20 @@ s32_t nrc_port_irq_disable(void);
 s32_t nrc_port_irq_enable(void);
 
 /**
- * Used by log macros
- */
+* @brief Print to debug port
+*
+* @param format String to print
+* @param argptr Argument list to format string
+* @return If successful, number of characters written is returned.
+ * If failure, negative number is returned.
+*/
 s32_t nrc_port_vprintf(const char * format, va_list argptr);
 
-void nrc_port_error_handler(s8_t *file, u32_t line);
+/**
+* @brief Call to exit
+
+* @return void
+*/void nrc_port_error_handler(s8_t *file, u32_t line);
 
 #ifdef __cplusplus
 }
