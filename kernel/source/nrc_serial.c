@@ -54,13 +54,20 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
 static struct nrc_serial* get_serial_from_cfg(const s8_t *cfg_id_settings);
 static struct nrc_serial* get_serial_from_uart(nrc_port_uart_t uart);
 
+static s32_t serial_open_reader_or_writer(
+    const s8_t                  *cfg_id_settings,
+    struct nrc_serial_reader    *reader,
+    struct nrc_serial_writer    *writer,
+    nrc_serial_t                *serial_id);
+
 static void data_available(nrc_port_uart_t uart, s32_t result);
 static void write_complete(nrc_port_uart_t uart, s32_t result, u32_t bytes);
 
-static bool_t                               _initialized = FALSE;
-static struct nrc_serial                    *_serial = NULL;
-static struct nrc_port_uart_callback_fcn    _callback;
 static const s8_t                           *_tag = "nrc_serial";
+static bool_t                               _initialized = FALSE;
+
+static struct nrc_serial                    *_serial = NULL;        // List of created serial objects
+static struct nrc_port_uart_callback_fcn    _callback;              // NRC UART callback functions
 
 s32_t nrc_serial_init(void)
 {
@@ -81,39 +88,52 @@ s32_t nrc_serial_init(void)
     return result;
 }
 
-s32_t nrc_serial_open_reader(
+static s32_t serial_open_reader_or_writer(
     const s8_t                  *cfg_id_settings,
-    struct nrc_serial_reader    reader,
+    struct nrc_serial_reader    *reader,
+    struct nrc_serial_writer    *writer,
     nrc_serial_t                *serial_id)
 {
     s32_t                       result = NRC_R_OK;
     struct nrc_serial           *serial = NULL;
 
-    if ((cfg_id_settings != NULL) && (reader.node != NULL) &&
-        (reader.data_available_evt != 0) && (reader.error_evt != 0)) {
+    if ((cfg_id_settings != NULL) && (serial_id != NULL) && 
+        (((reader != NULL) && (reader->node != NULL) && (reader->data_available_evt != 0) && (reader->error_evt != 0)) ||
+         ((writer != NULL) && (writer->node != NULL) && (writer->write_complete_evt != 0) && (reader->error_evt != 0)))) {
 
         *serial_id = NULL;
 
+        // Get (if already created) serial object identified by
+        // the id for the "nrc-serial" configuration node
         serial = get_serial_from_cfg(cfg_id_settings);
 
         if (serial != NULL) {
-            if (serial->reader.node == NULL) {
-                serial->reader = reader;
+            if ((reader != NULL) && (reader->node != NULL)) {
+                // Serial available with no reader
+                serial->reader = *reader;
+            }
+            else if ((writer != NULL) && (serial->writer.node == NULL)) {
+                // Serial available with no writer
+                serial->writer = *writer;
             }
             else {
+                // Serial already opened by reader
                 result = NRC_R_UNAVAILABLE_RESOURCE;
             }
         }
         else {
+            // Allocate and initialize serial object
             serial = (struct nrc_serial*)nrc_port_heap_alloc(sizeof(struct nrc_serial));
 
             if (serial != NULL) {
                 memset(serial, 0, sizeof(struct nrc_serial));
 
                 serial->cfg_id_settings = cfg_id_settings;
-                serial->reader = reader;
-                serial->open = FALSE;
+                serial->reader = *reader;
+                serial->writer = *writer;
+                serial->open = FALSE; // Not yet opened
 
+                // Insert first in list
                 serial->next = _serial;
                 _serial = serial;
             }
@@ -123,10 +143,12 @@ s32_t nrc_serial_open_reader(
         }
 
         if ((result == NRC_R_OK) && (serial->open == FALSE)) {
+            // Read serial port and settings from configuration
             result = get_settings(cfg_id_settings, &serial->port, &serial->pars);
         }
 
         if ((result == NRC_R_OK) && (serial->open == FALSE)) {
+            // Open the UART if not already done
             result = nrc_port_uart_open(serial->port, serial->pars, _callback, &serial->uart);
 
             if (result == NRC_R_OK) {
@@ -149,6 +171,25 @@ s32_t nrc_serial_open_reader(
     return result;
 }
 
+s32_t nrc_serial_open_reader(
+    const s8_t                  *cfg_id_settings,
+    struct nrc_serial_reader    reader,
+    nrc_serial_t                *serial)
+{
+    s32_t result = NRC_R_OK;
+
+    if ((cfg_id_settings != NULL) && (serial != NULL) &&
+        (reader.node != NULL) && (reader.data_available_evt != 0) && (reader.error_evt != 0)) {
+
+        result = serial_open_reader_or_writer(cfg_id_settings, &reader, NULL, serial);
+    }
+    else {
+        result = NRC_R_INVALID_IN_PARAM;
+    }
+
+    return result;
+}
+
 s32_t nrc_serial_close_reader(nrc_serial_t serial)
 {
     s32_t result = NRC_R_OK;
@@ -159,10 +200,10 @@ s32_t nrc_serial_close_reader(nrc_serial_t serial)
             memset(&self->reader, 0, sizeof(struct nrc_serial_reader));
 
             if (self->writer.node == NULL) {
-                self->open = FALSE;
-
+                // Close UART only if both reader and writer are closed
                 result = nrc_port_uart_close(self->uart);
                 self->uart = NULL;
+                self->open = FALSE;
             }
         }
     }
@@ -183,6 +224,9 @@ u32_t nrc_serial_read(nrc_serial_t serial, u8_t *buf, u32_t buf_size)
 
         read_bytes = nrc_port_uart_read(self->uart, buf, buf_size);
     }
+    else {
+        NRC_LOGE(_tag, "read: invalid in params");
+    }
 
     return read_bytes;
 }
@@ -193,7 +237,15 @@ u32_t nrc_serial_get_bytes(nrc_serial_t serial)
     struct nrc_serial   *self = (struct nrc_serial*)serial;
 
     if ((self != NULL) && (self->type == NRC_SERIAL_TYPE)) {
-        bytes = nrc_port_uart_get_bytes(self->uart);
+        if ((self->open == TRUE) && (self->uart != NULL)) {
+            bytes = nrc_port_uart_get_bytes(self->uart);
+        }
+        else {
+            NRC_LOGE(_tag, "get_bytes(%s): uart not open", self->cfg_id_settings);
+        }
+    }
+    else {
+        NRC_LOGE(_tag, "read: invalid in params");
     }
 
     return bytes;
@@ -222,24 +274,73 @@ s32_t nrc_serial_get_read_error(nrc_serial_t serial)
 
 s32_t nrc_serial_open_writer(
     const s8_t                  *cfg_id_settings,
-    struct nrc_serial_writer    writer_notification,
+    struct nrc_serial_writer    writer,
     nrc_serial_t                *serial)
 {
-    return NRC_R_OK;
+    s32_t result = NRC_R_OK;
+
+    if ((cfg_id_settings != NULL) && (serial != NULL) &&
+        (writer.node != NULL) && (writer.write_complete_evt != 0) && (writer.error_evt != 0)) {
+
+        result = serial_open_reader_or_writer(cfg_id_settings, NULL, &writer, serial);
+    }
+    else {
+        result = NRC_R_INVALID_IN_PARAM;
+    }
+
+    return result;
 }
 
 s32_t nrc_serial_close_writer(nrc_serial_t serial)
 {
-    return NRC_R_OK;
+    s32_t result = NRC_R_OK;
+    struct nrc_serial *self = (struct nrc_serial*)serial;
+
+    if ((self != NULL) && (self->type == NRC_SERIAL_TYPE) && (self->writer.node != NULL)) {
+        if (self->open == TRUE) {
+            memset(&self->writer, 0, sizeof(struct nrc_serial_writer));
+
+            if (self->reader.node == NULL) {
+                // Close UART only if both reader and writer are closed
+                result = nrc_port_uart_close(self->uart);
+                self->uart = NULL;
+                self->open = FALSE;
+            }
+        }
+        else {
+            result = NRC_R_INVALID_STATE;
+        }
+    }
+    else {
+        result = NRC_R_INVALID_IN_PARAM;
+    }
+
+    return result;
 }
 
 s32_t nrc_serial_write(nrc_serial_t serial, u8_t *buf, u32_t buf_size)
 {
-    return NRC_R_OK;
+    s32_t               result = NRC_R_INVALID_IN_PARAM;
+    struct nrc_serial   *self = (struct nrc_serial*)serial;
+
+    if ((self != NULL) && (self->type == NRC_SERIAL_TYPE) && (buf != NULL) && (buf_size > 0)) {
+        if ((self->open == TRUE) && (self->tx_state == NRC_SERIAL_S_IDLE)) {
+            result = nrc_port_uart_write(self->uart, buf, buf_size);
+            if (result == NRC_R_OK) {
+                self->tx_state = NRC_SERIAL_S_BUSY;
+            }
+        }
+        else {
+            result = NRC_R_INVALID_STATE;
+        }
+    }
+
+    return result;
 }
 
 s32_t nrc_serial_get_write_error(nrc_serial_t serial)
 {
+    //TODO:
     return NRC_R_OK;
 }
 
