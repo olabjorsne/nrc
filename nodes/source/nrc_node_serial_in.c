@@ -351,10 +351,10 @@ static s32_t nrc_node_serial_in_recv_evt(nrc_node_t slf, u32_t event_mask)
     if ((self != NULL) && (self->type == NRC_N_SERIAL_IN_TYPE)) {
         switch (self->state) {
         case NRC_N_SERIAL_IN_S_STARTED:
-            if ((event_mask | NRC_N_SERIAL_IN_EVT_DATA_AVAIL) != 0) {
+            if ((event_mask & NRC_N_SERIAL_IN_EVT_DATA_AVAIL) != 0) {
                 result = send_data(self);
             }
-            if ((event_mask | NRC_N_SERIAL_IN_EVT_ERROR) != 0) {
+            if ((event_mask & NRC_N_SERIAL_IN_EVT_ERROR) != 0) {
                 NRC_LOGW(_tag, "recv_evt(%s): serial error %d", self->hdr.cfg_id, nrc_serial_get_read_error(self->serial));
             }
             break;

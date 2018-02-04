@@ -338,11 +338,18 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
 u32_t nrc_port_uart_get_bytes(nrc_port_uart_t uart)
 {
     struct nrc_port_uart    *self = (struct nrc_port_uart*)uart;
+    u32_t                   bytes = 0;
 
     assert(self != NULL);
     assert(self->type == NRC_PORT_UART_TYPE);
 
-    return nrc_misc_cbuf_get_bytes(self->cbuf);
+    bytes = nrc_misc_cbuf_get_bytes(self->cbuf);
+
+    if (bytes == 0) {
+        self->notify_data_available = TRUE;
+    }
+
+    return bytes;
 }
 
 s32_t nrc_port_uart_clear(nrc_port_uart_t uart)
@@ -351,6 +358,8 @@ s32_t nrc_port_uart_clear(nrc_port_uart_t uart)
 
     assert(self != NULL);
     assert(self->type == NRC_PORT_UART_TYPE);
+
+    self->notify_data_available = TRUE;
 
     return nrc_misc_cbuf_clear(self->cbuf);
 }

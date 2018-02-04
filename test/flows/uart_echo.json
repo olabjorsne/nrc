@@ -3,7 +3,7 @@
         "id": "2fc5d057.91e46",
         "type": "nrc-serial",
         "z": "",
-        "port": "COM3",
+        "port": "3",
         "baudrate": "115200",
         "databits": "8",
         "parity": "none",

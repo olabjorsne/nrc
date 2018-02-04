@@ -2,7 +2,7 @@
  * Copyright 2017 Tomas Frisberg & Ola Bjorsne
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * you may not use this file except in compliance with the License
  * You may obtain a copy of the License at
  *
  * http ://www.apache.org/licenses/LICENSE-2.0
@@ -188,7 +188,7 @@ s32_t nrc_port_mutex_lock(nrc_port_mutex_t mutex, u32_t timeout)
         timeout = INFINITE;
     }
 
-    win_result = WaitForSingleObject((HANDLE)mutex, timeout);
+    win_result = WaitForSingleObjectEx((HANDLE)mutex, timeout, TRUE);
 
     if (win_result == WAIT_OBJECT_0) {
         result = NRC_R_OK;
@@ -262,7 +262,7 @@ s32_t nrc_port_sema_wait(nrc_port_sema_t sema, u32_t timeout)
         timeout = INFINITE;
     }
     
-    win_result = WaitForSingleObject((HANDLE)sema, timeout);
+    win_result = WaitForSingleObjectEx((HANDLE)sema, timeout, TRUE);
 
     if(win_result == WAIT_OBJECT_0) {
         result = NRC_R_OK;

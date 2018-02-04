@@ -108,7 +108,7 @@ static s32_t serial_open_reader_or_writer(
         serial = get_serial_from_cfg(cfg_id_settings);
 
         if (serial != NULL) {
-            if ((reader != NULL) && (reader->node != NULL)) {
+            if ((reader != NULL) && (serial->reader.node == NULL)) {
                 // Serial available with no reader
                 serial->reader = *reader;
             }
@@ -135,6 +135,7 @@ static s32_t serial_open_reader_or_writer(
                 if (writer != NULL) {
                     serial->writer = *writer;
                 }
+                serial->type = NRC_SERIAL_TYPE;
                 serial->open = FALSE; // Not yet opened
 
                 // Insert first in list
@@ -249,7 +250,7 @@ u32_t nrc_serial_get_bytes(nrc_serial_t serial)
         }
     }
     else {
-        NRC_LOGE(_tag, "read: invalid in params");
+        NRC_LOGE(_tag, "get_bytes: invalid in params");
     }
 
     return bytes;
@@ -331,6 +332,7 @@ s32_t nrc_serial_write(nrc_serial_t serial, u8_t *buf, u32_t buf_size)
         if ((self->open == TRUE) && (self->tx_state == NRC_SERIAL_S_IDLE)) {
             result = nrc_port_uart_write(self->uart, buf, buf_size);
             if (result == NRC_R_OK) {
+                self->bytes_written = buf_size;
                 self->tx_state = NRC_SERIAL_S_BUSY;
             }
         }
@@ -352,7 +354,7 @@ static struct nrc_serial* get_serial_from_cfg(const s8_t *cfg_id_settings)
 {
     struct nrc_serial* serial = _serial;
 
-    while ((serial != NULL) && (serial->cfg_id_settings != cfg_id_settings)) {
+    while ((serial != NULL) && (strcmp(serial->cfg_id_settings, cfg_id_settings) != 0)) { //(serial->cfg_id_settings != cfg_id_settings)) {
         serial = serial->next;
     }
 
