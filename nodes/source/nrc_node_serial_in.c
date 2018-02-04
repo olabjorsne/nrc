@@ -9,7 +9,7 @@
 
 #include <string.h>
 
-// Event bitmask for nrc callbacks
+// Event bitmask for nrc_serial callbacks
 #define NRC_N_SERIAL_IN_EVT_DATA_AVAIL  (1)
 #define NRC_N_SERIAL_IN_EVT_ERROR       (2)
 
@@ -37,14 +37,14 @@ struct nrc_node_serial_in {
     struct nrc_node_hdr             hdr;            // General node header; from create function in pars
 
     const s8_t                      *topic;         // Node topic from cfg
-    const s8_t                      *cfg_serial_id; // serial-port (configuration node) id from cfg
+    const s8_t                      *cfg_serial_id; // serial (configuration) node id from cfg
     s8_t                            prio;           // Node prio; used for sending messages; from cfg
     enum nrc_node_serial_in_msg     msg_type;       // Msg type to send; from cfg
     u32_t                           max_buf_size;   // Max buf size for buf messages
 
     enum nrc_node_serial_in_state   state;          // Node state
     nrc_serial_t                    serial;         // NRC serial port
-    struct nrc_serial_reader        reader;         // Reader notification data
+    struct nrc_serial_reader        reader;         // Reader notification data for nrc_serial callback evt
 
     u32_t                           type;           // Object type check; unique number for every object type
 };
@@ -60,7 +60,7 @@ static s32_t nrc_node_serial_in_stop(nrc_node_t self);
 static s32_t nrc_node_serial_in_recv_msg(nrc_node_t self, nrc_msg_t msg);
 static s32_t nrc_node_serial_in_recv_evt(nrc_node_t self, u32_t event_mask);
 
-// Function sent in buf message; Called by reader of the data
+// Function sent in data available message; Called by reader of the data
 static u32_t read_data(void *self, u8_t *buf, u32_t buf_size);
 
 // Internal functions
@@ -68,12 +68,12 @@ static s32_t send_data(struct nrc_node_serial_in *self);
 
 // Internal variables
 const static s8_t*          _tag = "serial-in"; // Used in NRC_LOG function
-static struct nrc_node_api  _api;               // Node API functions
+static struct nrc_node_api  _api;                   // Node API functions
 
 // Register node to node factory; called at system start
 void nrc_node_serial_in_register(void)
 {
-    s32_t result = nrc_factory_register_node_type("serial-in", nrc_node_serial_in_create);
+    s32_t result = nrc_factory_register_node_type("nrc-serial-in", nrc_node_serial_in_create);
     if (!OK(result)) {
         NRC_LOGE(_tag, "register: error %d", result);
     }
@@ -84,7 +84,7 @@ nrc_node_t nrc_node_serial_in_create(struct nrc_node_factory_pars *pars)
 {
     struct nrc_node_serial_in *self = NULL;
 
-    if ((pars != NULL) && (strcmp("serial-in", pars->cfg_type) == 0)) {
+    if ((pars != NULL) && (strcmp("nrc-serial-in", pars->cfg_type) == 0)) {
         self = (struct nrc_node_serial_in*)nrc_os_node_alloc(sizeof(struct nrc_node_serial_in));
 
         if (self != NULL) {
@@ -110,7 +110,10 @@ nrc_node_t nrc_node_serial_in_create(struct nrc_node_factory_pars *pars)
             self->reader.data_available_evt = NRC_N_SERIAL_IN_EVT_DATA_AVAIL;
             self->reader.error_evt = NRC_N_SERIAL_IN_EVT_ERROR;
             self->reader.node = self;
-            self->max_buf_size = NRC_N_SERIAL_IN_MAX_BUF_SIZE; // Default message buf size
+            self->msg_type = NRC_N_SERIAL_IN_MSG_BYTE_ARRAY;    // Default message type
+            self->max_buf_size = NRC_N_SERIAL_IN_MAX_BUF_SIZE;  // Default message buf size
+
+            // Object type check
             self->type = NRC_N_SERIAL_IN_TYPE; // For node pointer validity check
 
             self->state = NRC_N_SERIAL_IN_S_CREATED;
@@ -143,8 +146,8 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
                 // Read topic from configuration
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);
                 if (OK(result)) {
-                    // Get cfg id of serial-port configuration node
-                    result = nrc_cfg_get_str(self->hdr.cfg_id, "serial-port", &self->cfg_serial_id);
+                    // Get cfg id of serial configuration node
+                    result = nrc_cfg_get_str(self->hdr.cfg_id, "serial", &self->cfg_serial_id);
                 }
                 if (OK(result)) {
                     // Get msg type to send; data available or byte array
@@ -157,6 +160,8 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
                         }
                         else {
                             self->msg_type = NRC_N_SERIAL_IN_MSG_BYTE_ARRAY;
+
+                            // TODO: Read buf size
                         }
                     }
                 }
@@ -184,13 +189,6 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
                 self->state = NRC_N_SERIAL_IN_S_ERROR;
                 NRC_LOGE(_tag, "init(%s): error %d", self->hdr.cfg_id, result);
             }
-            break;
-
-        case NRC_N_SERIAL_IN_S_INITIALISED:
-        case NRC_N_SERIAL_IN_S_STARTED:
-            // If init is called a second time it means there may be more wires to readout (if needed)
-            result = NRC_R_OK;
-            NRC_LOGI(_tag, "init(%s): ok", self->hdr.cfg_id);
             break;
 
         default:

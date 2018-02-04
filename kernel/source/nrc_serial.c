@@ -63,7 +63,7 @@ static s32_t serial_open_reader_or_writer(
 static void data_available(nrc_port_uart_t uart, s32_t result);
 static void write_complete(nrc_port_uart_t uart, s32_t result, u32_t bytes);
 
-static const s8_t                           *_tag = "nrc_serial";
+static const s8_t                           *_tag = "serial";
 static bool_t                               _initialized = FALSE;
 
 static struct nrc_serial                    *_serial = NULL;        // List of created serial objects
@@ -99,7 +99,7 @@ static s32_t serial_open_reader_or_writer(
 
     if ((cfg_id_settings != NULL) && (serial_id != NULL) && 
         (((reader != NULL) && (reader->node != NULL) && (reader->data_available_evt != 0) && (reader->error_evt != 0)) ||
-         ((writer != NULL) && (writer->node != NULL) && (writer->write_complete_evt != 0) && (reader->error_evt != 0)))) {
+         ((writer != NULL) && (writer->node != NULL) && (writer->write_complete_evt != 0) && (writer->error_evt != 0)))) {
 
         *serial_id = NULL;
 
@@ -129,8 +129,12 @@ static s32_t serial_open_reader_or_writer(
                 memset(serial, 0, sizeof(struct nrc_serial));
 
                 serial->cfg_id_settings = cfg_id_settings;
-                serial->reader = *reader;
-                serial->writer = *writer;
+                if (reader != NULL) {
+                    serial->reader = *reader;
+                }
+                if (writer != NULL) {
+                    serial->writer = *writer;
+                }
                 serial->open = FALSE; // Not yet opened
 
                 // Insert first in list
@@ -378,7 +382,7 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
         result = nrc_cfg_get_str(cfg_id, "type", &cfg_type);
 
         if (result == NRC_R_OK) {
-            if ((cfg_type == NULL) || (strcmp("serial", cfg_type) != 0)) {
+            if ((cfg_type == NULL) || (strcmp("nrc-serial", cfg_type) != 0)) {
                 result = NRC_R_INVALID_CFG;
             }
         }
@@ -446,7 +450,7 @@ static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_p
     }
     if (result == NRC_R_OK) {
         const s8_t *cfg_flow_ctrl = NULL;
-        result = nrc_cfg_get_str(cfg_id, "flowcontrol", &cfg_flow_ctrl);
+        result = nrc_cfg_get_str(cfg_id, "flowctrl", &cfg_flow_ctrl);
 
         if (result == NRC_R_OK) {
             if (strcmp("none", cfg_flow_ctrl) == 0) {

@@ -64,7 +64,7 @@ static struct nrc_node_api  _api;                // Node API functions
 // Register node to node factory; called at system start
 void nrc_node_serial_out_register(void)
 {
-    s32_t result = nrc_factory_register_node_type("serial-out", nrc_node_serial_out_create);
+    s32_t result = nrc_factory_register_node_type("nrc-serial-out", nrc_node_serial_out_create);
     if (!OK(result)) {
         NRC_LOGE(_tag, "register: error %d", result);
     }
@@ -75,7 +75,7 @@ nrc_node_t nrc_node_serial_out_create(struct nrc_node_factory_pars *pars)
 {
     struct nrc_node_serial_out *self = NULL;
 
-    if ((pars != NULL) && (strcmp("serial-out", pars->cfg_type) == 0)) {
+    if ((pars != NULL) && (strcmp("nrc-serial-out", pars->cfg_type) == 0)) {
         self = (struct nrc_node_serial_out*)nrc_os_node_alloc(sizeof(struct nrc_node_serial_out));
 
         if (self != NULL) {
@@ -135,7 +135,7 @@ static s32_t nrc_node_serial_out_init(nrc_node_t slf)
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);
                 if (OK(result)) {
                     // Get cfg id of serial-port configuration node
-                    result = nrc_cfg_get_str(self->hdr.cfg_id, "serial-port", &self->cfg_serial_id);
+                    result = nrc_cfg_get_str(self->hdr.cfg_id, "serial", &self->cfg_serial_id);
                 }
                 if (OK(result)) {
                     // Get node priority
@@ -161,13 +161,6 @@ static s32_t nrc_node_serial_out_init(nrc_node_t slf)
                 self->state = NRC_N_SERIAL_OUT_S_ERROR;
                 NRC_LOGE(_tag, "init(%s): error %d", self->hdr.cfg_id, result);
             }
-            break;
-
-        case NRC_N_SERIAL_OUT_S_INITIALISED:
-        case NRC_N_SERIAL_OUT_S_STARTED:
-            // If init is called a second time it means there may be more wires to readout (if needed)
-            result = NRC_R_OK;
-            NRC_LOGI(_tag, "init(%s): ok", self->hdr.cfg_id);
             break;
 
         default:

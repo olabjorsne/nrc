@@ -48,11 +48,12 @@ extern "C" {
 #define NULL ((void*)0)
 #endif
 
-#define S8_MAX_VALUE  (0x7F)
-#define S8_MIN_VALUE  (0x80)
-#define U8_MAX_VALUE  (0xFF)
-#define S32_MAX_VALUE (0x7FFFFFFF)
-#define U32_MAX_VALUE (0xFFFFFFFF)
+#define S8_MAX_VALUE  (127)
+#define S8_MIN_VALUE  (-128)
+#define U8_MAX_VALUE  (255)
+#define S32_MIN_VALUE (2147483647)
+#define S32_MAX_VALUE (2147483647)
+#define U32_MAX_VALUE (4294967295)
 
 typedef signed char         s8_t;
 typedef signed short        s16_t;
