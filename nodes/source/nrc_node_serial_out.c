@@ -22,10 +22,12 @@
 // Node states
 enum nrc_node_serial_out_state {
     NRC_N_SERIAL_OUT_S_INVALID = 0,      
-    NRC_N_SERIAL_OUT_S_CREATED,      // Created but not yet initialised. No memory allocated except the object itself.
-    NRC_N_SERIAL_OUT_S_INITIALISED,  // Initialised and memory allocated. Ready to be started.
-    NRC_N_SERIAL_OUT_S_STARTED,      // Resources is started and node is now running.
-    NRC_N_SERIAL_OUT_S_ERROR         // Error occurred which node cannot recover from. Other nodes can continue to run.
+    NRC_N_SERIAL_OUT_S_CREATED,                 // Created but not yet initialised. No memory allocated except the object itself.
+    NRC_N_SERIAL_OUT_S_INITIALISED,             // Initialised and memory allocated. Ready to be started.
+    NRC_N_SERIAL_OUT_S_STARTED,                 // Resources is started and node is now running.
+    NRC_N_SERIAL_OUT_S_STARTED_TX_BUF,          // Resources is started and node is now running with outstanding write
+    NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL,   // Resources is started and node is now running with outstanding write
+    NRC_N_SERIAL_OUT_S_ERROR                    // Error occurred which node cannot recover from. Other nodes can continue to run.
 };
 
 struct nrc_node_serial_out {
@@ -39,6 +41,12 @@ struct nrc_node_serial_out {
     enum nrc_node_serial_out_state  state;          // Node state
     nrc_serial_t                    serial;         // NRC serial port
     struct nrc_serial_writer        writer;         // Writer notification data
+
+    struct nrc_msg_buf              *msg_buf;       // Message for outstanding write
+
+    nrc_node_t                      read_node;      // Node to read from
+    nrc_msg_read_t                  read_fcn;       // Read function of data available msg
+    u8_t                            *data_avail_buf;// Buffer for data available writes
 
     u32_t                           type;           // Object type check; unique number for every object type
 };
@@ -55,7 +63,8 @@ static s32_t nrc_node_serial_out_recv_msg(nrc_node_t self, nrc_msg_t msg);
 static s32_t nrc_node_serial_out_recv_evt(nrc_node_t self, u32_t event_mask);
 
 // Internal functions
-static s32_t write_data(struct nrc_node_serial_out *self, struct nrc_msg_hdr *msg_hdr);
+static s32_t write_msg_buf(struct nrc_node_serial_out *self, struct nrc_msg_buf *msg);
+static s32_t write_msg_data_avail(struct nrc_node_serial_out *self, struct nrc_msg_data_available *msg);
 
 // Internal variables
 const static s8_t*          _tag = "serial-out"; // Used in NRC_LOG function
@@ -64,7 +73,7 @@ static struct nrc_node_api  _api;                // Node API functions
 // Register node to node factory; called at system start
 void nrc_node_serial_out_register(void)
 {
-    s32_t result = nrc_factory_register_node_type("serial-out", nrc_node_serial_out_create);
+    s32_t result = nrc_factory_register_node_type("nrc-serial-out", nrc_node_serial_out_create);
     if (!OK(result)) {
         NRC_LOGE(_tag, "register: error %d", result);
     }
@@ -75,7 +84,7 @@ nrc_node_t nrc_node_serial_out_create(struct nrc_node_factory_pars *pars)
 {
     struct nrc_node_serial_out *self = NULL;
 
-    if ((pars != NULL) && (strcmp("serial-out", pars->cfg_type) == 0)) {
+    if ((pars != NULL) && (strcmp("nrc-serial-out", pars->cfg_type) == 0)) {
         self = (struct nrc_node_serial_out*)nrc_os_node_alloc(sizeof(struct nrc_node_serial_out));
 
         if (self != NULL) {
@@ -135,7 +144,7 @@ static s32_t nrc_node_serial_out_init(nrc_node_t slf)
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);
                 if (OK(result)) {
                     // Get cfg id of serial-port configuration node
-                    result = nrc_cfg_get_str(self->hdr.cfg_id, "serial-port", &self->cfg_serial_id);
+                    result = nrc_cfg_get_str(self->hdr.cfg_id, "serial", &self->cfg_serial_id);
                 }
                 if (OK(result)) {
                     // Get node priority
@@ -154,6 +163,9 @@ static s32_t nrc_node_serial_out_init(nrc_node_t slf)
             }
 
             if (OK(result)) {
+                self->data_avail_buf = (u8_t*)nrc_port_heap_alloc(self->max_buf_size);
+                NRC_ASSERT(self->data_avail_buf != NULL);
+
                 self->state = NRC_N_SERIAL_OUT_S_INITIALISED;
                 NRC_LOGI(_tag, "init(%s): ok", self->hdr.cfg_id);
             }
@@ -161,13 +173,6 @@ static s32_t nrc_node_serial_out_init(nrc_node_t slf)
                 self->state = NRC_N_SERIAL_OUT_S_ERROR;
                 NRC_LOGE(_tag, "init(%s): error %d", self->hdr.cfg_id, result);
             }
-            break;
-
-        case NRC_N_SERIAL_OUT_S_INITIALISED:
-        case NRC_N_SERIAL_OUT_S_STARTED:
-            // If init is called a second time it means there may be more wires to readout (if needed)
-            result = NRC_R_OK;
-            NRC_LOGI(_tag, "init(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
@@ -194,6 +199,8 @@ static s32_t nrc_node_serial_out_deinit(nrc_node_t slf)
         case NRC_N_SERIAL_OUT_S_INITIALISED:
         case NRC_N_SERIAL_OUT_S_ERROR:
             // Free allocated memory (if any)
+            nrc_port_heap_free(self->data_avail_buf);
+            self->data_avail_buf = NULL;
 
             self->state = NRC_N_SERIAL_OUT_S_CREATED;
             NRC_LOGI(_tag, "deinit(%s): ok", self->hdr.cfg_id);
@@ -234,6 +241,8 @@ static s32_t nrc_node_serial_out_start(nrc_node_t slf)
             break;
 
         case NRC_N_SERIAL_OUT_S_STARTED:
+        case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
+        case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
             NRC_LOGI(_tag, "start(%d): already started", self->hdr.cfg_id);
             break;
 
@@ -258,6 +267,11 @@ static s32_t nrc_node_serial_out_stop(nrc_node_t slf)
 
     if ((self != NULL) && (self->type == NRC_N_SERIAL_OUT_TYPE)) {
         switch (self->state) {
+        case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
+        case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
+            // TODO: cancel writing
+            // Fall through ??
+
         case NRC_N_SERIAL_OUT_S_STARTED:
             // Stop any ongoing activites, free memory allocated in the start state
             result = nrc_serial_close_writer(self->serial);
@@ -298,12 +312,24 @@ static s32_t nrc_node_serial_out_recv_msg(nrc_node_t slf, nrc_msg_t msg)
     if ((self != NULL) && (self->type == NRC_N_SERIAL_OUT_TYPE) && (msg_hdr != NULL)) {
         switch (self->state) {
         case NRC_N_SERIAL_OUT_S_STARTED:
-            result = write_data(self, msg_hdr);
-
-            //TODO:
-            
-            NRC_LOGV(_tag, "recv_msg(%s): type %d", self->hdr.cfg_id, msg_hdr->type);   
+            if (msg_hdr->type == NRC_MSG_TYPE_BUF) {
+                result = write_msg_buf(self, (struct nrc_msg_buf*)msg_hdr);
+            }
+            else if (msg_hdr->type == NRC_MSG_TYPE_DATA_AVAILABLE) {
+                result = write_msg_data_avail(self, (struct nrc_msg_data_available*)msg_hdr);
+            }
+            else {
+                NRC_LOGW(_tag, "recv_msg(%s): unknown msg type %d", self->hdr.cfg_id, msg_hdr->type);
+                nrc_os_msg_free(msg);
+            }
             break;
+
+        case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
+        case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
+            // TODO: Ignore??
+            nrc_os_msg_free(msg);
+            break;
+
         default:
             nrc_os_msg_free(msg);
             NRC_LOGW(_tag, "recv_msg(%s): invalid state %d", self->hdr.cfg_id, self->state);
@@ -326,13 +352,28 @@ static s32_t nrc_node_serial_out_recv_evt(nrc_node_t slf, u32_t event_mask)
 
     if ((self != NULL) && (self->type == NRC_N_SERIAL_OUT_TYPE)) {
         switch (self->state) {
-        case NRC_N_SERIAL_OUT_S_STARTED:
-            if ((event_mask | NRC_N_SERIAL_OUT_EVT_WRITE_COMPLETE) != 0) {
-                result = write_data(self, NULL);
+        case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
+            if ((event_mask & NRC_N_SERIAL_OUT_EVT_WRITE_COMPLETE) != 0) {
+                nrc_os_msg_free(self->msg_buf);
+                self->msg_buf = NULL;
 
-                //TODO:
+                self->state = NRC_N_SERIAL_OUT_S_STARTED;
             }
-            if ((event_mask | NRC_N_SERIAL_OUT_EVT_ERROR) != 0) {
+            if ((event_mask & NRC_N_SERIAL_OUT_EVT_ERROR) != 0) {
+                NRC_LOGW(_tag, "recv_evt(%s): serial error %d", self->hdr.cfg_id, nrc_serial_get_write_error(self->serial));
+            }
+            break;
+
+        case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
+            NRC_ASSERT(self->data_avail_buf != NULL);
+
+            if ((event_mask & NRC_N_SERIAL_OUT_EVT_WRITE_COMPLETE) != 0) {
+                self->state = NRC_N_SERIAL_OUT_S_STARTED;
+                if (nrc_serial_get_bytes(self->serial) > 0) {
+                    result = write_msg_data_avail(self, NULL); // Continue to read and write
+                }
+            }
+            if ((event_mask & NRC_N_SERIAL_OUT_EVT_ERROR) != 0) {
                 NRC_LOGW(_tag, "recv_evt(%s): serial error %d", self->hdr.cfg_id, nrc_serial_get_write_error(self->serial));
             }
             break;
@@ -350,21 +391,56 @@ static s32_t nrc_node_serial_out_recv_evt(nrc_node_t slf, u32_t event_mask)
     return result;
 }
 
-static s32_t write_data(struct nrc_node_serial_out *self, struct nrc_msg_hdr *msg_hdr)
+static s32_t write_msg_buf(struct nrc_node_serial_out *self, struct nrc_msg_buf *msg)
 {
     s32_t result = NRC_R_OK;
 
-    NRC_ASSERT(self != NULL);
+    NRC_ASSERT((self != NULL) && (self->type == NRC_N_SERIAL_OUT_TYPE));
+    NRC_ASSERT((msg != NULL) && (msg->hdr.type == NRC_MSG_TYPE_BUF));
     
-    switch (msg_hdr->type) {
-    case NRC_MSG_TYPE_BUF:
-        break;
-    case NRC_MSG_TYPE_DATA_AVAILABLE:
-        break;
-    default:
-        nrc_os_msg_free(msg_hdr);
-        NRC_LOGW(_tag, "write_data(%s): unknown msg %d", self->hdr.cfg_id, msg_hdr->type);
-        break;
+    NRC_ASSERT(self->msg_buf == NULL);
+    self->msg_buf = msg;
+
+    result = nrc_serial_write(self->serial, msg->buf, msg->buf_size);
+
+    if (result == NRC_R_OK) {
+        self->state = NRC_N_SERIAL_OUT_S_STARTED_TX_BUF;
+    }
+    else {
+        NRC_LOGW(_tag, "write_msg_buf(%s): failed write", self->hdr.cfg_id);
+        nrc_os_msg_free(msg);
+        self->state = NRC_N_SERIAL_OUT_S_STARTED;
+    }
+
+    return result;
+}
+
+static s32_t write_msg_data_avail(struct nrc_node_serial_out *self, struct nrc_msg_data_available *msg)
+{
+    s32_t result = NRC_R_OK;
+    u32_t bytes = 0;
+
+    NRC_ASSERT((self != NULL) && (self->type == NRC_N_SERIAL_OUT_TYPE));
+
+    if ((msg != NULL) && (msg->read != NULL) && (msg->node != NULL)) {
+        self->read_fcn = msg->read;
+        self->read_node = msg->node;
+    }
+    NRC_ASSERT((self->read_node != NULL) && (self->read_fcn != NULL));
+
+    bytes = self->read_fcn(self->read_node, self->data_avail_buf, self->max_buf_size);
+
+    self->state = NRC_N_SERIAL_OUT_S_STARTED;
+    if (bytes > 0) {
+        result = nrc_serial_write(self->serial, self->data_avail_buf, bytes);
+
+        if (result == NRC_R_OK) {
+            self->state = NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL;
+        }
+    }
+
+    if (msg != NULL) {
+        nrc_os_msg_free(msg);
     }
 
     return result;
