@@ -359,7 +359,7 @@ static s32_t nrc_node_serial_out_recv_evt(nrc_node_t slf, u32_t event_mask)
         switch (self->state) {
         case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
             if ((event_mask & NRC_N_SERIAL_OUT_EVT_WRITE_COMPLETE) != 0) {
-                struct nrc_msg_buf *msg = self->msg_buf->hdr.next;
+                struct nrc_msg_buf *msg = (struct nrc_msg_buf*)self->msg_buf->hdr.next;
 
                 self->msg_buf->hdr.next = NULL; // If there are linked messages, do not free them
                 nrc_os_msg_free(self->msg_buf);
