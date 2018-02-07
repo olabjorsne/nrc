@@ -9,12 +9,12 @@
 
 #include <string.h>
 
+// Type number to check that node pointer is of correct type
+#define NRC_N_SERIAL_OUT_TYPE            (0x01432FD2)
+
 // Event bitmask for nrc callbacks
 #define NRC_N_SERIAL_OUT_EVT_WRITE_COMPLETE  (1)
 #define NRC_N_SERIAL_OUT_EVT_ERROR           (2)
-
-// Type number to check that node pointer is of correct type
-#define NRC_N_SERIAL_OUT_TYPE            (0x01432FD2)
 
 // Default max buffer read size
 #define NRC_N_SERIAL_OUT_MAX_BUF_SIZE (256)
@@ -142,24 +142,27 @@ static s32_t nrc_node_serial_out_init(nrc_node_t slf)
             if (OK(result)) {
                 // Read topic from configuration
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);
+            }
+            if (OK(result)) {
+                // Get cfg id of serial-port configuration node
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "serial", &self->cfg_serial_id);
+            }
+            if (OK(result)) {
+                // Get node priority
+                s32_t prio;
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "priority", &prio);
                 if (OK(result)) {
-                    // Get cfg id of serial-port configuration node
-                    result = nrc_cfg_get_str(self->hdr.cfg_id, "serial", &self->cfg_serial_id);
-                }
-                if (OK(result)) {
-                    // Get node priority
-                    s32_t prio;
-                    result = nrc_cfg_get_int(self->hdr.cfg_id, "priority", &prio);
-                    if (OK(result)) {
-                        if ((prio >= S8_MIN_VALUE) && (prio <= S8_MAX_VALUE)) {
-                            self->prio = (s8_t)prio;
-                            self->writer.prio = self->prio;
-                        }
-                        else {
-                            result = NRC_R_INVALID_CFG;
-                        }
+                    if ((prio >= S8_MIN_VALUE) && (prio <= S8_MAX_VALUE)) {
+                        self->prio = (s8_t)prio;
+                        self->writer.prio = self->prio;
+                    }
+                    else {
+                        result = NRC_R_INVALID_CFG;
                     }
                 }
+            }
+            if (OK(result)) {
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "bufsize", &self->max_buf_size);
             }
 
             if (OK(result)) {
@@ -191,7 +194,7 @@ static s32_t nrc_node_serial_out_init(nrc_node_t slf)
 
 static s32_t nrc_node_serial_out_deinit(nrc_node_t slf)
 {
-    struct nrc_node_serial_out   *self = (struct nrc_node_serial_out*)slf;
+    struct nrc_node_serial_out  *self = (struct nrc_node_serial_out*)slf;
     s32_t                       result = NRC_R_INVALID_IN_PARAM;
  
     if ((self != NULL) && (self->type == NRC_N_SERIAL_OUT_TYPE)) {
@@ -243,7 +246,7 @@ static s32_t nrc_node_serial_out_start(nrc_node_t slf)
         case NRC_N_SERIAL_OUT_S_STARTED:
         case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
         case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
-            NRC_LOGI(_tag, "start(%d): already started", self->hdr.cfg_id);
+            NRC_LOGW(_tag, "start(%d): already started", self->hdr.cfg_id);
             break;
 
         default:
@@ -277,16 +280,19 @@ static s32_t nrc_node_serial_out_stop(nrc_node_t slf)
             result = nrc_serial_close_writer(self->serial);
             self->serial = NULL;
 
-            // No memory to free
+            if (self->msg_buf != NULL) {
+                nrc_port_heap_free(self->msg_buf);
+                self->msg_buf = NULL;
+            }
 
             self->state = NRC_N_SERIAL_OUT_S_INITIALISED;
             result = NRC_R_OK;
 
-            NRC_LOGI(_tag, "stop(%s): result ", self->hdr.cfg_id, result);
+            NRC_LOGI(_tag, "stop(%s): ok ", self->hdr.cfg_id);
             break;
 
         case NRC_N_SERIAL_OUT_S_INITIALISED:
-            NRC_LOGI(_tag, "stop(%d): already stopped", self->hdr.cfg_id);
+            NRC_LOGW(_tag, "stop(%d): already stopped", self->hdr.cfg_id);
             break;
 
         default:
@@ -305,7 +311,7 @@ static s32_t nrc_node_serial_out_stop(nrc_node_t slf)
 
 static s32_t nrc_node_serial_out_recv_msg(nrc_node_t slf, nrc_msg_t msg)
 {
-    struct nrc_node_serial_out   *self = (struct nrc_node_serial_out*)slf;
+    struct nrc_node_serial_out  *self = (struct nrc_node_serial_out*)slf;
     s32_t                       result = NRC_R_INVALID_IN_PARAM;
     struct nrc_msg_hdr          *msg_hdr = (struct nrc_msg_hdr*)msg;
 
@@ -326,7 +332,6 @@ static s32_t nrc_node_serial_out_recv_msg(nrc_node_t slf, nrc_msg_t msg)
 
         case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
         case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
-            // TODO: Ignore??
             nrc_os_msg_free(msg);
             break;
 
@@ -354,10 +359,17 @@ static s32_t nrc_node_serial_out_recv_evt(nrc_node_t slf, u32_t event_mask)
         switch (self->state) {
         case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
             if ((event_mask & NRC_N_SERIAL_OUT_EVT_WRITE_COMPLETE) != 0) {
+                struct nrc_msg_buf *msg = (struct nrc_msg_buf*)self->msg_buf->hdr.next;
+
+                self->msg_buf->hdr.next = NULL; // If there are linked messages, do not free them
                 nrc_os_msg_free(self->msg_buf);
                 self->msg_buf = NULL;
 
                 self->state = NRC_N_SERIAL_OUT_S_STARTED;
+
+                if (msg != NULL) {
+                    result = write_msg_buf(self, msg);
+                } 
             }
             if ((event_mask & NRC_N_SERIAL_OUT_EVT_ERROR) != 0) {
                 NRC_LOGW(_tag, "recv_evt(%s): serial error %d", self->hdr.cfg_id, nrc_serial_get_write_error(self->serial));

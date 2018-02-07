@@ -9,12 +9,12 @@
 
 #include <string.h>
 
+// Type number to check that node pointer is of correct type
+#define NRC_N_SERIAL_IN_TYPE            (0x18FF346A)
+
 // Event bitmask for nrc_serial callbacks
 #define NRC_N_SERIAL_IN_EVT_DATA_AVAIL  (1)
 #define NRC_N_SERIAL_IN_EVT_ERROR       (2)
-
-// Type number to check that node pointer is of correct type
-#define NRC_N_SERIAL_IN_TYPE            (0x18FF346A)
 
 // Default max buffer read size
 #define NRC_N_SERIAL_IN_MAX_BUF_SIZE (256)
@@ -33,6 +33,7 @@ enum nrc_node_serial_in_msg {
     NRC_N_SERIAL_IN_MSG_BYTE_ARRAY      // Send byte array messages to wires
 };
 
+// Serial-in node structure
 struct nrc_node_serial_in {
     struct nrc_node_hdr             hdr;            // General node header; from create function in pars
 
@@ -68,7 +69,7 @@ static s32_t send_data(struct nrc_node_serial_in *self);
 
 // Internal variables
 const static s8_t*          _tag = "serial-in"; // Used in NRC_LOG function
-static struct nrc_node_api  _api;                   // Node API functions
+static struct nrc_node_api  _api;               // Node API functions
 
 // Register node to node factory; called at system start
 void nrc_node_serial_in_register(void)
@@ -131,7 +132,7 @@ nrc_node_t nrc_node_serial_in_create(struct nrc_node_factory_pars *pars)
     return self;
 }
 
-// Initialize the node; allocate memory (if any); ready to start
+// Read configuration; allocate memory (if any); initialize resources (if any); 
 static s32_t nrc_node_serial_in_init(nrc_node_t slf)
 {
     struct nrc_node_serial_in   *self = (struct nrc_node_serial_in*)slf;
@@ -145,38 +146,38 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
             if (OK(result)) {
                 // Read topic from configuration
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);
-                if (OK(result)) {
-                    // Get cfg id of serial configuration node
-                    result = nrc_cfg_get_str(self->hdr.cfg_id, "serial", &self->cfg_serial_id);
-                }
-                if (OK(result)) {
-                    // Get msg type to send; data available or byte array
-                    s8_t *cfg_msg_type = NULL;
-                    result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &cfg_msg_type);
+            }
+            if (OK(result)) {
+                // Get cfg id of serial configuration node
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "serial", &self->cfg_serial_id);
+            }
+            if (OK(result)) {
+                // Get msg type to send; data available or byte array
+                s8_t *cfg_msg_type = NULL;
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &cfg_msg_type);
 
-                    if (OK(result)) {
-                        if (strcmp(cfg_msg_type, "dataavailable") == 0) {
-                            self->msg_type = NRC_N_SERIAL_IN_MSG_DATA_AVAIL;
-                        }
-                        else {
-                            self->msg_type = NRC_N_SERIAL_IN_MSG_BYTE_ARRAY;
+                if (OK(result)) {
+                    if (strcmp(cfg_msg_type, "dataavailable") == 0) {
+                        self->msg_type = NRC_N_SERIAL_IN_MSG_DATA_AVAIL;
+                    }
+                    else {
+                        self->msg_type = NRC_N_SERIAL_IN_MSG_BYTE_ARRAY;
 
-                            // TODO: Read buf size
-                        }
+                        result = nrc_cfg_get_int(self->hdr.cfg_id, "bufsize", &self->max_buf_size);
                     }
                 }
+            }
+            if (OK(result)) {
+                // Get node priority
+                s32_t prio;
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "priority", &prio);
                 if (OK(result)) {
-                    // Get node priority
-                    s32_t prio;
-                    result = nrc_cfg_get_int(self->hdr.cfg_id, "priority", &prio);
-                    if (OK(result)) {
-                        if ((prio >= S8_MIN_VALUE) && (prio <= S8_MAX_VALUE)) {
-                            self->prio = (s8_t)prio;
-                            self->reader.prio = self->prio;
-                        }
-                        else {
-                            result = NRC_R_INVALID_CFG;
-                        }
+                    if ((prio >= S8_MIN_VALUE) && (prio <= S8_MAX_VALUE)) {
+                        self->prio = (s8_t)prio;
+                        self->reader.prio = self->prio;
+                    }
+                    else {
+                        result = NRC_R_INVALID_CFG;
                     }
                 }
             }
@@ -260,7 +261,7 @@ static s32_t nrc_node_serial_in_start(nrc_node_t slf)
             break;
 
         case NRC_N_SERIAL_IN_S_STARTED:
-            NRC_LOGI(_tag, "start(%d): already started", self->hdr.cfg_id);
+            NRC_LOGW(_tag, "start(%d): already started", self->hdr.cfg_id);
             break;
 
         default:
@@ -294,11 +295,11 @@ static s32_t nrc_node_serial_in_stop(nrc_node_t slf)
             self->state = NRC_N_SERIAL_IN_S_INITIALISED;
             result = NRC_R_OK;
 
-            NRC_LOGI(_tag, "stop(%s): result ", self->hdr.cfg_id, result);
+            NRC_LOGI(_tag, "stop(%s): ok ", self->hdr.cfg_id);
             break;
 
         case NRC_N_SERIAL_IN_S_INITIALISED:
-            NRC_LOGI(_tag, "stop(%d): already stopped", self->hdr.cfg_id);
+            NRC_LOGW(_tag, "stop(%d): already stopped", self->hdr.cfg_id);
             break;
 
         default:
