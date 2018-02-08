@@ -21,7 +21,7 @@
         "x": 222,
         "y": 215.14999389648438,
         "msgtype": "bytearray",
-        "bufsize":  512,
+        "bufsize": 512,
         "wires": [ [ "5c1acde8.23d444" ] ]
     },
     {
@@ -36,6 +36,25 @@
         "x": 432,
         "y": 195.29998779296875,
         "wires": []
+    },
+    {
+        "id": "fc79931a.d428d",
+        "type": "nrc-inject",
+        "priority":  8,
+         "name": "my inject node",
+        "topic": "timeout: 5s",
+        "period": 5000,
+        "once": false,
+        "wires": [ [ "e73d61e7.fc1c" ] ]
+    },
+    {
+        "id": "e73d61e7.fc1c",
+        "type": "nrc-debug",
+        "priority": 8,
+        "name": "my debug node",
+        "active": true,
+        "console": "false",
+        "complete": "true",
+        "wires": []
     }
-
 ]
