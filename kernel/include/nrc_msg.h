@@ -34,22 +34,34 @@ extern "C" {
 
 typedef void* nrc_msg_t;
 
+/**
+* @brief Message header that every message type must start with
+*/
 struct nrc_msg_hdr {
-    struct nrc_msg_hdr  *next;
-    const s8_t          *topic;
-    u32_t               type;
+    struct nrc_msg_hdr  *next;  // Messages can be linked
+    const s8_t          *topic; // Topic of the message
+    u32_t               type;   // Type to describe what specific message it is
 };
 
+/**
+* @brief Message representing an integer value
+*/
 struct nrc_msg_int {
     struct nrc_msg_hdr  hdr;
     s32_t               value;
 };
 
+/**
+* @brief Message representing a null terminated string
+*/
 struct nrc_msg_str {
     struct nrc_msg_hdr  hdr;
     s8_t                str[NRC_EMTPY_ARRAY];
 };
 
+/**
+* @brief Message representing a byte array
+*/
 struct nrc_msg_buf {
     struct nrc_msg_hdr  hdr;
     u32_t               buf_size;
@@ -58,11 +70,14 @@ struct nrc_msg_buf {
 
 typedef u32_t(*nrc_msg_read_t)(void *node, u8_t *buf, u32_t buf_size);
 
+/**
+* @brief Message representing a data_available callback
+*/
 struct nrc_msg_data_available {
     struct nrc_msg_hdr  hdr;
-    void                *node;
-    nrc_msg_read_t      read;
-};
+    void                *node;  // Node to read data from
+    nrc_msg_read_t      read;   // Read function. If 0 bytes is returned, a new
+};                              // data_available message shall be sent when new data is available
 
 #ifdef __cplusplus
 }

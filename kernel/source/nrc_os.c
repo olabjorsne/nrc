@@ -312,7 +312,7 @@ nrc_node_t nrc_os_node_get(const s8_t *cfg_id)
         struct nrc_os_node_hdr  *hdr = _os.node_list;
 
         while ((found == FALSE) && (hdr != NULL)) {
-            if (strncmp(cfg_id, hdr->cfg_id, NRC_MAX_CFG_NAME_LEN) == 0) {
+            if (strcmp(cfg_id, hdr->cfg_id) == 0) {
                 found = TRUE;
                 node = hdr + 1;
             }

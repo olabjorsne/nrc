@@ -27,6 +27,9 @@ extern "C" {
 
 typedef void* nrc_node_t;
 
+/**
+* @brief Function declarations for node api
+*/
 typedef s32_t (*nrc_node_init_t)(nrc_node_t self);
 typedef s32_t (*nrc_node_deinit_t)(nrc_node_t self);
 typedef s32_t (*nrc_node_start_t)(nrc_node_t self);
@@ -34,19 +37,25 @@ typedef s32_t (*nrc_node_stop_t)(nrc_node_t self);
 typedef s32_t (*nrc_node_recv_msg_t)(nrc_node_t self, nrc_msg_t msg);
 typedef s32_t (*nrc_node_recv_evt_t)(nrc_node_t self, u32_t event_mask);
 
+/**
+* @brief Function api that every node must implement
+*/
 struct nrc_node_api {
-    nrc_node_init_t     init;
-    nrc_node_deinit_t   deinit;
-    nrc_node_start_t    start;
-    nrc_node_stop_t     stop;
-    nrc_node_recv_msg_t recv_msg;
-    nrc_node_recv_evt_t recv_evt;
+    nrc_node_init_t     init;       // Allocate memory, read configuration, etc..
+    nrc_node_deinit_t   deinit;     // Free allocated memory
+    nrc_node_start_t    start;      // Open resources and get ready to receive messages/events
+    nrc_node_stop_t     stop;       // Close resources, and free memory allocated when started
+    nrc_node_recv_msg_t recv_msg;   // Receive message or chain of messages sent to node
+    nrc_node_recv_evt_t recv_evt;   // Receive events from nrc layer (typically from opened resources)
 };
 
+/**
+* @brief A node structure must start with the following header
+*/
 struct nrc_node_hdr {
-    const s8_t          *cfg_type;
-    const s8_t          *cfg_id;
-    const s8_t          *cfg_name;
+    const s8_t          *cfg_type;  // Node type as in configuration file
+    const s8_t          *cfg_id;    // Node identifier as in configuration file
+    const s8_t          *cfg_name;  // Node name as in configuration file
 };
 
 #ifdef __cplusplus
