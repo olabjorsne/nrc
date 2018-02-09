@@ -25,8 +25,6 @@ extern "C" {
 
 #define NRC_EMTPY_ARRAY (1) //If C99 supported empty array supported
 
-#define NRC_MAX_CFG_NAME_LEN    (32) //Max string length for id, type, name, etc.. in cfg
-
 #define NRC_UNUSED(x) (void)(x)
 
 #ifdef __cplusplus
