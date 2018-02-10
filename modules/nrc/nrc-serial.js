@@ -3,7 +3,7 @@ module.exports = function(RED) {
     "use strict";
     var settings = RED.settings;
     var events = require("events");
-    var serialp = require("serialport");
+    //var serialp = require("serialport");
 
     function NRCSerialNode(n) {
         RED.nodes.createNode(this,n);
@@ -24,6 +24,7 @@ module.exports = function(RED) {
         this.serial = n.serial;
         this.serialConfig = RED.nodes.getNode(this.serial);
 
+        /*
         if (this.serialConfig) {
             var node = this;
             node.port = serialPool.get(this.serialConfig.serialport,
@@ -69,6 +70,7 @@ module.exports = function(RED) {
         else {
             this.error(RED._("serial.errors.missing-conf"));
         }
+        */
 
         this.on("close", function(done) {
             if (this.serialConfig) {
@@ -87,6 +89,7 @@ module.exports = function(RED) {
         this.serial = n.serial;
         this.serialConfig = RED.nodes.getNode(this.serial);
 
+        /*
         if (this.serialConfig) {
             var node = this;
             node.tout = null;
@@ -175,6 +178,7 @@ module.exports = function(RED) {
         else {
             this.error(RED._("serial.errors.missing-conf"));
         }
+        */
 
         this.on("close", function(done) {
             if (this.serialConfig) {
@@ -187,7 +191,7 @@ module.exports = function(RED) {
     }
     RED.nodes.registerType("nrc-serial-in", NRCSerialInNode);
 
-
+    /*
     var serialPool = (function() {
         var connections = {};
         return {
@@ -290,4 +294,5 @@ module.exports = function(RED) {
             res.json(ports);
         });
     });
+    */
 }
