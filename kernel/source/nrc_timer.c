@@ -19,7 +19,6 @@
 #include "nrc_node.h"
 #include "nrc_os.h"
 #include "nrc_log.h"
-#include <assert.h>
 
 enum nrc_timer_state {
     NRC_TIMER_S_INVALID,
