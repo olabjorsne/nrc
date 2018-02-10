@@ -1,0 +1,2 @@
+nrc-serial
+Based on "https://flows.nodered.org/node/node-red-node-serialport"

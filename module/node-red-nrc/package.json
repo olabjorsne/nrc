@@ -1,0 +1,20 @@
+{
+  "name": "node-red-c",
+  "version": "0.0.1",
+  "description": "Embedded library for a C environment",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "embedded",
+    "c",
+    "node-red"
+  ],
+  "author": "Tomas Frisberg & Ola Bjorsne",
+  "license": "Apache-2.0",
+  "node-red": {
+    "nodes": {
+        "serial-port": "nrc-serial.js"
+    }
+  }
+}
