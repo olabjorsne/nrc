@@ -6,16 +6,18 @@ module.exports = function(RED) {
     //var serialp = require("serialport");
 
     function NRCSerialNode(n) {
-        RED.nodes.createNode(this,n);
+        RED.nodes.createNode(this, n);
+        this.name = "nrc-serial";
         this.serialport = n.serialport;
-        this.newline = n.newline;
-        this.addchar = n.addchar || "false";
+        //this.newline = n.newline;
+        //this.addchar = n.addchar || "false";
         this.serialbaud = parseInt(n.serialbaud) || 57600;
         this.databits = parseInt(n.databits) || 8;
         this.parity = n.parity || "none";
+        this.flowctrl = n.flowctrl || "none";
         this.stopbits = parseInt(n.stopbits) || 1;
-        this.bin = n.bin || "false";
-        this.out = n.out || "char";
+        //this.bin = n.bin || "false";
+        //this.out = n.out || "char";
     }
     RED.nodes.registerType("nrc-serial",NRCSerialNode);
 

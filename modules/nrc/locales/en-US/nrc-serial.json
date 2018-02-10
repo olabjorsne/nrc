@@ -7,6 +7,7 @@
             "databits": "Data Bits",
             "parity": "Parity",
             "stopbits": "Stop Bits",
+            "flowctrl":  "Flow Control",
             "input": "Input",
             "split": "Split input",
             "deliver": "and deliver",
@@ -15,14 +16,16 @@
             "none": "none"
         },
         "placeholder": {
-            "serialport": "for example: /dev/ttyUSB0/"
+            "serialport": "for example: 0, 1, 2..."
         },
         "parity": {
             "none": "None",
             "even": "Even",
-            "mark": "Mark",
-            "odd": "Odd",
-            "space": "Space"
+            "odd": "Odd"
+        },
+        "flowctrl": {
+            "none": "None",
+            "hw":  "Hw"
         },
         "split": {
             "character": "on the character",
