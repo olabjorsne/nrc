@@ -8,6 +8,25 @@
         <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span></label>
         <input type="text" id="node-input-name" data-i18n="[placeholder]node-red:common.label.name">
     </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.topic"></span></label>
+        <input type="text" id="node-input-topic" data-i18n="[placeholder]node-red:common.label.topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-priority"><i class="fa fa-tag"></i> Priority</label>
+        <input type="text" id="node-input-priority" placeholder="8">
+    </div>
+    <div class="form-row">
+        <label for="node-input-msgtype"><i class="fa fa-tag"></i> Msg type</label>
+        <select type="text" id="node-input-msgtype">
+            <option value="dataavailable"> Data available</option>
+            <option value="bytearray"> Byte array</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-bufsize"><i class="fa fa-tag"></i> Read size</label>
+        <input type="text" id="node-input-bufsize" placeholder="256">
+    </div>
 </script>
 
 <script type="text/x-red" data-help-name="nrc-serial-in">
@@ -24,8 +43,12 @@
     RED.nodes.registerType('nrc-serial-in',{
         category: 'nrc',
         defaults: {
-            name: {name:""},
-            serial: {type:"nrc-serial",required:true}
+            name: { name: "" },
+            topic: {value: ""},
+            serial: { type: "nrc-serial", required: true },
+            priority: { value: "8", required: true, validate: RED.validators.number() },
+            bufsize: { value: "256", required: true, validate: RED.validators.number() },
+            msgtype: { value: "bytearray", required: true}
         },
         color:"BurlyWood",
         inputs:0,
@@ -50,6 +73,18 @@
         <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span></label>
         <input type="text" id="node-input-name" data-i18n="[placeholder]node-red:common.label.name">
     </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.topic"></span></label>
+        <input type="text" id="node-input-topic" data-i18n="[placeholder]node-red:common.label.topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-priority"><i class="fa fa-tag"></i> Priority</label>
+        <input type="text" id="node-input-priority" placeholder="8">
+    </div>
+    <div class="form-row">
+        <label for="node-input-bufsize"><i class="fa fa-tag"></i> Write size</label>
+        <input type="text" id="node-input-bufsize" placeholder="256">
+    </div>
 </script>
 
 <script type="text/x-red" data-help-name="nrc-serial-out">
@@ -63,8 +98,11 @@
     RED.nodes.registerType('nrc-serial-out',{
         category: 'nrc',
         defaults: {
-            name: {name:""},
-            serial: {type:"nrc-serial",required:true}
+            name: { name: "" },
+            topic: { value: "" },
+            serial: { type: "nrc-serial", required: true },
+            priority: { value: "8", required: true, validate: RED.validators.number() },
+            bufsize: { value: "256", required: true, validate: RED.validators.number() }        
         },
         color:"BurlyWood",
         inputs:1,

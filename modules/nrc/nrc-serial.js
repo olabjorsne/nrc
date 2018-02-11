@@ -24,6 +24,10 @@ module.exports = function(RED) {
     function NRCSerialOutNode(n) {
         RED.nodes.createNode(this,n);
         this.serial = n.serial;
+        this.bufsize = n.bufsize;
+        this.name = n.name;
+        this.topic = n.topic;
+        this.priority = n.priority;
         this.serialConfig = RED.nodes.getNode(this.serial);
 
         /*
@@ -89,6 +93,11 @@ module.exports = function(RED) {
     function NRCSerialInNode(n) {
         RED.nodes.createNode(this,n);
         this.serial = n.serial;
+        this.name = n.name;
+        this.topic = n.topic;
+        this.priority = n.priority;
+        this.msgtype = n.msgtype;
+        this.bufsize = n.bufsize;
         this.serialConfig = RED.nodes.getNode(this.serial);
 
         /*
