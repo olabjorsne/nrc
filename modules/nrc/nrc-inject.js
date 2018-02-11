@@ -34,6 +34,7 @@ module.exports = function(RED) {
         this.name = n.name;
         this.timeout = n.timeout;
         this.repeat = n.repeat;
+        this.priority = n.priority;
 
         /*
         // copy "this" object in case we need it in context of callbacks of other functions.

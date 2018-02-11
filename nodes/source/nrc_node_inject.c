@@ -35,7 +35,8 @@ struct nrc_node_inject {
     //enum nrc_node_inject_types  payload_type;  // TODO: Do we need user configurable types?
     //s8_t                        *payload_string;
 
-    u32_t                       period_ms;
+    u32_t                       timeout_ms;
+    bool_t                      repeat;
     struct nrc_timer_pars       timer_pars;
 
     u32_t                       type;
@@ -108,14 +109,27 @@ static s32_t nrc_node_inject_init(nrc_node_t slf)
             result = nrc_timer_init();
 
             if (OK(result)) {
-                s32_t period_ms = 0;
-                result = nrc_cfg_get_int(self->hdr.cfg_id, "period", &period_ms);
+                s32_t timeout_ms = 0;
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "timeout", &timeout_ms);
                 if (OK(result)) {
-                    if (period_ms >= 0) {
-                        self->period_ms = period_ms;
+                    if (timeout_ms >= 0) {
+                        self->timeout_ms = timeout_ms;
                     }
                     else {
                         result = NRC_R_INVALID_CFG;
+                    }
+                }
+            }
+            if (OK(result)) {
+                s8_t *str;
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "repeat", &str);
+
+                if (OK(result)) {
+                    if (strcmp(str, "false") == 0) {
+                        self->repeat = FALSE;
+                    }
+                    else {
+                        self->repeat = TRUE;
                     }
                 }
             }
@@ -203,8 +217,8 @@ static s32_t nrc_node_inject_start(nrc_node_t slf)
             self->timer_pars.evt = NRC_N_INJECT_EVT_TIMEOUT;
             self->timer_pars.prio = self->prio;
 
-            if (self->period_ms >= 0) {
-                result = nrc_timer_after(self->period_ms, &self->timer_pars);
+            if (self->timeout_ms >= 0) {
+                result = nrc_timer_after(self->timeout_ms, &self->timer_pars);
             }
             else {
                 result = NRC_R_OK;
@@ -303,8 +317,8 @@ static s32_t nrc_node_inject_recv_evt(nrc_node_t slf, u32_t event_mask)
         switch (self->state) {
         case NRC_N_INJECT_S_STARTED:
             if ((event_mask & self->timer_pars.evt) != 0) {
-                if (self->period_ms >= 0) {
-                    result = nrc_timer_after(self->period_ms, &self->timer_pars);
+                if (self->timeout_ms >= 0) {
+                    result = nrc_timer_after(self->timeout_ms, &self->timer_pars);
                 }
 
                 hdr = (struct nrc_msg_hdr*)nrc_os_msg_alloc(sizeof(struct nrc_msg_hdr));

@@ -38,23 +38,38 @@
         "wires": []
     },
     {
-        "id": "fc79931a.d428d",
+        "id": "b33d6d69.25c0b",
         "type": "nrc-inject",
-        "priority":  8,
-         "name": "my inject node",
-        "topic": "timeout: 5s",
-        "period": 5000,
-        "once": false,
-        "wires": [ [ "e73d61e7.fc1c" ] ]
+        "z": "56539973.45d2a8",
+        "name": "tomas",
+        "topic": "abc",
+        "timeout": "3500",
+        "repeat": true,
+        "priority": "9",
+        "x": 317,
+        "y": 262.78997802734375,
+        "wires": [ [ "2d8e3186.0fa65e", "e2191270.184f8" ] ]
     },
     {
-        "id": "e73d61e7.fc1c",
+        "id": "2d8e3186.0fa65e",
         "type": "nrc-debug",
-        "priority": 8,
-        "name": "my debug node",
-        "active": true,
-        "console": "false",
-        "complete": "true",
+        "z": "56539973.45d2a8",
+        "name": "My debug",
+        "host": false,
+        "target": true,
+        "x": 520,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "e2191270.184f8",
+        "type": "nrc-debug",
+        "z": "56539973.45d2a8",
+        "name": "My second debug",
+        "host": true,
+        "target": true,
+        "x": 550,
+        "y": 380,
         "wires": []
     }
 ]
