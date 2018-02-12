@@ -317,7 +317,7 @@ static s32_t nrc_node_inject_recv_evt(nrc_node_t slf, u32_t event_mask)
         switch (self->state) {
         case NRC_N_INJECT_S_STARTED:
             if ((event_mask & self->timer_pars.evt) != 0) {
-                if (self->timeout_ms >= 0) {
+                if ((self->timeout_ms >= 0) && (self->repeat == TRUE)) {
                     result = nrc_timer_after(self->timeout_ms, &self->timer_pars);
                 }
 
