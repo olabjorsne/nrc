@@ -227,35 +227,33 @@ static s32_t log_msg(struct nrc_node_debug *self, nrc_msg_t msg)
 
     // TODO: Messages shall be sent to host
 
-    if (hdr != NULL) {
+    while (hdr != NULL) {
         switch (hdr->type) {
         case NRC_MSG_TYPE_STRING:
         {
             struct nrc_msg_str *msg_str = (struct nrc_msg_str*)hdr;
-            NRC_LOGI(_tag, "%s: topic: %s, string: %s", self->hdr.cfg_id, hdr->topic, msg_str->str);
+            NRC_LOGI(_tag, "%s(%s): topic %s, string: %s", self->hdr.cfg_name, self->hdr.cfg_id, hdr->topic, msg_str->str);
             break;
         }
         case NRC_MSG_TYPE_INT:
         {
             struct nrc_msg_int *msg_int = (struct nrc_msg_int*)hdr;
-            NRC_LOGI(_tag, "%s: topic: %s, int: %d", self->hdr.cfg_id, hdr->topic, msg_int->value);
+            NRC_LOGI(_tag, "%s(%s): topic %s, int: %d", self->hdr.cfg_name, self->hdr.cfg_id, hdr->topic, msg_int->value);
             break;
         }
         case NRC_MSG_TYPE_DATA_AVAILABLE:
         {
             struct nrc_msg_data_available *msg_da = (struct nrc_msg_data_available*)hdr;
-            NRC_LOGI(_tag, "%s: topic: %s, node 0x%X, read fcn: 0x%X", self->hdr.cfg_id, hdr->topic, msg_da->node, msg_da->read);
+            NRC_LOGI(_tag, "%s(%s): topic %s, node 0x%X, read fcn: 0x%X", self->hdr.cfg_name, self->hdr.cfg_id, hdr->topic, msg_da->node, msg_da->read);
             break;
         }
         default:
         {
-            NRC_LOGI(_tag, "%s: topic: %s", self->hdr.cfg_id, hdr->topic);
+            NRC_LOGI(_tag, "%s(%s): topic %s", self->hdr.cfg_name, self->hdr.cfg_id, hdr->topic);
             break;
         }
         }
-    }
-    else {
-        NRC_LOGW(_tag, "%s: empty msg");
+        hdr = hdr->next;
     }
 
     return result;
