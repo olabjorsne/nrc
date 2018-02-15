@@ -552,6 +552,7 @@ s32_t nrc_cfg_get_str(const s8_t *cfg_id, const s8_t *cfg_param_name, const s8_t
 
     if (param) {
         *str = (s8_t*)param->value;
+        status = NRC_R_OK;
     }
     return status; 
 }
@@ -582,6 +583,7 @@ s32_t nrc_cfg_get_int(const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *int
 
     if (param) {
         *int_value = *(s32_t*)param->value;
+        status = NRC_R_OK;
     }
     return status;
 }
