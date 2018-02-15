@@ -122,8 +122,8 @@
 
 <script type="text/x-red" data-template-name="nrc-serial">
     <div class="form-row">
-        <label for="node-config-input-serialport"><i class="fa fa-random"></i> <span data-i18n="serial.label.serialport"></span></label>
-        <input type="text" id="node-config-input-serialport" style="width:60%;" data-i18n="[placeholder]serial.placeholder.serialport">
+        <label for="node-config-input-port"><i class="fa fa-random"></i> <span data-i18n="serial.label.serialport"></span></label>
+        <input type="text" id="node-config-input-port" style="width:60%;" data-i18n="[placeholder]serial.placeholder.serialport">
         <a id="node-config-lookup-serial" class="btn"><i id="node-config-lookup-serial-icon" class="fa fa-search"></i></a>
     </div>
     <div class="form-row">
@@ -139,7 +139,7 @@
             <tr>
                 <td>&nbsp;</td>
                 <td>
-                    <input type="text" id="node-config-input-serialbaud" style="width:100px">
+                    <input type="text" id="node-config-input-baudrate" style="width:100px">
                 </td>
                 <td>
                     <select type="text" id="node-config-input-databits" style="width:70px;">
@@ -220,8 +220,8 @@
             category: 'config',
             defaults: {
                 //name: {value:""},
-                serialport: {value:"",required:true},
-                serialbaud: {value:"57600",required:true,validate:RED.validators.number()},
+                port: {value:"",required:true},
+                baudrate: {value:"57600",required:true,validate:RED.validators.number()},
                 databits: {value:8,required:true},
                 parity: {value:"none",required:true},
                 stopbits: { value: 1, required: true },
@@ -232,12 +232,12 @@
                 //addchar: {value:false}
             },
             label: function() {
-                this.serialbaud = this.serialbaud || 57600;
+                this.baudrate = this.baudrate || 57600;
                 this.databits = this.databits || 8;
                 this.parity = this.parity || this._("serial.label.none");
                 this.stopbits = this.stopbits || 1;
                 this.flowctrl = this.flowctrl || this._("serial.label.none");
-                return this.serialport + ":" + this.serialbaud + "-" + this.databits + this.parity.charAt(0).toUpperCase() + this.stopbits + "-" + this.flowctrl.charAt(0).toUpperCase();
+                return this.port + ":" + this.baudrate + "-" + this.databits + this.parity.charAt(0).toUpperCase() + this.stopbits + "-" + this.flowctrl.charAt(0).toUpperCase();
             },
             oneditprepare: function() {
                 var previous = null;
@@ -255,15 +255,15 @@
                     {label:"other",value:"other",icon:"red/images/typedInput/09.png",validate:/^[0-9]*$/}
                 ];
 
-                var serialbaudType = "custom";
+                var baudrateType = "custom";
                 for (var i in blist) {
-                    if (this.serialbaud == blist[i].value) {
-                        serialbaudType = this.serialbaud;
+                    if (this.baudrate == blist[i].value) {
+                        baudrateType = this.baudrate;
                     }
                 }
 
-                $("#node-config-input-serialbaud").typedInput({
-                    default: this.serialbaud,
+                $("#node-config-input-baudrate").typedInput({
+                    default: this.baudrate,
                     types:blist
                 });
 
@@ -295,7 +295,7 @@
                 });
 
                 try {
-                    $("#node-config-input-serialport").autocomplete( "destroy" );
+                    $("#node-config-input-port").autocomplete( "destroy" );
                 } catch(err) {
                 }
                 $("#node-config-lookup-serial").click(function() {
@@ -306,22 +306,22 @@
                         $.each(data, function(i, port) {
                             ports.push(port.comName);
                         });
-                        $("#node-config-input-serialport").autocomplete({
+                        $("#node-config-input-port").autocomplete({
                             source:ports,
                             minLength:0,
                             close: function( event, ui ) {
-                                $("#node-config-input-serialport").autocomplete( "destroy" );
+                                $("#node-config-input-port").autocomplete( "destroy" );
                             }
                         }).autocomplete("search","");
                     });
                 });
             },
             oneditsave: function() {
-                var mytype = $("#node-config-input-serialbaud").typedInput('type');
+                var mytype = $("#node-config-input-baudrate").typedInput('type');
                 if (mytype !== "other") {
-                    $("#node-config-input-serialbaud").typedInput('value',mytype);
+                    $("#node-config-input-baudrate").typedInput('value',mytype);
                 }
-                this.serialbaud = $("#node-config-input-serialbaud").typedInput('value');
+                this.baudrate = $("#node-config-input-baudrate").typedInput('value');
             }
         });
     </script>

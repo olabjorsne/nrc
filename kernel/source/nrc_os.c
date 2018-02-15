@@ -665,9 +665,7 @@ static void init_registered_nodes(void)
         }
 
         result = hdr->api->init(hdr + 1);
-        if (!OK(result)) {
-            NRC_LOGE(_tag, "init_registered_nodes: Failed node init %s", hdr->cfg_id);
-        }
+        NRC_LOGI(_tag, "init(%s): result %d", hdr->cfg_id, result);
 
         hdr = hdr->next;
     }
@@ -675,20 +673,24 @@ static void init_registered_nodes(void)
 
 static void start_registered_nodes(void)
 {
-    struct nrc_os_node_hdr *hdr = _os.node_list;
+    struct nrc_os_node_hdr  *hdr = _os.node_list;
+    s32_t                   result;
 
     while (hdr != NULL) {
-        hdr->api->start(hdr + 1);
+        result = hdr->api->start(hdr + 1);
+        NRC_LOGI(_tag, "start(%s): result %d", hdr->cfg_id, result);
 
         hdr = hdr->next;
     }
 }
 static void deinit_registered_nodes(void)
 {
-    struct nrc_os_node_hdr *hdr = _os.node_list;
+    struct nrc_os_node_hdr  *hdr = _os.node_list;
+    s32_t                   result;
 
     while (hdr != NULL) {
-        hdr->api->deinit(hdr + 1);
+        result = hdr->api->deinit(hdr + 1);
+        NRC_LOGI(_tag, "deinit(%s): result %d", hdr->cfg_id, result);
 
         hdr = hdr->next;
     }
@@ -724,10 +726,12 @@ static void free_messages(void)
 
 static void stop_registered_nodes(void)
 {
-    struct nrc_os_node_hdr *hdr = _os.node_list;
+    struct nrc_os_node_hdr  *hdr = _os.node_list;
+    s32_t                   result;
 
     while (hdr != NULL) {
-        hdr->api->stop(hdr + 1);
+        result = hdr->api->stop(hdr + 1);
+        NRC_LOGI(_tag, "stop(%s): result %d", hdr->cfg_id, result);
 
         hdr = hdr->next;
     }
@@ -799,13 +803,8 @@ static s32_t parse_flow_cfg(void)
                 n_pars.api = f_pars.api;
                 n_pars.cfg_id = f_pars.cfg_id;
                 s32_t res = register_node(node, n_pars);
-                if (OK(res)) {
-                    NRC_LOGI(_tag, "Node added: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
-                }
-                else {
-                    NRC_LOGE(_tag, "Failed to add node (error=%d): type=\"%s\", id=\"%s\", name=\"%s\"", res, f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
-                }
-            }
+                NRC_LOGI(_tag, "register(%s - %s): result %d", f_pars.cfg_name, f_pars.cfg_id, res);
+             }
             else {
                 NRC_LOGE(_tag, "Node not supported: type=\"%s\", id=\"%s\", name=\"%s\"", f_pars.cfg_type, f_pars.cfg_id, f_pars.cfg_name);
             }

@@ -118,8 +118,6 @@ nrc_node_t nrc_node_serial_in_create(struct nrc_node_factory_pars *pars)
             self->type = NRC_N_SERIAL_IN_TYPE; // For node pointer validity check
 
             self->state = NRC_N_SERIAL_IN_S_CREATED;
-
-            NRC_LOGI(_tag, "create(%s): ok", pars->cfg_id);
         }
         else {
             NRC_LOGE(_tag, "create(%s): out of mem", pars->cfg_id);
