@@ -152,24 +152,18 @@ static s32_t nrc_node_inject_init(nrc_node_t slf)
 
             if (OK(result)) {
                 self->state = NRC_N_INJECT_S_INITIALISED;
-
-                NRC_LOGI(_tag, "init(%s): ok", self->hdr.cfg_id);
             }
             else {
                 self->state = NRC_N_INJECT_S_ERROR;
 
-                NRC_LOGE(_tag, "init(%s): failed %d", self->hdr.cfg_id, result);
+                NRC_LOGE(_tag, "init(%s): to error state", self->hdr.cfg_id);
             }
             break;
 
         default:
-            NRC_LOGE(_tag, "init(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "init: invalid in parameter");
     }
 
     return result;
@@ -188,18 +182,12 @@ static s32_t nrc_node_inject_deinit(nrc_node_t slf)
 
             self->state = NRC_N_INJECT_S_CREATED;
             result = NRC_R_OK;
-
-            NRC_LOGI(_tag, "deinit(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
-            NRC_LOGE(_tag, "deinit(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "deinit: invalid in params");
     }
 
     return result;
@@ -226,8 +214,6 @@ static s32_t nrc_node_inject_start(nrc_node_t slf)
 
             if (OK(result)) {
                 self->state = NRC_N_INJECT_S_STARTED;
-
-                NRC_LOGI(_tag, "start(%s): ok", self->hdr.cfg_id);
             }
             else {
                 self->state = NRC_N_INJECT_S_ERROR;
@@ -237,13 +223,9 @@ static s32_t nrc_node_inject_start(nrc_node_t slf)
             break;
 
         default:
-            NRC_LOGE(_tag, "start(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "start: invalid in params");
     }
 
     return result;
@@ -261,18 +243,12 @@ static s32_t nrc_node_inject_stop(nrc_node_t slf)
 
             self->state = NRC_N_INJECT_S_INITIALISED;
             result = NRC_R_OK;
-
-            NRC_LOGI(_tag, "stop(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
-            NRC_LOGE(_tag, "stop(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "start: invalid in params");
     }
 
     return result;
@@ -287,17 +263,13 @@ static s32_t nrc_node_inject_recv_msg(nrc_node_t slf, nrc_msg_t msg)
 
         switch (self->state) {
         case NRC_N_INJECT_S_STARTED:
-             NRC_LOGW(_tag, "recv_msg(%s): unexpected msg %d", self->hdr.cfg_id);
+            NRC_LOGW(_tag, "recv_msg(%s): unexpected msg %d", self->hdr.cfg_id);
             break;
 
         default:
-            NRC_LOGE(_tag, "recv_msg(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "recv_msg: invalid in params");
     }
 
     if (msg != NULL) {
@@ -331,22 +303,16 @@ static s32_t nrc_node_inject_recv_evt(nrc_node_t slf, u32_t event_mask)
                 else {
                     result = NRC_R_OUT_OF_MEM;
                 }
-
-                NRC_LOGV(_tag, "recv_evt(%s): result %d", event_mask);
             }
             else {
-                NRC_LOGE(_tag, "recv_evt(%s): invalid evt %d", self->hdr.cfg_id, event_mask);
+                NRC_LOGE(_tag, "recv_evt(%s): unextected evt %d", self->hdr.cfg_id, event_mask);
             }
             break;
 
         default:
-            NRC_LOGE(_tag, "recv_evt(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "recv_evt: invalid in params");
     }
 
     return result;

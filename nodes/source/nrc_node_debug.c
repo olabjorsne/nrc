@@ -93,18 +93,12 @@ static s32_t nrc_node_debug_init(nrc_node_t slf)
 
             self->state = NRC_N_DEBUG_S_INITIALISED;
             result = NRC_R_OK;
-
-            NRC_LOGI(_tag, "init(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
-            NRC_LOGE(_tag, "init(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "init: invalid in params");
     }
 
     return result;
@@ -123,18 +117,12 @@ static s32_t nrc_node_debug_deinit(nrc_node_t slf)
 
             self->state = NRC_N_DEBUG_S_CREATED;
             result = NRC_R_OK;
-
-            NRC_LOGI(_tag, "deinit(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
-            NRC_LOGE(_tag, "deinit(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "deinit: invalid in params");
     }
 
     return result;
@@ -151,18 +139,12 @@ static s32_t nrc_node_debug_start(nrc_node_t slf)
 
             self->state = NRC_N_DEBUG_S_STARTED;
             result = NRC_R_OK;
-
-            NRC_LOGI(_tag, "start(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
-            NRC_LOGE(_tag, "start(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "start: invalid in params");
     }
 
     return result;
@@ -178,18 +160,12 @@ static s32_t nrc_node_debug_stop(nrc_node_t slf)
         case NRC_N_DEBUG_S_STARTED:
             self->state = NRC_N_DEBUG_S_INITIALISED;
             result = NRC_R_OK;
-
-            NRC_LOGI(_tag, "stop(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
-            NRC_LOGE(_tag, "stop(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "stop: invalid in params");
     }
 
     return result;
@@ -205,18 +181,12 @@ static s32_t nrc_node_debug_recv_msg(nrc_node_t slf, nrc_msg_t msg)
         switch (self->state) {
         case NRC_N_DEBUG_S_STARTED:
             result = log_msg(self, msg);
-
-            NRC_LOGV(_tag, "recv_msg(%s): result %d", self->hdr.cfg_id, result);
             break;
 
         default:
-            NRC_LOGE(_tag, "recv_msg(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "recv_msg: invalid in params");
     }
 
     if (msg != NULL) {
@@ -239,13 +209,9 @@ static s32_t nrc_node_debug_recv_evt(nrc_node_t slf, u32_t event_mask)
             break;
 
         default:
-            NRC_LOGE(_tag, "recv_evt(%s): invalid state %d", self->hdr.cfg_id, self->state);
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "recv_evt: invalid in params");
     }
 
     return result;
@@ -266,30 +232,30 @@ static s32_t log_msg(struct nrc_node_debug *self, nrc_msg_t msg)
         case NRC_MSG_TYPE_STRING:
         {
             struct nrc_msg_str *msg_str = (struct nrc_msg_str*)hdr;
-            NRC_LOGI(_tag, "log_msg(%s): topic: %s, string: %s", self->hdr.cfg_id, hdr->topic, msg_str->str);
+            NRC_LOGI(_tag, "%s: topic: %s, string: %s", self->hdr.cfg_id, hdr->topic, msg_str->str);
             break;
         }
         case NRC_MSG_TYPE_INT:
         {
             struct nrc_msg_int *msg_int = (struct nrc_msg_int*)hdr;
-            NRC_LOGI(_tag, "log_msg(%s): topic: %s, int: %d", self->hdr.cfg_id, hdr->topic, msg_int->value);
+            NRC_LOGI(_tag, "%s: topic: %s, int: %d", self->hdr.cfg_id, hdr->topic, msg_int->value);
             break;
         }
         case NRC_MSG_TYPE_DATA_AVAILABLE:
         {
             struct nrc_msg_data_available *msg_da = (struct nrc_msg_data_available*)hdr;
-            NRC_LOGI(_tag, "log_msg(%s): topic: %s, node 0x%X, read fcn: 0x%X", self->hdr.cfg_id, hdr->topic, msg_da->node, msg_da->read);
+            NRC_LOGI(_tag, "%s: topic: %s, node 0x%X, read fcn: 0x%X", self->hdr.cfg_id, hdr->topic, msg_da->node, msg_da->read);
             break;
         }
         default:
         {
-            NRC_LOGI(_tag, "log_msg(%s): topic: %s", self->hdr.cfg_id, hdr->topic);
+            NRC_LOGI(_tag, "%s: topic: %s", self->hdr.cfg_id, hdr->topic);
             break;
         }
         }
     }
     else {
-        NRC_LOGW(_tag, "log_msg(%s): empty msg");
+        NRC_LOGW(_tag, "%s: empty msg");
     }
 
     return result;

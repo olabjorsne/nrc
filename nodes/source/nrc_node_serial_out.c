@@ -170,7 +170,6 @@ static s32_t nrc_node_serial_out_init(nrc_node_t slf)
                 NRC_ASSERT(self->data_avail_buf != NULL);
 
                 self->state = NRC_N_SERIAL_OUT_S_INITIALISED;
-                NRC_LOGI(_tag, "init(%s): ok", self->hdr.cfg_id);
             }
             else {
                 self->state = NRC_N_SERIAL_OUT_S_ERROR;
@@ -184,9 +183,6 @@ static s32_t nrc_node_serial_out_init(nrc_node_t slf)
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "init: invalid in parameter");
     }
 
     return result;
@@ -206,7 +202,6 @@ static s32_t nrc_node_serial_out_deinit(nrc_node_t slf)
             self->data_avail_buf = NULL;
 
             self->state = NRC_N_SERIAL_OUT_S_CREATED;
-            NRC_LOGI(_tag, "deinit(%s): ok", self->hdr.cfg_id);
             break;
 
         default:
@@ -215,9 +210,6 @@ static s32_t nrc_node_serial_out_deinit(nrc_node_t slf)
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "deinit: invalid in parameter");
     }
 
     return result;
@@ -235,7 +227,6 @@ static s32_t nrc_node_serial_out_start(nrc_node_t slf)
 
             if (OK(result)) {
                 self->state = NRC_N_SERIAL_OUT_S_STARTED;
-                NRC_LOGI(_tag, "start(%s): OK", self->hdr.cfg_id);
             }
             else {
                 self->state = NRC_N_SERIAL_OUT_S_ERROR;
@@ -255,9 +246,6 @@ static s32_t nrc_node_serial_out_start(nrc_node_t slf)
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "start: invalid in parameter");
     }
 
     return result;
@@ -287,8 +275,6 @@ static s32_t nrc_node_serial_out_stop(nrc_node_t slf)
 
             self->state = NRC_N_SERIAL_OUT_S_INITIALISED;
             result = NRC_R_OK;
-
-            NRC_LOGI(_tag, "stop(%s): ok ", self->hdr.cfg_id);
             break;
 
         case NRC_N_SERIAL_OUT_S_INITIALISED:
@@ -301,9 +287,6 @@ static s32_t nrc_node_serial_out_stop(nrc_node_t slf)
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "stop: invalid in parameter");
     }
 
     return result;
@@ -344,7 +327,6 @@ static s32_t nrc_node_serial_out_recv_msg(nrc_node_t slf, nrc_msg_t msg)
     }
     else {
         nrc_os_msg_free(msg);
-        NRC_LOGE(_tag, "recv_msg: invalid in parameter");
     }
 
     return result;
@@ -395,9 +377,6 @@ static s32_t nrc_node_serial_out_recv_evt(nrc_node_t slf, u32_t event_mask)
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-    else {
-        NRC_LOGE(_tag, "recv_evt: invalid in parameter");
     }
 
     return result;
