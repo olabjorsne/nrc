@@ -120,6 +120,18 @@
     <ClCompile Include="..\..\kernel\source\nrc_data_out.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\nodes\source\nrc_node_tcp_in.c">
+      <Filter>nodes\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\nodes\source\nrc_node_tcp_out.c">
+      <Filter>nodes\source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\nrc_port_socket.c">
+      <Filter>port\win32\source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_tcp.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
@@ -181,6 +193,9 @@
     </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_data_out.h">
       <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\nrc_port_socket.h">
+      <Filter>port\include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
