@@ -16,6 +16,7 @@
 
 
 #include "nrc_types.h"
+#include "nrc_defs.h"
 #include "test_port.h"
 
 #include <stdio.h>
@@ -104,10 +105,12 @@ bool_t test_sema_timeout(u32_t ms)
 
 }
 
-static void sema_thread_fcn(void)
+static void sema_thread_fcn(void *context)
 {
     s32_t result;
 
+    NRC_UNUSED(context);
+    
     Sleep(_delay);
 
     result = nrc_port_sema_signal(_sema);
@@ -126,7 +129,7 @@ bool_t test_sema_and_thread(u32_t ms, u32_t sema_count)
     result = nrc_port_sema_init(sema_count, &_sema);
 
     if (result == NRC_R_OK) {
-        result = nrc_port_thread_init(NRC_PORT_THREAD_PRIO_NORMAL, 4096, sema_thread_fcn, &_thread_id);
+        result = nrc_port_thread_init(NRC_PORT_THREAD_PRIO_NORMAL, 4096, sema_thread_fcn, NULL, &_thread_id);
     }
 
     if (result == NRC_R_OK) {
@@ -287,8 +290,9 @@ bool_t test_timeout_after_and_cancel(void)
     return ok;
 }
 
-static void mutex_thread_fcn(void)
+static void mutex_thread_fcn(void *context)
 {
+    NRC_UNUSED(context);
     nrc_port_mutex_lock(_mutex, 0);
     _bit_mask = 1;
     nrc_port_mutex_unlock(_mutex);
@@ -312,7 +316,7 @@ bool_t test_mutex(void)
     }
 
     if (result == NRC_R_OK) {
-        result = nrc_port_thread_init(NRC_PORT_THREAD_PRIO_NORMAL, 4096, mutex_thread_fcn, &_thread_id);
+        result = nrc_port_thread_init(NRC_PORT_THREAD_PRIO_NORMAL, 4096, mutex_thread_fcn, NULL, &_thread_id);
     }
 
     if (result == NRC_R_OK) {
