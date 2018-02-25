@@ -602,54 +602,51 @@ static void nrc_os_thread_fcn(void)
         result = nrc_port_sema_wait(_os.sema, 0);
         NRC_ASSERT(result == NRC_R_OK);
 
-        do {
-            // Get prio of highest priority msg (if any)
-            msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
+        // Get prio of highest priority msg (if any)
+        msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
 
-            // Get node event with higher prio than highest prio msg (if any)
-            result = nrc_port_irq_disable();
-            // Node list is sorted with highest event priority first
-            if ((_os.node_list->prio < S8_MAX_VALUE) && (_os.node_list->prio <= msg_prio)) {
-                evt_node = _os.node_list;
-                evt = _os.node_list->evt;
+        // Get node event with higher prio than highest prio msg (if any)
+        result = nrc_port_irq_disable();
+        // Node list is sorted with highest event priority first
+        if ((_os.node_list->prio < S8_MAX_VALUE) && (_os.node_list->prio <= msg_prio)) {
+            evt_node = _os.node_list;
+            evt = _os.node_list->evt;
 
-                // Clear event and re-order node to back of list
-                clear_evt(evt_node);
+            // Clear event and re-order node to back of list
+            clear_evt(evt_node);
+        }
+        else {
+            evt_node = NULL;
+        }
+        result = nrc_port_irq_enable();
+
+        // If there is an event with highest prio, call node recv_evt function
+        if (evt_node != NULL) {
+            if (evt_node->api->recv_evt != NULL) {
+                evt_node->api->recv_evt((evt_node + 1), evt);
             }
             else {
-                evt_node = NULL;
+                NRC_LOGI("nrc_os", "Receiving node %s has no recv_evt fcn", evt_node->cfg_id);
             }
-            result = nrc_port_irq_enable();
+        }
+        // Else if there is a msg with highest prio, call node recv_msg function
+        else if (msg_prio < S8_MAX_VALUE) {
+            // Msg with highest prio is first in list
 
-            // If there is an event with highest prio, call node recv_evt function
-            if (evt_node != NULL) {
-                if (evt_node->api->recv_evt != NULL) {
-                    evt_node->api->recv_evt((evt_node + 1), evt);
-                }
-                else {
-                    NRC_LOGI("nrc_os", "Receiving node %s has no recv_evt fcn", evt_node->cfg_id);
-                }
+            // Extract first msg
+            msg = _os.msg_list;
+            _os.msg_list = msg->next;
+
+            msg_node = msg->to_node;
+
+            if (msg_node->api->recv_msg != NULL) {
+                msg_node->api->recv_msg((msg_node + 1), (msg + 1));
             }
-            // Else if there is a msg with highest prio, call node recv_msg function
-            else if (msg_prio < S8_MAX_VALUE) {
-                // Msg with highest prio is first in list
-
-                // Extract first msg
-                msg = _os.msg_list;
-                _os.msg_list = msg->next;
-
-                msg_node = msg->to_node;
-
-                if (msg_node->api->recv_msg != NULL) {
-                    msg_node->api->recv_msg((msg_node + 1), (msg + 1));
-                }
-                else {
-                    NRC_LOGI("nrc_os", "Receiving node %s has no recv_msg fcn", msg_node->cfg_id);
-                    nrc_os_msg_free(msg + 1);
-                }
+            else {
+                NRC_LOGI("nrc_os", "Receiving node %s has no recv_msg fcn", msg_node->cfg_id);
+                nrc_os_msg_free(msg + 1);
             }
-
-        } while ((evt_node != NULL) || (msg_prio < S8_MAX_VALUE));
+        }
     }
 }
 
