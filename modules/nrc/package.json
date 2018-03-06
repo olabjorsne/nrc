@@ -16,7 +16,8 @@
     "nodes": {
         "nrc-serial": "nrc-serial.js",
         "nrc-inject": "nrc-inject.js",
-        "nrc-debug":  "nrc-debug.js"
+        "nrc-debug": "nrc-debug.js",
+        "nrc-tcp":  "nrc-tcp.js"
     }
   }
 }
