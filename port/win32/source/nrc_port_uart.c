@@ -1,6 +1,5 @@
 #include "nrc_port_uart.h"
 #include "nrc_misc_cbuf.h"
-#include <assert.h>
 #include <Windows.h>
 #include <stdio.h>
 
@@ -73,12 +72,12 @@ s32_t nrc_port_uart_open(
     COMMTIMEOUTS            timeouts;
     struct nrc_port_uart    *self = NULL;
 
-    assert(uart != NULL);
-    assert((callback.data_available != NULL) && (callback.write_complete != NULL));
+    NRC_PORT_ASSERT(uart != NULL);
+    NRC_PORT_ASSERT((callback.data_available != NULL) && (callback.write_complete != NULL));
     *uart = NULL;
 
     len = snprintf(file_name, 64, "\\\\.\\COM%d", port);
-    assert(len < 32);
+    NRC_PORT_ASSERT(len < 32);
 
     hPort = CreateFileA(file_name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
     if (hPort == INVALID_HANDLE_VALUE) {
@@ -181,7 +180,7 @@ s32_t nrc_port_uart_open(
             self->type = NRC_PORT_UART_TYPE;
 
             result = nrc_port_mutex_init(&self->mutex);
-            assert(result == NRC_R_OK);
+            NRC_PORT_ASSERT(result == NRC_R_OK);
 
             if (result == NRC_R_OK) {
                 result = nrc_misc_cbuf_init(self->rx_buf, NRC_PORT_UART_BUF_SIZE, &self->cbuf);
@@ -196,7 +195,7 @@ s32_t nrc_port_uart_open(
         u32_t   buf_size = 0;
         u8_t    *buf = nrc_misc_cbuf_get_write_buf(self->cbuf, &buf_size);
 
-        assert((buf != NULL) && (buf_size > 0));
+        NRC_PORT_ASSERT((buf != NULL) && (buf_size > 0));
 
         self->rx_overlapped.Offset = 0;
         self->rx_overlapped.OffsetHigh = 0;
@@ -232,18 +231,18 @@ s32_t nrc_port_uart_close(nrc_port_uart_t uart)
     s32_t                   result = NRC_R_OK;
     BOOL                    ok;
 
-    assert(self != NULL);
-    assert(self->type == NRC_PORT_UART_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_PORT_UART_TYPE);
 
     result = nrc_port_mutex_lock(self->mutex, 0);
-    assert(result == NRC_R_OK);
+    NRC_PORT_ASSERT(result == NRC_R_OK);
 
     ok = CloseHandle(self->hPort);
 
     self->type = 0;
 
     result = nrc_port_mutex_unlock(self->mutex);
-    assert(result == NRC_R_OK);
+    NRC_PORT_ASSERT(result == NRC_R_OK);
 
     nrc_port_heap_free(self);
 
@@ -257,13 +256,13 @@ s32_t nrc_port_uart_write(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
     s32_t                   result2;
     BOOL                    ok;
     
-    assert(self != NULL);
-    assert(self->type == NRC_PORT_UART_TYPE);
-    assert(buf != NULL);
-    assert(buf_size > 0);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_PORT_UART_TYPE);
+    NRC_PORT_ASSERT(buf != NULL);
+    NRC_PORT_ASSERT(buf_size > 0);
 
     result2 = nrc_port_mutex_lock(self->mutex, 0);
-    assert(result2 == NRC_R_OK);
+    NRC_PORT_ASSERT(result2 == NRC_R_OK);
 
     switch (self->tx_state) {
     case NRC_PORT_UART_S_IDLE:
@@ -285,7 +284,7 @@ s32_t nrc_port_uart_write(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
     }
 
     result2 = nrc_port_mutex_unlock(self->mutex);
-    assert(result2 == NRC_R_OK);
+    NRC_PORT_ASSERT(result2 == NRC_R_OK);
 
     return result;
 }
@@ -297,13 +296,13 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
     s32_t                   result;
     BOOL                    ok;
 
-    assert(self != NULL);
-    assert(self->type == NRC_PORT_UART_TYPE);
-    assert(buf != NULL);
-    assert(buf_size > 0);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_PORT_UART_TYPE);
+    NRC_PORT_ASSERT(buf != NULL);
+    NRC_PORT_ASSERT(buf_size > 0);
 
     result = nrc_port_mutex_lock(self->mutex, 0);
-    assert(result == NRC_R_OK);
+    NRC_PORT_ASSERT(result == NRC_R_OK);
 
     read_bytes = nrc_misc_cbuf_read(self->cbuf, buf, buf_size);
 
@@ -323,14 +322,14 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
             self->rx_overlapped.hEvent = self;
 
             ok = ReadFileEx(self->hPort, wbuf, wbuf_size, &self->rx_overlapped, read_complete);
-            assert(ok == TRUE);
+            NRC_PORT_ASSERT(ok == TRUE);
 
             self->rx_state = NRC_PORT_UART_S_READING;
         }
     }
 
     result = nrc_port_mutex_unlock(self->mutex);
-    assert(result == NRC_R_OK);
+    NRC_PORT_ASSERT(result == NRC_R_OK);
 
     return read_bytes;
 }
@@ -340,8 +339,8 @@ u32_t nrc_port_uart_get_bytes(nrc_port_uart_t uart)
     struct nrc_port_uart    *self = (struct nrc_port_uart*)uart;
     u32_t                   bytes = 0;
 
-    assert(self != NULL);
-    assert(self->type == NRC_PORT_UART_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_PORT_UART_TYPE);
 
     bytes = nrc_misc_cbuf_get_bytes(self->cbuf);
 
@@ -356,8 +355,8 @@ s32_t nrc_port_uart_clear(nrc_port_uart_t uart)
 {
     struct nrc_port_uart    *self = (struct nrc_port_uart*)uart;
 
-    assert(self != NULL);
-    assert(self->type == NRC_PORT_UART_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_PORT_UART_TYPE);
 
     self->notify_data_available = TRUE;
 
@@ -379,11 +378,11 @@ static VOID CALLBACK write_complete(
         self = (struct nrc_port_uart*)lpOverlapped->hEvent;
 
         result = nrc_port_mutex_lock(self->mutex, 0);
-        assert(result == NRC_R_OK);
+        NRC_PORT_ASSERT(result == NRC_R_OK);
 
-        assert(self != NULL);
-        assert(self->type == NRC_PORT_UART_TYPE);
-        assert(self->tx_state == NRC_PORT_UART_S_WRITING);
+        NRC_PORT_ASSERT(self != NULL);
+        NRC_PORT_ASSERT(self->type == NRC_PORT_UART_TYPE);
+        NRC_PORT_ASSERT(self->tx_state == NRC_PORT_UART_S_WRITING);
 
         self->tx_state = NRC_PORT_UART_S_IDLE;
 
@@ -398,7 +397,7 @@ static VOID CALLBACK write_complete(
         notify_fcn = self->callback.write_complete;
 
         result = nrc_port_mutex_unlock(self->mutex);
-        assert(result == NRC_R_OK);
+        NRC_PORT_ASSERT(result == NRC_R_OK);
 
         notify_fcn(self, notify_result, notify_bytes);
     }
@@ -419,12 +418,12 @@ static VOID CALLBACK read_complete(
     if (lpOverlapped != NULL) {
         self = (struct nrc_port_uart*)lpOverlapped->hEvent;
 
-        assert(self != NULL);
-        assert(self->type == NRC_PORT_UART_TYPE);
-        assert(self->rx_state == NRC_PORT_UART_S_READING);
+        NRC_PORT_ASSERT(self != NULL);
+        NRC_PORT_ASSERT(self->type == NRC_PORT_UART_TYPE);
+        NRC_PORT_ASSERT(self->rx_state == NRC_PORT_UART_S_READING);
 
         result = nrc_port_mutex_lock(self->mutex, 0);
-        assert(result == NRC_R_OK);
+        NRC_PORT_ASSERT(result == NRC_R_OK);
 
         self->rx_state = NRC_PORT_UART_S_IDLE;
 
@@ -448,7 +447,7 @@ static VOID CALLBACK read_complete(
         }
 
         result = nrc_port_mutex_unlock(self->mutex);
-        assert(result == NRC_R_OK);
+        NRC_PORT_ASSERT(result == NRC_R_OK);
 
         if (dwErrorCode != 0) {
             error_code = NRC_R_ERROR;

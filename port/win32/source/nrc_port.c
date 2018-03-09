@@ -124,7 +124,7 @@ s32_t nrc_port_thread_init(
     HANDLE  handle;
     s32_t   result = NRC_R_OK;
 
-    assert(thread_id != NULL);
+    NRC_PORT_ASSERT(thread_id != NULL);
 
     if (stack_size < 8 * 1024) {
         stack_size = 8 * 1024;
@@ -167,7 +167,7 @@ s32_t nrc_port_mutex_init(nrc_port_mutex_t *mutex)
     s32_t   result = NRC_R_OK;
     HANDLE  handle;
     
-    assert(mutex != NULL);
+    NRC_PORT_ASSERT(mutex != NULL);
 
     handle = CreateMutex(NULL, FALSE, NULL);
 
@@ -223,7 +223,7 @@ s32_t nrc_port_sema_init(u32_t count, nrc_port_sema_t *sema)
     s32_t       result = NRC_R_OK;
     HANDLE      handle;
 
-    assert(sema != NULL);
+    NRC_PORT_ASSERT(sema != NULL);
     
     handle = CreateSemaphore(
         NULL,
@@ -422,14 +422,14 @@ u64_t nrc_port_timer_get_time_ms(void)
 
 s32_t nrc_port_irq_disable(void)
 {
-    assert(_port.state == NRC_PORT_S_INITIALISED);
+    NRC_PORT_ASSERT(_port.state == NRC_PORT_S_INITIALISED);
 
     return nrc_port_mutex_lock(_port.irq_mutex, 0);
 }
 
 s32_t nrc_port_irq_enable(void)
 {
-    assert(_port.state == NRC_PORT_S_INITIALISED);
+    NRC_PORT_ASSERT(_port.state == NRC_PORT_S_INITIALISED);
 
     return nrc_port_mutex_unlock(_port.irq_mutex);
 }

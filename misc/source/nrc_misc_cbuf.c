@@ -1,6 +1,5 @@
 #include "nrc_misc_cbuf.h"
 #include "nrc_port.h"
-#include <assert.h>
 #include <string.h>
 
 #define NRC_MISC_CBUF_TYPE   (0xA73481B6)
@@ -45,8 +44,8 @@ s32_t nrc_misc_cbuf_deinit(nrc_misc_cbuf_t cbuf)
     s32_t                   result = NRC_R_OK;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
 
     self->type = 0;
 
@@ -60,8 +59,8 @@ bool_t nrc_misc_cbuf_is_empty(nrc_misc_cbuf_t cbuf)
     bool_t                  empty = FALSE;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
 
     if (self->bytes == 0) {
         empty = TRUE;
@@ -75,8 +74,8 @@ bool_t nrc_misc_cbuf_is_full(nrc_misc_cbuf_t cbuf)
     bool_t                  full = FALSE;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
 
     if (self->bytes == self->buf_size) {
         full = TRUE;
@@ -89,8 +88,8 @@ u32_t nrc_misc_cbuf_get_bytes(nrc_misc_cbuf_t cbuf)
 {
     struct nrc_misc_cbuf *self = (struct nrc_misc_cbuf*)cbuf;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
 
     return self->bytes;
 }
@@ -117,8 +116,8 @@ u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size)
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
     u32_t                   read = 0;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
 
     if ((buf != NULL) && (buf_size > 0) && (self->bytes > 0)) {
         do {
@@ -128,7 +127,7 @@ u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size)
             else {
                 bytes = self->buf_size - self->read_index;
             }
-            assert(bytes <= self->bytes);
+            NRC_PORT_ASSERT(bytes <= self->bytes);
 
             if (bytes > buf_size) {
                 bytes = buf_size;
@@ -152,8 +151,8 @@ u32_t nrc_misc_cbuf_write(nrc_misc_cbuf_t cbuf, u8_t *data, u32_t data_size)
     u32_t                   written = 0;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
 
     if ((data != NULL) && (data_size > 0) && (self->bytes < self->buf_size)) {
         do {
@@ -163,7 +162,7 @@ u32_t nrc_misc_cbuf_write(nrc_misc_cbuf_t cbuf, u8_t *data, u32_t data_size)
             else {
                 bytes = self->read_index - self->write_index;
             }
-            assert((bytes + self->bytes) <= self->buf_size);
+            NRC_PORT_ASSERT((bytes + self->bytes) <= self->buf_size);
 
             if (bytes > (data_size - written)) {
                 bytes = data_size - written;
@@ -186,9 +185,9 @@ u8_t* nrc_misc_cbuf_get_read_buf(nrc_misc_cbuf_t cbuf, u32_t *buf_size)
     u8_t                    *buf = NULL;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
-    assert(buf_size != NULL);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(buf_size != NULL);
 
     if (self->bytes > 0) {
         if (self->write_index > self->read_index) {
@@ -211,14 +210,14 @@ void nrc_misc_cbuf_read_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
 {
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
     
-    assert(self->bytes >= bytes);
+    NRC_PORT_ASSERT(self->bytes >= bytes);
     self->bytes -= bytes;
 
     self->read_index = (self->read_index + bytes);
-    assert(self->read_index <= self->buf_size);
+    NRC_PORT_ASSERT(self->read_index <= self->buf_size);
     self->read_index %= self->buf_size;
 }
 
@@ -227,9 +226,9 @@ u8_t* nrc_misc_cbuf_get_write_buf(nrc_misc_cbuf_t cbuf, u32_t *buf_size)
     u8_t                    *buf = NULL;
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
-    assert(buf_size != NULL);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(buf_size != NULL);
 
     if (self->bytes < self->buf_size) {
         if ((self->bytes == 0) || (self->write_index > self->read_index)) {
@@ -252,14 +251,14 @@ void nrc_misc_cbuf_write_buf_consumed(nrc_misc_cbuf_t cbuf, u32_t bytes)
 {
     struct nrc_misc_cbuf    *self = (struct nrc_misc_cbuf*)cbuf;
 
-    assert(self != NULL);
-    assert(self->type == NRC_MISC_CBUF_TYPE);
+    NRC_PORT_ASSERT(self != NULL);
+    NRC_PORT_ASSERT(self->type == NRC_MISC_CBUF_TYPE);
 
     self->bytes += bytes;
-    assert(self->bytes <= self->buf_size);
+    NRC_PORT_ASSERT(self->bytes <= self->buf_size);
 
     self->write_index += bytes;
-    assert(self->write_index <= self->buf_size);
+    NRC_PORT_ASSERT(self->write_index <= self->buf_size);
     self->write_index %= self->buf_size;
 }
 
