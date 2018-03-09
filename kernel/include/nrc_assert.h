@@ -28,7 +28,7 @@ extern "C" {
 #define NRC_ASSERT(x)                                           \
 	do {                                                        \
 		if (!(x)) {                                             \
-            nrc_port_error_handler(__FILE__, __LINE__);         \
+            nrc_port_error(__FILE__, __LINE__);         \
 		}                                                       \
 	} while ((0))
 

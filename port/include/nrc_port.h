@@ -39,6 +39,8 @@ typedef void* nrc_port_timer_t;
 typedef void(*nrc_port_thread_fcn_t)(void);
 typedef void(*nrc_port_timeout_fcn_t)(nrc_port_timer_t timer_id, void *tag);
 
+typedef void(*nrc_port_error_handler_t)(s8_t *file, u32_t line);
+
 
 /** 
  * @brief Initialises the nrc_port component
@@ -263,10 +265,23 @@ s32_t nrc_port_irq_enable(void);
 s32_t nrc_port_vprintf(const char * format, va_list argptr);
 
 /**
-* @brief Call to exit
-
+* @brief Register error handler
+*
+* @param error_handler Callback function that is called when the nrc_port_error is called.
+*
 * @return void
-*/void nrc_port_error_handler(s8_t *file, u32_t line);
+*/
+s32_t nrc_port_register_error_handler(nrc_port_error_handler_t error_handler);
+
+/**
+ * @brief Call to exit
+ *
+ * @param file Pointer to file name
+ * @param line Line of error/assert
+ *
+ * @return void
+ **/
+void nrc_port_error(s8_t *file, u32_t line);
 
 #ifdef __cplusplus
 }

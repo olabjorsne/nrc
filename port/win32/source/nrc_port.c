@@ -54,6 +54,8 @@ struct nrc_port {
     struct nrc_port_timer   *timer_list;
     s8_t                    flows_config_buffer[NRC_PORT_MAX_CONFIG_SIZE];
     u32_t                   flows_config_size;
+
+    nrc_port_error_handler_t error_handler;
 };
 
 static void timer_thread_fcn(void);
@@ -438,9 +440,25 @@ s32_t nrc_port_vprintf(const char *format, va_list argptr)
     return vprintf(format, argptr);
 }
 
-void nrc_port_error_handler(s8_t *file, u32_t line)
+s32_t nrc_port_register_error_handler(nrc_port_error_handler_t error_handler)
+{
+    s32_t result = NRC_R_ERROR;
+
+    if (_port.error_handler == NULL) {
+        _port.error_handler = error_handler;
+        result = NRC_R_OK;
+    }
+
+    return result;
+}
+
+void nrc_port_error(s8_t *file, u32_t line)
 {
     NRC_LOGE(_tag, "Error handled called. File:%s Line:%d", file, line);
+    if (_port.error_handler != NULL) {
+        _port.error_handler(file, line);
+    }
+
     NRC_LOGE(_tag, "nrc will exit");
     exit(1);
 }
