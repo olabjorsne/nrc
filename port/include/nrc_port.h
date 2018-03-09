@@ -24,6 +24,14 @@
 extern "C" {
 #endif
 
+#define NRC_PORT_ASSERT(x)                                      \
+	do {                                                        \
+		if (!(x)) {                                             \
+            nrc_port_error(__FILE__, __LINE__);                 \
+		}                                                       \
+	} while ((0))
+
+
 enum nrc_port_thread_prio {
     NRC_PORT_THREAD_PRIO_CRITICAL = 1,  // For time critical drivers
     NRC_PORT_THREAD_PRIO_HIGH,          // For kernel
