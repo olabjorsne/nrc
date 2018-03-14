@@ -27,17 +27,17 @@ static bool_t transfer(void)
 
 static void data_available(nrc_port_uart_t uart, s32_t result)
 {
-    if(uart_tx == FALSE) {
-        if (transfer() == TRUE) {
+    if(!uart_tx) {
+        if (transfer()) {
             uart_tx = TRUE;
         }
     }
 }
 static void write_complete(nrc_port_uart_t uart, s32_t result, u32_t bytes)
 {
-    assert(uart_tx == TRUE);
+    assert(uart_tx);
 
-    if (transfer() == FALSE) {
+    if (!transfer()) {
         uart_tx = FALSE;
     }
 }

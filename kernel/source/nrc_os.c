@@ -108,7 +108,7 @@ s32_t nrc_os_init(void)
 {
     s32_t result = NRC_R_ERROR;
 
-    if (_created == FALSE) {
+    if (!_created) {
         _created = TRUE;
         _os.state = NRC_OS_S_CREATED;
     }
@@ -218,7 +218,7 @@ s32_t nrc_os_stop(bool_t application_nodes_only)
 
     switch (_os.state) {
     case NRC_OS_S_STARTED:
-        if (application_nodes_only == TRUE) {
+        if (application_nodes_only) {
             // Stop and deinit application nodes (not kernal nodes)
             stop_registered_nodes(FALSE);
             deinit_registered_nodes(FALSE);
@@ -237,7 +237,7 @@ s32_t nrc_os_stop(bool_t application_nodes_only)
         break;
 
     case NRC_OS_S_STARTED_KERNAL:
-        if (application_nodes_only == FALSE) {
+        if (!application_nodes_only) {
             // Stop and deinit remaining nodes
             stop_registered_nodes(TRUE); 
             deinit_registered_nodes(TRUE);
@@ -311,7 +311,7 @@ nrc_node_t nrc_os_node_get(const s8_t *cfg_id)
         bool_t                  found = FALSE;
         struct nrc_os_node_hdr  *hdr = _os.node_list;
 
-        while ((found == FALSE) && (hdr != NULL)) {
+        while ((!found) && (hdr != NULL)) {
             if (strcmp(cfg_id, hdr->cfg_id) == 0) {
                 found = TRUE;
                 node = hdr + 1;

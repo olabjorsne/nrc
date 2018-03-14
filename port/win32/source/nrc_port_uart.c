@@ -49,7 +49,7 @@ s32_t nrc_port_uart_init(void)
 {
     s32_t result = NRC_R_OK;
 
-    if (_initialized == FALSE) {
+    if (!_initialized) {
         _initialized = TRUE;
     }
 
@@ -88,7 +88,7 @@ s32_t nrc_port_uart_open(
         memset(&dcb, 0, sizeof(dcb));
 
         ok = GetCommState(hPort, &dcb);
-        if (ok == FALSE) {
+        if (!ok) {
             result = NRC_R_UNAVAILABLE_RESOURCE;
         }
     }
@@ -139,7 +139,7 @@ s32_t nrc_port_uart_open(
 
         if (result == NRC_R_OK) {
             ok = SetCommState(hPort, &dcb);
-            if (ok == FALSE) {
+            if (!ok) {
                 result = NRC_R_INVALID_IN_PARAM;
             }
         }
@@ -149,7 +149,7 @@ s32_t nrc_port_uart_open(
         memset(&timeouts, 0, sizeof(COMMTIMEOUTS));
 
         ok = GetCommTimeouts(hPort, &timeouts);
-        if (ok == FALSE) {
+        if (!ok) {
             result = NRC_R_UNAVAILABLE_RESOURCE;
         }
     }
@@ -162,7 +162,7 @@ s32_t nrc_port_uart_open(
         timeouts.WriteTotalTimeoutMultiplier = 0;
 
         ok = SetCommTimeouts(hPort, &timeouts);
-        if (ok == FALSE) {
+        if (!ok) {
             result = NRC_R_INVALID_IN_PARAM;
         }
     }
@@ -202,7 +202,7 @@ s32_t nrc_port_uart_open(
         self->rx_overlapped.hEvent = self;
 
         ok = ReadFileEx(hPort, buf, buf_size, &self->rx_overlapped, read_complete);
-        if (ok == TRUE) {
+        if (ok) {
             self->rx_state = NRC_PORT_UART_S_READING;
         }
         else {
@@ -271,7 +271,7 @@ s32_t nrc_port_uart_write(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
         self->tx_overlapped.hEvent = self;
 
         ok = WriteFileEx(self->hPort, buf, buf_size, &self->tx_overlapped, write_complete);
-        if (ok == TRUE) {
+        if (ok) {
             self->tx_state = NRC_PORT_UART_S_WRITING;
         }
         else {
@@ -322,7 +322,7 @@ u32_t nrc_port_uart_read(nrc_port_uart_t uart, u8_t *buf, u32_t buf_size)
             self->rx_overlapped.hEvent = self;
 
             ok = ReadFileEx(self->hPort, wbuf, wbuf_size, &self->rx_overlapped, read_complete);
-            NRC_PORT_ASSERT(ok == TRUE);
+            NRC_PORT_ASSERT(ok);
 
             self->rx_state = NRC_PORT_UART_S_READING;
         }
@@ -438,7 +438,7 @@ static VOID CALLBACK read_complete(
             self->rx_overlapped.hEvent = self;
 
             ok = ReadFileEx(self->hPort, buf, buf_size, &self->rx_overlapped, read_complete);
-            if (ok == TRUE) {
+            if (ok) {
                 self->rx_state = NRC_PORT_UART_S_READING;
             }
             else {
@@ -453,7 +453,7 @@ static VOID CALLBACK read_complete(
             error_code = NRC_R_ERROR;
         }
 
-        if ((error_code == NRC_R_OK) && (self->notify_data_available == TRUE)) {
+        if ((error_code == NRC_R_OK) && (self->notify_data_available)) {
             self->notify_data_available = FALSE;
             self->callback.data_available(self, error_code);
         }

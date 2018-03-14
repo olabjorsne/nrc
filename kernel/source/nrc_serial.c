@@ -73,7 +73,7 @@ s32_t nrc_serial_init(void)
 {
     s32_t result = NRC_R_OK;
 
-    if (_initialized != TRUE) {
+    if (!_initialized) {
         _initialized = TRUE;
         _serial = NULL;
 
@@ -152,12 +152,12 @@ static s32_t serial_open_reader_or_writer(
             }
         }
 
-        if ((result == NRC_R_OK) && (serial->open == FALSE)) {
+        if ((result == NRC_R_OK) && (!serial->open)) {
             // Read serial port and settings from configuration
             result = get_settings(cfg_id_settings, &serial->port, &serial->pars);
         }
 
-        if ((result == NRC_R_OK) && (serial->open == FALSE)) {
+        if ((result == NRC_R_OK) && (!serial->open)) {
             // Open the UART if not already done
             result = nrc_port_uart_open(serial->port, serial->pars, _callback, &serial->uart);
 
@@ -218,7 +218,7 @@ s32_t nrc_serial_close_reader(nrc_serial_t serial)
         res = nrc_port_mutex_lock(_mutex, 0);
         NRC_ASSERT(res == NRC_R_OK);
 
-        if ((self->open == TRUE) && (self->reader.node != NULL)) {
+        if (self->open && (self->reader.node != NULL)) {
             memset(&self->reader, 0, sizeof(struct nrc_serial_reader));
 
             if (self->writer.node == NULL) {
@@ -262,7 +262,7 @@ u32_t nrc_serial_get_bytes(nrc_serial_t serial)
     struct nrc_serial   *self = (struct nrc_serial*)serial;
 
     if ((self != NULL) && (self->type == NRC_SERIAL_TYPE)) {
-        if ((self->open == TRUE) && (self->uart != NULL)) {
+        if (self->open && (self->uart != NULL)) {
             bytes = nrc_port_uart_get_bytes(self->uart);
         }
         else {
@@ -332,7 +332,7 @@ s32_t nrc_serial_close_writer(nrc_serial_t serial)
         res = nrc_port_mutex_lock(_mutex, 0);
         NRC_ASSERT(res == NRC_R_OK);
 
-        if (self->open == TRUE) {
+        if (self->open) {
             memset(&self->writer, 0, sizeof(struct nrc_serial_writer));
 
             if (self->reader.node == NULL) {
@@ -363,7 +363,7 @@ s32_t nrc_serial_write(nrc_serial_t serial, u8_t *buf, u32_t buf_size)
     struct nrc_serial   *self = (struct nrc_serial*)serial;
 
     if ((self != NULL) && (self->type == NRC_SERIAL_TYPE) && (buf != NULL) && (buf_size > 0)) {
-        if ((self->open == TRUE) && (self->tx_state == NRC_SERIAL_S_IDLE)) {
+        if (self->open && (self->tx_state == NRC_SERIAL_S_IDLE)) {
             res = nrc_port_mutex_lock(_mutex, 0);
             NRC_ASSERT(res == NRC_R_OK);
 
@@ -526,7 +526,7 @@ static void data_available(nrc_port_uart_t uart, s32_t result)
     serial = get_serial_from_uart(uart);
 
     if ((serial != NULL) && (serial->type == NRC_SERIAL_TYPE) &&
-        (serial->open == TRUE) && (serial->reader.node != NULL)) {
+        serial->open && (serial->reader.node != NULL)) {
 
         evt = serial->reader.data_available_evt;
 
@@ -564,7 +564,7 @@ static void write_complete(nrc_port_uart_t uart, s32_t result, u32_t bytes)
 
     self = get_serial_from_uart(uart);
 
-    if ((self != NULL) && (self->type == NRC_SERIAL_TYPE) && (self->open == TRUE) &&
+    if ((self != NULL) && (self->type == NRC_SERIAL_TYPE) && self->open &&
         (self->writer.node != NULL) && (self->tx_state == NRC_SERIAL_S_BUSY)) {
 
         evt = self->writer.write_complete_evt;
