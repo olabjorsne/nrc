@@ -76,6 +76,7 @@ struct nrc_os {
 
     nrc_port_thread_t           thread;
     nrc_port_sema_t             sema;
+    nrc_port_mutex_t            mutex;
 
     struct nrc_os_node_hdr      *node_list;
     struct nrc_os_msg_hdr       *msg_list;
@@ -125,6 +126,9 @@ s32_t nrc_os_init(void)
         NRC_ASSERT(result == NRC_R_OK);
 
         result = nrc_port_sema_init(0, &_os.sema);
+        NRC_ASSERT(result == NRC_R_OK);
+
+        result = nrc_port_mutex_init(&_os.mutex);
         NRC_ASSERT(result == NRC_R_OK);
 
         result = nrc_port_thread_init(
@@ -475,8 +479,8 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
         if (node->type == NRC_OS_NODE_TYPE) {
 
             // Disable IRQ during insertion of event
-            result = nrc_port_irq_disable();
-            NRC_ASSERT(result == NRC_R_OK);
+            //result = nrc_port_irq_disable();
+            //NRC_ASSERT(result == NRC_R_OK);
 
             // Set event bit(s)
             node->evt = node->evt | event_mask;
@@ -488,8 +492,8 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
             }
 
             // Enable IRQs again
-            result = nrc_port_irq_enable();
-            NRC_ASSERT(result == NRC_R_OK);
+            //result = nrc_port_irq_enable();
+            //NRC_ASSERT(result == NRC_R_OK);
 
             // Signal thread that a new event is available
             result = nrc_port_sema_signal(_os.sema);
@@ -498,6 +502,16 @@ s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio)
     }
     
     return result;
+}
+
+s32_t nrc_os_lock(void)
+{
+    return nrc_port_mutex_lock(_os.mutex, 0);
+}
+
+s32_t nrc_os_unlock(void)
+{
+    return nrc_port_mutex_unlock(_os.mutex);
 }
 
 static void extract_node(struct nrc_os_node_hdr* node)
@@ -602,11 +616,15 @@ static void nrc_os_thread_fcn(void)
         result = nrc_port_sema_wait(_os.sema, 0);
         NRC_ASSERT(result == NRC_R_OK);
 
+        // Make sure thread locks the nrc layer
+        result = nrc_os_lock();
+        NRC_ASSERT(result == NRC_R_OK);
+
         // Get prio of highest priority msg (if any)
         msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
 
         // Get node event with higher prio than highest prio msg (if any)
-        result = nrc_port_irq_disable();
+        //result = nrc_port_irq_disable();
         // Node list is sorted with highest event priority first
         if ((_os.node_list->prio < S8_MAX_VALUE) && (_os.node_list->prio <= msg_prio)) {
             evt_node = _os.node_list;
@@ -618,7 +636,7 @@ static void nrc_os_thread_fcn(void)
         else {
             evt_node = NULL;
         }
-        result = nrc_port_irq_enable();
+        //result = nrc_port_irq_enable();
 
         // If there is an event with highest prio, call node recv_evt function
         if (evt_node != NULL) {
@@ -647,6 +665,9 @@ static void nrc_os_thread_fcn(void)
                 nrc_os_msg_free(msg + 1);
             }
         }
+       
+        result = nrc_os_unlock();
+        NRC_ASSERT(result == NRC_R_OK);
     }
 }
 

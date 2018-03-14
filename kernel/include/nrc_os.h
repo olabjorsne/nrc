@@ -130,6 +130,20 @@ s32_t nrc_os_send_msg_from(nrc_node_t from, nrc_msg_t msg, s8_t prio);
 */
 s32_t nrc_os_send_evt(nrc_node_t to, u32_t event_mask, s8_t prio);
 
+/**
+* @brief Lock nrc_os until nrc_unlock is called
+*
+* @return NRC_R_OK is successful
+*/
+s32_t nrc_os_lock(void);
+
+/**
+* @brief Unlocks nrc_os previously locked by nrc_lock.
+*
+* @return NRC_R_OK is successful
+*/
+s32_t nrc_os_unlock(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -19,6 +19,7 @@
 #include "nrc_node.h"
 #include "nrc_os.h"
 #include "nrc_log.h"
+#include "nrc_assert.h"
 
 enum nrc_timer_state {
     NRC_TIMER_S_INVALID,
@@ -70,7 +71,10 @@ static void timeout_fcn(nrc_port_timer_t timer, void* pars)
     s32_t                   result;
     struct nrc_timer_pars   *timer_pars = (struct nrc_timer_pars*)pars;
 
-    if ((timer_pars != 0) &&
+    result = nrc_os_lock();
+    NRC_ASSERT(result == NRC_R_OK);
+
+    if ((timer_pars != NULL) &&
         (timer == timer_pars->timer)) {
 
         result = nrc_os_send_evt(timer_pars->node, timer_pars->evt, timer_pars->prio);
@@ -78,4 +82,7 @@ static void timeout_fcn(nrc_port_timer_t timer, void* pars)
     else {
         NRC_LOGD("nrc_timer", "timeout_fcn: invalid parameters timer_pars ptr %d, timer_id %d", timer_pars, timer_pars->timer);
     }
+
+    result = nrc_os_unlock();
+    NRC_ASSERT(result == NRC_R_OK);
 }
