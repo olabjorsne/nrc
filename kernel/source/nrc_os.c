@@ -27,6 +27,8 @@
 #define NRC_OS_NODE_TYPE    (0xA5A5)
 #define NRC_OS_MSG_TYPE     (0x5A5A)
 
+#define NRC_OS_MSG_DEFAULT_PRIO (16)
+
 enum nrc_os_state {
     NRC_OS_S_INVALID = 0,
     NRC_OS_S_CREATED,
@@ -351,6 +353,7 @@ nrc_msg_t nrc_os_msg_alloc(u32_t size)
 
         hdr->total_size = total_size;
         hdr->type = NRC_OS_MSG_TYPE;
+        hdr->prio = NRC_OS_MSG_DEFAULT_PRIO;
         tail->dead_beef = 0xDEADBEEF;
     }
     
@@ -392,14 +395,16 @@ s32_t nrc_os_send_msg_to(nrc_node_t to, nrc_msg_t msg, s8_t prio)
 {
     s32_t result = NRC_R_INVALID_IN_PARAM;
 
-    if ((to != NULL) && (msg != NULL) && (prio < S8_MAX_VALUE)) {
+    if ((to != NULL) && (msg != NULL)) {
 
         struct nrc_os_node_hdr  *os_node_hdr = (struct nrc_os_node_hdr*)to - 1;
         struct nrc_os_msg_hdr   *os_msg_hdr = (struct nrc_os_msg_hdr*)msg - 1;
 
         if ((os_node_hdr->type == NRC_OS_NODE_TYPE) && (os_msg_hdr->type == NRC_OS_MSG_TYPE)) {
 
-            os_msg_hdr->prio = prio;
+            if (prio < S8_MAX_VALUE) {
+                os_msg_hdr->prio = prio;
+            }
             os_msg_hdr->to_node = os_node_hdr;
 
             if ((_os.msg_list == NULL) || (os_msg_hdr->prio < _os.msg_list->prio)) {
@@ -623,23 +628,15 @@ static void nrc_os_thread_fcn(void)
         // Get prio of highest priority msg (if any)
         msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
 
-        // Get node event with higher prio than highest prio msg (if any)
-        //result = nrc_port_irq_disable();
-        // Node list is sorted with highest event priority first
+        // If there is an event with highest prio, call node recv_evt function
         if ((_os.node_list->prio < S8_MAX_VALUE) && (_os.node_list->prio <= msg_prio)) {
             evt_node = _os.node_list;
             evt = _os.node_list->evt;
 
             // Clear event and re-order node to back of list
             clear_evt(evt_node);
-        }
-        else {
-            evt_node = NULL;
-        }
-        //result = nrc_port_irq_enable();
 
-        // If there is an event with highest prio, call node recv_evt function
-        if (evt_node != NULL) {
+            // Call node recevie event function
             if (evt_node->api->recv_evt != NULL) {
                 evt_node->api->recv_evt((evt_node + 1), evt);
             }

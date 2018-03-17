@@ -98,7 +98,7 @@ void nrc_os_msg_free(nrc_msg_t msg);
 *
 * @param to Node to send message to
 * @param msg Message or chain of messages to send
-* @param prio Priority of the message
+* @param prio Priority of the message. If S8_MAX_VALUE, keep priority of message that was previously set.
 *
 * @return NRC_R_OK is successful
 */
@@ -111,7 +111,7 @@ s32_t nrc_os_send_msg_to(nrc_node_t to, nrc_msg_t msg, s8_t prio);
 *
 * @param to Node to send message from
 * @param msg Message or chain of messages to send
-* @param prio Priority of the message
+* @param prio Priority of the message. If S8_MAX_VALUE, keep priority of message that was previously set.
 *
 * @return NRC_R_OK is successful
 */
