@@ -190,7 +190,9 @@ s32_t nrc_port_mutex_lock(nrc_port_mutex_t mutex, u32_t timeout)
         timeout = INFINITE;
     }
 
-    win_result = WaitForSingleObjectEx((HANDLE)mutex, timeout, TRUE);
+    do {
+        win_result = WaitForSingleObjectEx((HANDLE)mutex, timeout, TRUE);
+    } while ((win_result != WAIT_OBJECT_0) && (win_result != WAIT_TIMEOUT) && (win_result != WAIT_FAILED));
 
     if (win_result == WAIT_OBJECT_0) {
         result = NRC_R_OK;
@@ -264,7 +266,9 @@ s32_t nrc_port_sema_wait(nrc_port_sema_t sema, u32_t timeout)
         timeout = INFINITE;
     }
     
-    win_result = WaitForSingleObjectEx((HANDLE)sema, timeout, TRUE);
+    do {
+        win_result = WaitForSingleObjectEx((HANDLE)sema, timeout, TRUE);
+    } while ((win_result != WAIT_OBJECT_0) && (win_result != WAIT_TIMEOUT) && (win_result != WAIT_FAILED));
 
     if(win_result == WAIT_OBJECT_0) {
         result = NRC_R_OK;

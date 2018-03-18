@@ -129,8 +129,8 @@ u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size)
             }
             NRC_PORT_ASSERT(bytes <= self->bytes);
 
-            if (bytes > buf_size) {
-                bytes = buf_size;
+            if (bytes > (buf_size - read)) {
+                bytes = (buf_size - read);
             }
 
             memcpy(&buf[read], &self->buf[self->read_index], bytes);
@@ -141,6 +141,7 @@ u32_t nrc_misc_cbuf_read(nrc_misc_cbuf_t cbuf, u8_t *buf, u32_t buf_size)
 
         } while ((read < buf_size) && (self->bytes > 0));
     }
+    NRC_PORT_ASSERT(read <= buf_size);
 
     return read;
 }

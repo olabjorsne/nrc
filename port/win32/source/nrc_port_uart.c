@@ -15,7 +15,8 @@ enum nrc_port_uart_state {
 };
 
 struct nrc_port_uart {
-    u32_t                               type;
+ 
+    struct nrc_port_uart                *next;
 
     enum nrc_port_uart_state_tx         tx_state;
     enum nrc_port_uart_state_rx         rx_state;
@@ -29,8 +30,10 @@ struct nrc_port_uart {
     OVERLAPPED                          tx_overlapped;
     OVERLAPPED                          rx_overlapped;
 
-    u8_t                                rx_buf[NRC_PORT_UART_BUF_SIZE];
     nrc_misc_cbuf_t                     cbuf;
+    u8_t                                rx_buf[NRC_PORT_UART_BUF_SIZE];
+
+    u32_t                               type;
 };
 
 static VOID CALLBACK write_complete(
@@ -43,7 +46,8 @@ static VOID CALLBACK read_complete(
     _In_    DWORD        dwNumberOfBytesTransfered,
     _Inout_ LPOVERLAPPED lpOverlapped);
 
-static bool_t _initialized = FALSE;
+static bool_t                   _initialized = FALSE;
+static struct nrc_port_uart *   _uart = NULL;
 
 s32_t nrc_port_uart_init(void)
 {
@@ -179,6 +183,9 @@ s32_t nrc_port_uart_open(
             self->hPort = hPort;
             self->type = NRC_PORT_UART_TYPE;
 
+            self->next = _uart;
+            _uart = self;
+
             result = nrc_port_mutex_init(&self->mutex);
             NRC_PORT_ASSERT(result == NRC_R_OK);
 
@@ -244,6 +251,18 @@ s32_t nrc_port_uart_close(nrc_port_uart_t uart)
     result = nrc_port_mutex_unlock(self->mutex);
     NRC_PORT_ASSERT(result == NRC_R_OK);
 
+    if (_uart == self) {
+        _uart = self->next;
+    }
+    else {
+        struct nrc_port_uart *uart = _uart;
+
+        while ((uart != NULL) && (uart->next != self) && (uart->next != NULL)) {
+            uart = uart->next;
+        }
+        NRC_PORT_ASSERT((uart != NULL) && (uart->next == self));
+        uart->next = self->next;
+    }
     nrc_port_heap_free(self);
 
     return result;

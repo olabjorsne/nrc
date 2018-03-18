@@ -335,8 +335,8 @@ nrc_msg_t nrc_os_msg_alloc(u32_t size)
     struct nrc_os_msg_hdr   *hdr = NULL;
     struct nrc_msg_hdr      *msg = NULL;
 
-    if ((size % 4) != 0) {
-        size += 4 - (size % 4);
+    if ((size % 16) != 0) {
+        size += 16 - (size % 16);
     }
 
     total_size = sizeof(struct nrc_os_msg_hdr) + size + sizeof(struct nrc_os_msg_tail);
@@ -379,7 +379,7 @@ void nrc_os_msg_free(nrc_msg_t msg)
     struct nrc_os_msg_tail  *os_msg_tail;
 
     while (hdr != NULL) {
-        os_msg_header = (struct nrc_os_msg_hdr*)msg - 1;
+        os_msg_header = (struct nrc_os_msg_hdr*)hdr - 1;
         NRC_ASSERT(os_msg_header->type == NRC_OS_MSG_TYPE);
 
         os_msg_tail = (struct nrc_os_msg_tail*)((u8_t*)os_msg_header + os_msg_header->total_size) - 1;

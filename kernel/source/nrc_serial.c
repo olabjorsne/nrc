@@ -32,6 +32,8 @@ enum nrc_serial_state {
 };
 
 struct nrc_serial {
+    u32_t                       type;
+
     struct nrc_serial           *next;
 
     s8_t                        port;
@@ -45,8 +47,6 @@ struct nrc_serial {
     struct nrc_serial_writer    writer;
     enum nrc_serial_state       tx_state;
     u32_t                       bytes_written;
-
-    u32_t                       type;
 };
 
 static s32_t get_settings(const s8_t *cfg_id, u8_t *port, struct nrc_port_uart_pars *pars);

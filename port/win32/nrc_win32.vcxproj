@@ -101,7 +101,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_LONG_HANDLES_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\nodes\include;$(ProjectDir)..\..\test\misc;$(ProjectDir)..\..\test\port;$(ProjectDir)..\..\misc\include;$(ProjectDir)..\..\port\include;$(ProjectDir)..\..\kernel\include</AdditionalIncludeDirectories>
-      <StructMemberAlignment>1Byte</StructMemberAlignment>
+      <StructMemberAlignment>Default</StructMemberAlignment>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
