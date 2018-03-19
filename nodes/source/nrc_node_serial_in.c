@@ -376,8 +376,9 @@ static s32_t send_data(struct nrc_node_serial_in *self)
     else {
         struct nrc_msg_buf  *msg = NULL;
         u32_t               bytes_to_read = nrc_serial_get_bytes(self->serial);
+        u32_t               cnt = 0;
 
-        while(bytes_to_read > 0) {
+        while((bytes_to_read > 0) && (cnt < 1)) {
             if (bytes_to_read > self->max_buf_size) {
                 bytes_to_read = self->max_buf_size;
             }
@@ -393,6 +394,7 @@ static s32_t send_data(struct nrc_node_serial_in *self)
                 result = nrc_os_send_msg_from(self, msg, self->prio);
 
                 bytes_to_read = nrc_serial_get_bytes(self->serial);
+                cnt++;
             }
             else {
                 // No memory left; clear data
@@ -400,6 +402,11 @@ static s32_t send_data(struct nrc_node_serial_in *self)
                 result = NRC_R_OUT_OF_MEM;
                 bytes_to_read = 0;
             }
+        }
+
+        // Continue reading but allow other events/messages to be executed.
+        if (bytes_to_read > 0) {
+            result = nrc_os_send_evt(self, NRC_N_SERIAL_IN_EVT_DATA_AVAIL, self->prio);
         }
     }
 
