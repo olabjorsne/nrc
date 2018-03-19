@@ -629,7 +629,7 @@ static void nrc_os_thread_fcn(void)
         msg_prio = (_os.msg_list != NULL) ? _os.msg_list->prio : S8_MAX_VALUE;
 
         // If there is an event with highest prio, call node recv_evt function
-        if ((_os.node_list->prio < S8_MAX_VALUE) && (_os.node_list->prio <= msg_prio)) {
+        if ((_os.node_list->prio < S8_MAX_VALUE) && (_os.node_list->prio < msg_prio)) {
             evt_node = _os.node_list;
             evt = _os.node_list->evt;
 
