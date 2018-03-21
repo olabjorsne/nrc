@@ -58,6 +58,18 @@ s32_t nrc_din_start(
     return result;
 }
 
+s32_t nrc_din_stop(struct nrc_din *self)
+{
+    s32_t result = NRC_R_OK;
+
+    NRC_ASSERT((self != NULL) && (self->type == NRC_DIN_TYPE));
+
+    self->type = 0;
+    self->msg_type = NRC_MSG_TYPE_INVALID;
+
+    return result;
+}
+
 s32_t nrc_din_data_available(
     struct nrc_din              *self,
     struct nrc_din_node_pars    pars,

@@ -45,11 +45,6 @@ enum nrc_node_serial_in_state {
     NRC_N_SERIAL_IN_S_ERROR         // Error occurred which node cannot recover from. Other nodes can continue to run.
 };
 
-enum nrc_node_serial_in_msg {
-    NRC_N_SERIAL_IN_MSG_DATA_AVAIL = 1, // Send data available messages to wires
-    NRC_N_SERIAL_IN_MSG_BYTE_ARRAY      // Send byte array messages to wires
-};
-
 // Serial-in node structure
 struct nrc_node_serial_in {
     struct nrc_node_hdr             hdr;            // General node header; from create function in pars
@@ -58,7 +53,6 @@ struct nrc_node_serial_in {
     const s8_t                      *cfg_serial_id; // serial (configuration) node id from cfg
     const s8_t                      *cfg_msg_type;  // message type from cfg
     s8_t                            prio;           // Node prio; used for sending messages; from cfg
-    enum nrc_node_serial_in_msg     msg_type;       // Msg type to send; from cfg
     u32_t                           max_buf_size;   // Max buf size for buf messages
 
     enum nrc_node_serial_in_state   state;          // Node state
@@ -80,9 +74,6 @@ static s32_t nrc_node_serial_in_start(nrc_node_t self);
 static s32_t nrc_node_serial_in_stop(nrc_node_t self);
 static s32_t nrc_node_serial_in_recv_msg(nrc_node_t self, nrc_msg_t msg);
 static s32_t nrc_node_serial_in_recv_evt(nrc_node_t self, u32_t event_mask);
-
-// Function sent in data available message; Called by reader of the data
-static u32_t read_data(void *self, u8_t *buf, u32_t buf_size);
 
 // Internal functions
 static s32_t send_data(struct nrc_node_serial_in *self);
@@ -131,7 +122,6 @@ nrc_node_t nrc_node_serial_in_create(struct nrc_node_factory_pars *pars)
             self->reader.data_available_evt = NRC_N_SERIAL_IN_EVT_DATA_AVAIL;
             self->reader.error_evt = NRC_N_SERIAL_IN_EVT_ERROR;
             self->reader.node = self;
-            self->msg_type = NRC_N_SERIAL_IN_MSG_BYTE_ARRAY;    // Default message type
             self->max_buf_size = NRC_N_SERIAL_IN_MAX_BUF_SIZE;  // Default message buf size
 
             // Object type check
@@ -172,17 +162,9 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
             if (OK(result)) {
                 // Get msg type to send; data available or byte array
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &self->cfg_msg_type);
-
-                if (OK(result)) {
-                    if (strcmp(self->cfg_msg_type, "dataavailable") == 0) {
-                        self->msg_type = NRC_N_SERIAL_IN_MSG_DATA_AVAIL;
-                    }
-                    else {
-                        self->msg_type = NRC_N_SERIAL_IN_MSG_BYTE_ARRAY;
-
-                        result = nrc_cfg_get_int(self->hdr.cfg_id, "bufsize", &self->max_buf_size);
-                    }
-                }
+            }
+            if (OK(result)) {
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "bufsize", &self->max_buf_size);
             }
             if (OK(result)) {
                 // Get node priority
@@ -305,6 +287,8 @@ static s32_t nrc_node_serial_in_stop(nrc_node_t slf)
     if ((self != NULL) && (self->type == NRC_N_SERIAL_IN_TYPE)) {
         switch (self->state) {
         case NRC_N_SERIAL_IN_S_STARTED:
+            result = nrc_din_stop(self->data_in);
+
             // Stop any ongoing activites, free memory allocated in the start state
             result = nrc_serial_close_reader(self->serial);
             self->serial = NULL;
@@ -395,82 +379,6 @@ static s32_t send_data(struct nrc_node_serial_in *self)
     if (more_to_read) {
         result = nrc_os_send_evt(self, NRC_N_SERIAL_IN_EVT_DATA_AVAIL, self->prio);
     }
-}
-/*
-{
-    s32_t result = NRC_R_OK;
-
-    NRC_ASSERT(self != NULL);
-    
-    if (self->msg_type == NRC_N_SERIAL_IN_MSG_DATA_AVAIL) {
-        struct nrc_msg_data_available *msg = NULL;
-
-        msg = (struct nrc_msg_data_available*)nrc_os_msg_alloc(sizeof(struct nrc_msg_data_available));
-        if (msg != NULL) {
-            msg->hdr.next = NULL;
-            msg->hdr.topic = self->topic;
-            msg->hdr.type = NRC_MSG_TYPE_DATA_AVAILABLE;
-
-            msg->node = self;
-            msg->read = read_data;
-
-            result = nrc_os_send_msg_from(self, msg, self->prio);
-        }
-        else {
-            result = NRC_R_OUT_OF_MEM;
-        }
-    }
-    else {
-        struct nrc_msg_buf  *msg = NULL;
-        u32_t               bytes_to_read = nrc_serial_get_bytes(self->serial);
-        u32_t               cnt = 0;
-
-        while((bytes_to_read > 0) && (cnt < 1)) {
-            if (bytes_to_read > self->max_buf_size) {
-                bytes_to_read = self->max_buf_size;
-            }
-
-            msg = (struct nrc_msg_buf*)nrc_os_msg_alloc(sizeof(struct nrc_msg_buf) + bytes_to_read);
-            if (msg != NULL) {
-                msg->hdr.next = NULL;
-                msg->hdr.topic = self->topic;
-                msg->hdr.type = NRC_MSG_TYPE_BUF;
-
-                msg->buf_size = nrc_serial_read(self->serial, msg->buf, bytes_to_read);
-
-                result = nrc_os_send_msg_from(self, msg, self->prio);
-
-                bytes_to_read = nrc_serial_get_bytes(self->serial);
-                cnt++;
-            }
-            else {
-                // No memory left; clear data
-                nrc_serial_clear(self->serial);
-                result = NRC_R_OUT_OF_MEM;
-                bytes_to_read = 0;
-            }
-        }
-
-        // Continue reading but allow other events/messages to be executed.
-        if (bytes_to_read > 0) {
-            result = nrc_os_send_evt(self, NRC_N_SERIAL_IN_EVT_DATA_AVAIL, self->prio);
-        }
-    }
 
     return result;
-}
-*/
-
-static u32_t read_data(void *slf, u8_t *buf, u32_t buf_size)
-{
-    u32_t                       bytes_read = 0;
-    struct nrc_node_serial_in   *self = (struct nrc_node_serial_in*)slf;
-
-    if ((self != NULL) && (self->type == NRC_N_SERIAL_IN_TYPE) &&
-        (self->state == NRC_N_SERIAL_IN_S_STARTED)) {
-
-        bytes_read = nrc_serial_read(self->serial, buf, buf_size);
-    }
-
-    return bytes_read;
 }
