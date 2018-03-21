@@ -1,3 +1,19 @@
+/**
+* Copyright 2017 Tomas Frisberg & Ola Bjorsne
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http ://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #include "nrc_types.h"
 #include "nrc_node.h"
 #include "nrc_cfg.h"
@@ -6,6 +22,7 @@
 #include "nrc_factory.h"
 #include "nrc_assert.h"
 #include "nrc_serial.h"
+#include "nrc_data_in.h"
 
 #include <string.h>
 
@@ -39,6 +56,7 @@ struct nrc_node_serial_in {
 
     const s8_t                      *topic;         // Node topic from cfg
     const s8_t                      *cfg_serial_id; // serial (configuration) node id from cfg
+    const s8_t                      *cfg_msg_type;  // message type from cfg
     s8_t                            prio;           // Node prio; used for sending messages; from cfg
     enum nrc_node_serial_in_msg     msg_type;       // Msg type to send; from cfg
     u32_t                           max_buf_size;   // Max buf size for buf messages
@@ -46,6 +64,8 @@ struct nrc_node_serial_in {
     enum nrc_node_serial_in_state   state;          // Node state
     nrc_serial_t                    serial;         // NRC serial port
     struct nrc_serial_reader        reader;         // Reader notification data for nrc_serial callback evt
+
+    struct nrc_din                  *data_in;       // Help sub-node to read data from a generic nrc serial stream
 
     u32_t                           type;           // Object type check; unique number for every object type
 };
@@ -151,11 +171,10 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
             }
             if (OK(result)) {
                 // Get msg type to send; data available or byte array
-                s8_t *cfg_msg_type = NULL;
-                result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &cfg_msg_type);
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &self->cfg_msg_type);
 
                 if (OK(result)) {
-                    if (strcmp(cfg_msg_type, "dataavailable") == 0) {
+                    if (strcmp(self->cfg_msg_type, "dataavailable") == 0) {
                         self->msg_type = NRC_N_SERIAL_IN_MSG_DATA_AVAIL;
                     }
                     else {
@@ -177,6 +196,13 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
                     else {
                         result = NRC_R_INVALID_CFG;
                     }
+                }
+            }
+
+            if (OK(result)) {
+                self->data_in = (struct nrc_din*)nrc_port_heap_alloc(sizeof(struct nrc_din));
+                if (self->data_in == NULL) {
+                    result = NRC_R_OUT_OF_MEM;
                 }
             }
 
@@ -210,6 +236,8 @@ static s32_t nrc_node_serial_in_deinit(nrc_node_t slf)
         case NRC_N_SERIAL_IN_S_INITIALISED:
         case NRC_N_SERIAL_IN_S_ERROR:
             // Free allocated memory (if any)
+            nrc_port_heap_free(self->data_in);
+            self->data_in = NULL;
 
             self->state = NRC_N_SERIAL_IN_S_CREATED;
             break;
@@ -234,6 +262,11 @@ static s32_t nrc_node_serial_in_start(nrc_node_t slf)
         switch (self->state) {
         case NRC_N_SERIAL_IN_S_INITIALISED:
             result = nrc_serial_open_reader(self->cfg_serial_id, self->reader, &self->serial);
+
+            if (OK(result)) {
+                struct nrc_din_stream_api stream_api = { self->serial, nrc_serial_read, nrc_serial_get_bytes, nrc_serial_clear, nrc_serial_get_read_error };
+                result = nrc_din_start(self->data_in, self->cfg_msg_type, stream_api);
+            }
 
             if (OK(result)) {
                 self->state = NRC_N_SERIAL_IN_S_STARTED;
@@ -351,6 +384,20 @@ static s32_t nrc_node_serial_in_recv_evt(nrc_node_t slf, u32_t event_mask)
 
 static s32_t send_data(struct nrc_node_serial_in *self)
 {
+    struct nrc_din_node_pars    pars = { self, self->topic, self->prio, self->max_buf_size };
+    bool_t                      more_to_read;
+    s32_t                       result;
+
+    // Data-in sub-node will read and parse data and send correct message
+    result = nrc_din_data_available(self->data_in, pars, &more_to_read);
+
+    // If there is more data to read, post data available event to self
+    if (more_to_read) {
+        result = nrc_os_send_evt(self, NRC_N_SERIAL_IN_EVT_DATA_AVAIL, self->prio);
+    }
+}
+/*
+{
     s32_t result = NRC_R_OK;
 
     NRC_ASSERT(self != NULL);
@@ -412,6 +459,7 @@ static s32_t send_data(struct nrc_node_serial_in *self)
 
     return result;
 }
+*/
 
 static u32_t read_data(void *slf, u8_t *buf, u32_t buf_size)
 {

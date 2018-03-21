@@ -114,6 +114,9 @@
     <ClCompile Include="..\..\kernel\source\nrc_factory.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_data_in.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
@@ -168,6 +171,9 @@
       <Filter>kernel\include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_factory.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_data_in.h">
       <Filter>kernel\include</Filter>
     </ClInclude>
   </ItemGroup>

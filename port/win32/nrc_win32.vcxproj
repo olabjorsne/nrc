@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\kernel\source\nrc_cfg.c" />
+    <ClCompile Include="..\..\kernel\source\nrc_data_in.c" />
     <ClCompile Include="..\..\kernel\source\nrc_log.c" />
     <ClCompile Include="..\..\kernel\source\nrc_main.c" />
     <ClCompile Include="..\..\kernel\source\nrc_factory.c" />
@@ -163,6 +164,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_assert.h" />
     <ClInclude Include="..\..\kernel\include\nrc_cfg.h" />
+    <ClInclude Include="..\..\kernel\include\nrc_data_in.h" />
     <ClInclude Include="..\..\kernel\include\nrc_defs.h" />
     <ClInclude Include="..\..\kernel\include\nrc_log.h" />
     <ClInclude Include="..\..\kernel\include\nrc_msg.h" />

@@ -35,7 +35,7 @@
         <label for="node-input-msgtype"><i class="fa fa-tag"></i> Msg type</label>
         <select type="text" id="node-input-msgtype">
             <option value="dataavailable"> Data available</option>
-            <option value="bytearray"> Byte array</option>
+            <option value="buf"> Buffer</option>
         </select>
     </div>
     <div class="form-row">
@@ -69,7 +69,7 @@
             serial: { type: "nrc-serial", required: true },
             priority: { value: "8", required: true, validate: RED.validators.number() },
             bufsize: { value: "256", required: true, validate: RED.validators.number() },
-            msgtype: { value: "bytearray", required: true }
+            msgtype: { value: "buf", required: true }
         },
         color: "BurlyWood",
         inputs: 0,
