@@ -246,8 +246,9 @@ static s32_t nrc_node_serial_in_start(nrc_node_t slf)
             result = nrc_serial_open_reader(self->cfg_serial_id, self->reader, &self->serial);
 
             if (OK(result)) {
-                struct nrc_din_stream_api stream_api = { self->serial, nrc_serial_read, nrc_serial_get_bytes, nrc_serial_clear, nrc_serial_get_read_error };
-                result = nrc_din_start(self->data_in, self->cfg_msg_type, stream_api);
+                struct nrc_din_node_pars    pars = {self, self->topic, self->cfg_msg_type, self->prio, self->max_buf_size};
+                struct nrc_din_stream_api   api = { self->serial, nrc_serial_read, nrc_serial_get_bytes, nrc_serial_clear };
+                result = nrc_din_start(self->data_in, pars, api);
             }
 
             if (OK(result)) {
@@ -368,12 +369,11 @@ static s32_t nrc_node_serial_in_recv_evt(nrc_node_t slf, u32_t event_mask)
 
 static s32_t send_data(struct nrc_node_serial_in *self)
 {
-    struct nrc_din_node_pars    pars = { self, self->topic, self->prio, self->max_buf_size };
-    bool_t                      more_to_read;
-    s32_t                       result;
+    bool_t      more_to_read;
+    s32_t       result;
 
     // Data-in sub-node will read and parse data and send correct message
-    result = nrc_din_data_available(self->data_in, pars, &more_to_read);
+    result = nrc_din_data_available(self->data_in, &more_to_read);
 
     // If there is more data to read, post data available event to self
     if (more_to_read) {
