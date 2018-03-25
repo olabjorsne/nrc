@@ -102,7 +102,6 @@ static s32_t get_node_cfg_value_by_name(nrc_cfg_t* config, struct nrc_cfg_node* 
 static struct nrc_param* get_node_cfg_from_list(nrc_cfg_t* config, struct nrc_cfg_node *node, const s8_t *cfg_param_name);
 static struct nrc_param* add_node_str_cfg(nrc_cfg_t* config, struct nrc_cfg_node* node, const s8_t *name, s8_t *value, s32_t value_len);
 
-
 s32_t nrc_cfg_init(void)
 {
     return NRC_R_OK;
@@ -418,7 +417,6 @@ static s32_t get_node_cfg_array_str_by_name(nrc_cfg_t* config, struct nrc_cfg_no
     return status;
 }
 
-
 static struct nrc_param* get_node_cfg_from_list(nrc_cfg_t* config, struct nrc_cfg_node *node, const s8_t *name)
 {
     s32_t status = NRC_R_ERROR;
@@ -449,18 +447,9 @@ static struct nrc_param* add_node_str_cfg(nrc_cfg_t* config, struct nrc_cfg_node
     new_param->value = (s8_t*)nrc_port_heap_alloc(value_len + 1);
     memcpy(new_param->value, value, value_len);
     ((s8_t*)new_param->value)[value_len] = '\0';
-    new_param->next = NULL;
-
-    if (node->params == NULL) {
-        node->params = new_param;
-    }
-    else {
-        struct nrc_param* end_param = node->params;
-        while (end_param->next != NULL) {
-            end_param = end_param->next;
-        }
-        end_param->next = new_param;
-    }
+    
+    new_param->next = node->params;
+    node->params = new_param;
 
     return new_param;
 }
@@ -482,19 +471,9 @@ static struct nrc_param* add_node_int_cfg(nrc_cfg_t* config, struct nrc_cfg_node
     *(s32_t*)new_param->value = atoi(value_string);
     nrc_port_heap_free(value_string);
     
-    new_param->next = NULL;
-    
-    if (node->params == NULL) {
-        node->params = new_param;
-    }
-    else {
-        struct nrc_param* end_param = node->params;
-        while (end_param->next != NULL) {
-            end_param = end_param->next;
-        }
-        end_param->next = new_param;
-    }
-    
+    new_param->next = node->params;
+    node->params = new_param;
+
     return new_param;
 }
 
@@ -510,18 +489,8 @@ static struct nrc_param* add_node_str_array_cfg(nrc_cfg_t* config, struct nrc_cf
     memcpy(new_param->name, name, strlen(name) + 1);
     new_param->value = array_str;
 
-    new_param->next = NULL;
-
-    if (node->params == NULL) {
-        node->params = new_param;
-    }
-    else {
-        struct nrc_param* end_param = node->params;
-        while (end_param->next != NULL) {
-            end_param = end_param->next;
-        }
-        end_param->next = new_param;
-    }
+    new_param->next = node->params;
+    node->params = new_param;
 
     return new_param;
 }
