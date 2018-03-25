@@ -82,7 +82,7 @@ static void socket_error_event(nrc_port_socket_t socket, s32_t result);
 static const s8_t                           *_tag = "tcp";
 static bool_t                               _initialized = FALSE;
 static struct nrc_tcp                       *_tcp = NULL;        // List of created tcp objects
-static nrc_port_mutex_t                     _mutex;
+
 static struct nrc_port_socket_callback_fcn  _callback;
 
 s32_t nrc_tcp_init(void)
@@ -100,9 +100,6 @@ s32_t nrc_tcp_init(void)
         _callback.disconnect_event = socket_disconnect_event;
         _callback.connect_event = socket_connect_event;
         _callback.error_event = socket_error_event;
-
-        result = nrc_port_mutex_init(&_mutex);
-        NRC_ASSERT(result == NRC_R_OK);
 
         result = nrc_port_socket_init();
     }
@@ -227,18 +224,10 @@ s32_t nrc_tcp_open_reader(
     nrc_tcp_t                *tcp)
 {
     s32_t result = NRC_R_OK;
-    s32_t res;
 
     if ((cfg_id_settings != NULL) && (tcp != NULL) &&
         (reader.node != NULL) && (reader.data_available_evt != 0) && (reader.error_evt != 0)) {
-
-        res = nrc_port_mutex_lock(_mutex, 0);
-        NRC_ASSERT(res == NRC_R_OK);
-
         result = tcp_open_reader_or_writer(cfg_id_settings, &reader, NULL, tcp);
-
-        res = nrc_port_mutex_unlock(_mutex);
-        NRC_ASSERT(res == NRC_R_OK);
     }
     else {
         result = NRC_R_INVALID_IN_PARAM;
@@ -250,13 +239,9 @@ s32_t nrc_tcp_open_reader(
 s32_t nrc_tcp_close_reader(nrc_tcp_t tcp)
 {
     s32_t               result = NRC_R_OK;
-    s32_t               res;
     struct nrc_tcp      *self = (struct nrc_tcp*)tcp;
 
     if ((self != NULL) && (self->type == NRC_TCP_TYPE)) {
-        res = nrc_port_mutex_lock(_mutex, 0);
-        NRC_ASSERT(res == NRC_R_OK);
-
         if ((self->open == TRUE) && (self->reader.node != NULL)) {
             memset(&self->reader, 0, sizeof(struct nrc_tcp_reader));
 
@@ -267,8 +252,6 @@ s32_t nrc_tcp_close_reader(nrc_tcp_t tcp)
                 self->socket = NULL;
             }
         }
-        res = nrc_port_mutex_unlock(_mutex);
-        NRC_ASSERT(res == NRC_R_OK);
     }
     else {
         result = NRC_R_INVALID_IN_PARAM;
@@ -300,7 +283,7 @@ u32_t nrc_tcp_get_bytes(nrc_tcp_t tcp)
     struct nrc_tcp *self = (struct nrc_tcp*)tcp;
 
     if ((self != NULL) && (self->type == NRC_TCP_TYPE)) {
-        if ((self->open == TRUE) && (self->socket != NULL)) {
+        if ((self->open) && (self->socket != NULL)) {
             bytes = nrc_port_socket_get_bytes(self->socket);
         }
         else {
@@ -320,17 +303,10 @@ s32_t nrc_tcp_open_writer(
     nrc_tcp_t             *tcp)
 {
     s32_t result = NRC_R_OK;
-    s32_t res;
 
     if ((cfg_id_settings != NULL) && (tcp != NULL) &&
         (writer.node != NULL) && (writer.write_complete_evt != 0) && (writer.error_evt != 0)) {
-        res = nrc_port_mutex_lock(_mutex, 0);
-        NRC_ASSERT(res == NRC_R_OK);
-
         result = tcp_open_reader_or_writer(cfg_id_settings, NULL, &writer, tcp);
-
-        res = nrc_port_mutex_unlock(_mutex);
-        NRC_ASSERT(res == NRC_R_OK);
     }
     else {
         result = NRC_R_INVALID_IN_PARAM;
@@ -342,13 +318,9 @@ s32_t nrc_tcp_open_writer(
 s32_t nrc_tcp_close_writer(nrc_tcp_t tcp)
 {
     s32_t               result = NRC_R_OK;
-    s32_t               res;
-    struct nrc_tcp   *self = (struct nrc_tcp*)tcp;
+    struct nrc_tcp      *self = (struct nrc_tcp*)tcp;
 
     if ((self != NULL) && (self->type == NRC_TCP_TYPE) && (self->writer.node != NULL)) {
-        res = nrc_port_mutex_lock(_mutex, 0);
-        NRC_ASSERT(res == NRC_R_OK);
-
         if (self->open == TRUE) {
             memset(&self->writer, 0, sizeof(struct nrc_tcp_writer));
 
@@ -362,9 +334,6 @@ s32_t nrc_tcp_close_writer(nrc_tcp_t tcp)
         else {
             result = NRC_R_INVALID_STATE;
         }
-
-        res = nrc_port_mutex_unlock(_mutex);
-        NRC_ASSERT(res == NRC_R_OK);
     }
     else {
         result = NRC_R_INVALID_IN_PARAM;
@@ -376,21 +345,14 @@ s32_t nrc_tcp_close_writer(nrc_tcp_t tcp)
 s32_t nrc_tcp_write(nrc_tcp_t tcp, u8_t *buf, u32_t buf_size)
 {
     s32_t               result = NRC_R_INVALID_IN_PARAM;
-    s32_t               res;
     struct nrc_tcp     *self = (struct nrc_tcp*)tcp;
 
     if ((self != NULL) && (self->type == NRC_TCP_TYPE) && (buf != NULL) && (buf_size > 0)) {
-        if ((self->open == TRUE) && (self->tx_state == IDLE)) {
-            res = nrc_port_mutex_lock(_mutex, 0);
-            NRC_ASSERT(res == NRC_R_OK);
-
+        if ((self->open) && (self->tx_state == IDLE)) {
             result = nrc_port_socket_write(self->socket, buf, buf_size);
             if (result == NRC_R_OK) {
                 self->tx_state = BUSY;
             }
-
-            res = nrc_port_mutex_unlock(_mutex);
-            NRC_ASSERT(res == NRC_R_OK);
         }
         else {
             result = NRC_R_INVALID_STATE;
@@ -552,14 +514,13 @@ static void remote_connect_evt(nrc_port_socket_t socket, void *context)
 static void socket_data_available(nrc_port_socket_t socket, s32_t result)
 {
     struct nrc_tcp      *tcp;
-    s32_t               res;
 
     u32_t               evt = 0;
     nrc_node_t          node = NULL;
     s8_t                prio;
 
-    res = nrc_port_mutex_lock(_mutex, 0);
-    NRC_ASSERT(res == NRC_R_OK);
+    result = nrc_os_lock();
+    NRC_ASSERT(result == NRC_R_OK);
 
     tcp = get_tcp_from_socket(socket);
 
@@ -579,26 +540,24 @@ static void socket_data_available(nrc_port_socket_t socket, s32_t result)
         NRC_LOGD(_tag, "data_available: invalid socket or no reader");
     }
 
-    res = nrc_port_mutex_unlock(_mutex);
-    NRC_ASSERT(res == NRC_R_OK);
-
     if (evt != 0) {
         nrc_os_send_evt(node, evt, prio);
     }
+
+    result = nrc_os_unlock();
+    NRC_ASSERT(result == NRC_R_OK);
 }
 
 // Callback from thread in port layer
 static void socket_write_complete(nrc_port_socket_t socket, s32_t result)
 {
-    struct nrc_tcp   *self;
-    s32_t               res;
-
+    struct nrc_tcp      *self;
     u32_t               evt = 0;
     nrc_node_t          node = NULL;
     s8_t                prio;
 
-    res = nrc_port_mutex_lock(_mutex, 0);
-    NRC_ASSERT(res == NRC_R_OK);
+    result = nrc_os_lock();
+    NRC_ASSERT(result == NRC_R_OK);
 
     self = get_tcp_from_socket(socket);
 
@@ -620,12 +579,12 @@ static void socket_write_complete(nrc_port_socket_t socket, s32_t result)
         NRC_LOGD(_tag, "write_complete: invalid socket, state or no writer");
     }
 
-    res = nrc_port_mutex_unlock(_mutex);
-    NRC_ASSERT(res == NRC_R_OK);
-
     if (evt != 0) {
         nrc_os_send_evt(node, evt, prio);
     }
+	
+	result = nrc_os_unlock();
+    NRC_ASSERT(result == NRC_R_OK);
 }
 
 static void socket_connect_event(nrc_port_socket_t socket, s32_t result)
