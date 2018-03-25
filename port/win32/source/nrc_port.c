@@ -117,8 +117,8 @@ static DWORD WINAPI win32_thread_fcn(LPVOID lpParam)
     void                   *context;
     struct nrc_port_thread *arg = (struct nrc_port_thread*)lpParam;
 
-    assert(arg);
-    assert(arg->function);
+    NRC_PORT_ASSERT(arg);
+    NRC_PORT_ASSERT(arg->function);
     
     threan_fcn = arg->function;
     context = arg->context;
