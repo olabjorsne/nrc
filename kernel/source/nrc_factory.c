@@ -20,60 +20,57 @@
 #include "nrc_log.h"
 #include "nrc_factory.h"
 
-#ifndef NRC_NODE_FACTORY_MAX
-    #define NRC_NODE_FACTORY_MAX_NBR_OF_NODES 32
-#endif
-
-typedef struct 
+typedef struct nrc_node_factory_t
 {
-    s8_t* cfg_type;
-    nrc_node_create_t node_create;
+    struct nrc_node_factory_t  *next;
+    s8_t                       *cfg_type;
+    nrc_node_create_t          node_create;
 } nrc_node_factory_t;
 
 static const s8_t *_tag = "nrc_factory";
-static nrc_node_factory_t factory[NRC_NODE_FACTORY_MAX_NBR_OF_NODES] = { 0 };
-
-
-static u32_t find_free_index(void)
-{
-    u32_t i;
-    for (i = 0; i < NRC_NODE_FACTORY_MAX_NBR_OF_NODES; i++) {
-        if (factory[i].cfg_type == NULL) {
-            break;
-        }
-    }
-    return i;
-}
+static nrc_node_factory_t *_nrc_node_factory = NULL;
 
 static nrc_node_create_t find_create_function(const s8_t *cfg_type)
 {
-    nrc_node_create_t factory_function = NULL;
-    for (u32_t i = 0; (factory[i].cfg_type != NULL) && (i < NRC_NODE_FACTORY_MAX_NBR_OF_NODES); i++) {
-        if ((factory[i].cfg_type != NULL) &&
-            (strcmp(factory[i].cfg_type, cfg_type) == 0)) {
-            factory_function = factory[i].node_create;
-            break;
+    nrc_node_factory_t *factory = _nrc_node_factory;
+    while (factory != NULL) {
+        if (strcmp(factory->cfg_type, cfg_type) == 0) {
+            return factory->node_create;
         }
+        factory = factory->next;
     }
-    return factory_function;
+    return NULL;
 }
 
 s32_t nrc_factory_register_node_type(s8_t* cfg_type, nrc_node_create_t node_create)
 {
-    s32_t status = NRC_R_ERROR;
+    s32_t result = NRC_R_ERROR;
+    nrc_node_factory_t *new_factory = NULL;
+   
+    if (find_create_function(cfg_type) == NULL) {        
+        result = NRC_R_OK;
+    }
+    else {
+        NRC_LOGE(_tag, "%s already registered to node factory", cfg_type);
+    }
+    
+    if (OK(result)) {
+        new_factory = (nrc_node_factory_t*)nrc_port_heap_alloc(sizeof(nrc_node_factory_t));
+        if (new_factory != NULL) {
+            new_factory->cfg_type = cfg_type;
+            new_factory->node_create = node_create;
 
-    if (find_create_function(cfg_type) != NULL) {
-        NRC_LOGE(_tag, "Type \"%s\" already registered to factory", cfg_type);
-        return status;
+            new_factory->next = _nrc_node_factory;
+            _nrc_node_factory = new_factory;
+
+            result = NRC_R_OK;
+        }
+        else {
+            result = NRC_R_OUT_OF_MEM;
+        }
     }
 
-    u32_t i = find_free_index();
-    if (i < NRC_NODE_FACTORY_MAX_NBR_OF_NODES) {
-        factory[i].cfg_type = cfg_type;
-        factory[i].node_create = node_create;
-        status = NRC_R_OK;
-    }
-    return status;
+    return result;
 }
 
 nrc_node_t nrc_factory_create_node(struct nrc_node_factory_pars *pars)
