@@ -1,3 +1,19 @@
+/**
+* Copyright 2017 Tomas Frisberg & Ola Bjorsne
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http ://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #include "nrc_types.h"
 #include "nrc_node.h"
 #include "nrc_cfg.h"
@@ -5,6 +21,7 @@
 #include "nrc_log.h"
 #include "nrc_factory.h"
 #include "nrc_assert.h"
+#include "nrc_data_out.h"
 #include "nrc_tcp.h"
 #include <string.h>
 
@@ -24,8 +41,6 @@ enum nrc_node_tcp_out_state {
     NRC_N_SERIAL_OUT_S_CREATED,                 // Created but not yet initialised. No memory allocated except the object itself.
     NRC_N_SERIAL_OUT_S_INITIALISED,             // Initialised and memory allocated. Ready to be started.
     NRC_N_SERIAL_OUT_S_STARTED,                 // Resources is started and node is now running.
-    NRC_N_SERIAL_OUT_S_STARTED_TX_BUF,          // Resources is started and node is now running with outstanding write
-    NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL,   // Resources is started and node is now running with outstanding write
     NRC_N_SERIAL_OUT_S_ERROR                    // Error occurred which node cannot recover from. Other nodes can continue to run.
 };
 
@@ -39,12 +54,9 @@ struct nrc_node_tcp_out {
     enum nrc_node_tcp_out_state     state;          // Node state
     nrc_tcp_t                       tcp;            // NRC tcp port
     struct nrc_tcp_writer           writer;         // Writer notification data
-
-    struct nrc_msg_buf              *msg_buf;       // Message for outstanding write
+    struct nrc_dout                 *data_out;      // Data-out sub-node
 
     nrc_node_t                      read_node;      // Node to read from
-    nrc_msg_read_t                  read_fcn;       // Read function of data available msg
-    u8_t                            *data_avail_buf;// Buffer for data available writes
 
     u32_t                           type;           // Object type check; unique number for every object type
 };
@@ -159,9 +171,16 @@ static s32_t nrc_node_tcp_out_init(nrc_node_t slf)
             }
 
             if (OK(result)) {
-                self->data_avail_buf = (u8_t*)nrc_port_heap_alloc(self->max_buf_size);
-                NRC_ASSERT(self->data_avail_buf != NULL);
+                self->data_out = (struct nrc_dout*)nrc_port_heap_alloc(sizeof(struct nrc_dout));
+                if (self->data_out != NULL) {
+                    memset(self->data_out, 0, sizeof(struct nrc_dout));
+                }
+                else {
+                    result = NRC_R_OUT_OF_MEM;
+                }
+            }
 
+            if (OK(result)) {
                 self->state = NRC_N_SERIAL_OUT_S_INITIALISED;
             }
             else {
@@ -191,8 +210,8 @@ static s32_t nrc_node_tcp_out_deinit(nrc_node_t slf)
         case NRC_N_SERIAL_OUT_S_INITIALISED:
         case NRC_N_SERIAL_OUT_S_ERROR:
             // Free allocated memory (if any)
-            nrc_port_heap_free(self->data_avail_buf);
-            self->data_avail_buf = NULL;
+            nrc_port_heap_free(self->data_out);
+            self->data_out = NULL;
 
             self->state = NRC_N_SERIAL_OUT_S_CREATED;
             break;
@@ -219,17 +238,22 @@ static s32_t nrc_node_tcp_out_start(nrc_node_t slf)
             result = nrc_tcp_open_writer(self->hdr.cfg_id, self->writer, &self->tcp);
 
             if (OK(result)) {
+                struct nrc_dout_node_pars pars = {self->max_buf_size};
+                struct nrc_dout_stream_api api = {self->tcp, nrc_tcp_write};
+
+                result = nrc_dout_start(self->data_out, pars, api);
+            }
+
+            if (OK(result)) {
                 self->state = NRC_N_SERIAL_OUT_S_STARTED;
             }
             else {
                 self->state = NRC_N_SERIAL_OUT_S_ERROR;
-                NRC_LOGE(_tag, "start(%s): could not open tcp_out", self->hdr.cfg_id);
+                NRC_LOGE(_tag, "start(%s): could not open tcp out", self->hdr.cfg_id);
             }
             break;
 
         case NRC_N_SERIAL_OUT_S_STARTED:
-        case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
-        case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
             NRC_LOGW(_tag, "start(%d): already started", self->hdr.cfg_id);
             break;
 
@@ -251,20 +275,12 @@ static s32_t nrc_node_tcp_out_stop(nrc_node_t slf)
 
     if ((self != NULL) && (self->type == NRC_N_TCP_OUT_TYPE)) {
         switch (self->state) {
-        case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
-        case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
-            // TODO: cancel writing
-            // Fall through ??
-
-        case NRC_N_SERIAL_OUT_S_STARTED:
+         case NRC_N_SERIAL_OUT_S_STARTED:
             // Stop any ongoing activites, free memory allocated in the start state
             result = nrc_tcp_close_writer(self->tcp);
             self->tcp = NULL;
 
-            if (self->msg_buf != NULL) {
-                nrc_port_heap_free(self->msg_buf);
-                self->msg_buf = NULL;
-            }
+            result = nrc_dout_stop(self->data_out);
 
             self->state = NRC_N_SERIAL_OUT_S_INITIALISED;
             result = NRC_R_OK;
@@ -289,26 +305,11 @@ static s32_t nrc_node_tcp_out_recv_msg(nrc_node_t slf, nrc_msg_t msg)
 {
     struct nrc_node_tcp_out  *self = (struct nrc_node_tcp_out*)slf;
     s32_t                       result = NRC_R_INVALID_IN_PARAM;
-    struct nrc_msg_hdr          *msg_hdr = (struct nrc_msg_hdr*)msg;
 
-    if ((self != NULL) && (self->type == NRC_N_TCP_OUT_TYPE) && (msg_hdr != NULL)) {
+    if ((self != NULL) && (self->type == NRC_N_TCP_OUT_TYPE)) {
         switch (self->state) {
         case NRC_N_SERIAL_OUT_S_STARTED:
-            if (msg_hdr->type == NRC_MSG_TYPE_BUF) {
-                result = write_msg_buf(self, (struct nrc_msg_buf*)msg_hdr);
-            }
-            else if (msg_hdr->type == NRC_MSG_TYPE_DATA_AVAILABLE) {
-                result = write_msg_data_avail(self, (struct nrc_msg_data_available*)msg_hdr);
-            }
-            else {
-                NRC_LOGW(_tag, "recv_msg(%s): unknown msg type %d", self->hdr.cfg_id, msg_hdr->type);
-                nrc_os_msg_free(msg);
-            }
-            break;
-
-        case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
-        case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
-            nrc_os_msg_free(msg);
+            result = nrc_dout_recv_msg(self->data_out, msg);
             break;
 
         default:
@@ -332,34 +333,9 @@ static s32_t nrc_node_tcp_out_recv_evt(nrc_node_t slf, u32_t event_mask)
 
     if ((self != NULL) && (self->type == NRC_N_TCP_OUT_TYPE)) {
         switch (self->state) {
-        case NRC_N_SERIAL_OUT_S_STARTED_TX_BUF:
+        case NRC_N_SERIAL_OUT_S_STARTED:
             if ((event_mask & NRC_N_SERIAL_OUT_EVT_WRITE_COMPLETE) != 0) {
-                struct nrc_msg_buf *msg = (struct nrc_msg_buf*)self->msg_buf->hdr.next;
-
-                self->msg_buf->hdr.next = NULL; // If there are linked messages, do not free them
-                nrc_os_msg_free(self->msg_buf);
-                self->msg_buf = NULL;
-
-                self->state = NRC_N_SERIAL_OUT_S_STARTED;
-
-                if (msg != NULL) {
-                    result = write_msg_buf(self, msg);
-                } 
-            }
-            if ((event_mask & NRC_N_SERIAL_OUT_EVT_ERROR) != 0) {
-                //TODO
-                //NRC_LOGW(_tag, "recv_evt(%s): tcp error %d", self->hdr.cfg_id, nrc_tcp_get_write_error(self->tcp));
-            }
-            break;
-
-        case NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL:
-            NRC_ASSERT(self->data_avail_buf != NULL);
-
-            if ((event_mask & NRC_N_SERIAL_OUT_EVT_WRITE_COMPLETE) != 0) {
-                self->state = NRC_N_SERIAL_OUT_S_STARTED;
-                if (nrc_tcp_get_bytes(self->tcp) > 0) {
-                    result = write_msg_data_avail(self, NULL); // Continue to read and write
-                }
+                result = nrc_dout_write_complete(self->data_out);
             }
             if ((event_mask & NRC_N_SERIAL_OUT_EVT_ERROR) != 0) {
                 //TODO
@@ -372,61 +348,6 @@ static s32_t nrc_node_tcp_out_recv_evt(nrc_node_t slf, u32_t event_mask)
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-
-    return result;
-}
-
-static s32_t write_msg_buf(struct nrc_node_tcp_out *self, struct nrc_msg_buf *msg)
-{
-    s32_t result = NRC_R_OK;
-
-    NRC_ASSERT((self != NULL) && (self->type == NRC_N_TCP_OUT_TYPE));
-    NRC_ASSERT((msg != NULL) && (msg->hdr.type == NRC_MSG_TYPE_BUF));
-    
-    NRC_ASSERT(self->msg_buf == NULL);
-    self->msg_buf = msg;
-
-    result = nrc_tcp_write(self->tcp, msg->buf, msg->buf_size);
-
-    if (result == NRC_R_OK) {
-        self->state = NRC_N_SERIAL_OUT_S_STARTED_TX_BUF;
-    }
-    else {
-        NRC_LOGW(_tag, "write_msg_buf(%s): failed write", self->hdr.cfg_id);
-        nrc_os_msg_free(msg);
-        self->state = NRC_N_SERIAL_OUT_S_STARTED;
-    }
-
-    return result;
-}
-
-static s32_t write_msg_data_avail(struct nrc_node_tcp_out *self, struct nrc_msg_data_available *msg)
-{
-    s32_t result = NRC_R_OK;
-    u32_t bytes = 0;
-
-    NRC_ASSERT((self != NULL) && (self->type == NRC_N_TCP_OUT_TYPE));
-
-    if ((msg != NULL) && (msg->read != NULL) && (msg->node != NULL)) {
-        self->read_fcn = msg->read;
-        self->read_node = msg->node;
-    }
-    NRC_ASSERT((self->read_node != NULL) && (self->read_fcn != NULL));
-
-    bytes = self->read_fcn(self->read_node, self->data_avail_buf, self->max_buf_size);
-
-    self->state = NRC_N_SERIAL_OUT_S_STARTED;
-    if (bytes > 0) {
-        result = nrc_tcp_write(self->tcp, self->data_avail_buf, bytes);
-
-        if (result == NRC_R_OK) {
-            self->state = NRC_N_SERIAL_OUT_S_STARTED_TX_DATA_AVAIL;
-        }
-    }
-
-    if (msg != NULL) {
-        nrc_os_msg_free(msg);
     }
 
     return result;

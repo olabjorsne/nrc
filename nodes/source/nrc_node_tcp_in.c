@@ -1,3 +1,19 @@
+/**
+* Copyright 2017 Tomas Frisberg & Ola Bjorsne
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http ://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #include "nrc_types.h"
 #include "nrc_node.h"
 #include "nrc_cfg.h"
@@ -5,6 +21,7 @@
 #include "nrc_log.h"
 #include "nrc_factory.h"
 #include "nrc_assert.h"
+#include "nrc_data_in.h"
 #include "nrc_tcp.h"
 #include <string.h>
 
@@ -27,24 +44,20 @@ enum nrc_node_tcp_in_state {
     NRC_N_SERIAL_IN_S_ERROR         // Error occurred which node cannot recover from. Other nodes can continue to run.
 };
 
-enum nrc_node_tcp_in_msg {
-    NRC_N_SERIAL_IN_MSG_DATA_AVAIL = 1, // Send data available messages to wires
-    NRC_N_SERIAL_IN_MSG_BYTE_ARRAY      // Send byte array messages to wires
-};
 
-// Serial-in node structure
+// Tcp-in node structure
 struct nrc_node_tcp_in {
     struct nrc_node_hdr             hdr;            // General node header; from create function in pars
 
     const s8_t                      *topic;         // Node topic from cfg
+    const s8_t                      *cfg_msg_type;  // message type from cfg
     s8_t                            prio;           // Node prio; used for sending messages; from cfg
-    enum nrc_node_tcp_in_msg        msg_type;       // Msg type to send; from cfg
     u32_t                           max_buf_size;   // Max buf size for buf messages
 
     enum nrc_node_tcp_in_state      state;          // Node state
-    nrc_tcp_t                       tcp;         // NRC tcp port
+    nrc_tcp_t                       tcp;            // NRC tcp port
     struct nrc_tcp_reader           reader;         // Reader notification data for nrc_tcp callback evt
-
+    struct nrc_din                  *data_in;       // Help sub-node to read data from a generic nrc serial stream
     u32_t                           type;           // Object type check; unique number for every object type
 };
 
@@ -109,7 +122,6 @@ nrc_node_t nrc_node_tcp_in_create(struct nrc_node_factory_pars *pars)
             self->reader.data_available_evt = NRC_N_SERIAL_IN_EVT_DATA_AVAIL;
             self->reader.error_evt = NRC_N_SERIAL_IN_EVT_ERROR;
             self->reader.node = self;
-            self->msg_type = NRC_N_SERIAL_IN_MSG_BYTE_ARRAY;    // Default message type
             self->max_buf_size = NRC_N_SERIAL_IN_MAX_BUF_SIZE;  // Default message buf size
 
             // Object type check
@@ -132,7 +144,7 @@ nrc_node_t nrc_node_tcp_in_create(struct nrc_node_factory_pars *pars)
 static s32_t nrc_node_tcp_in_init(nrc_node_t slf)
 {
     struct nrc_node_tcp_in   *self = (struct nrc_node_tcp_in*)slf;
-    s32_t                       result = NRC_R_INVALID_IN_PARAM;
+    s32_t                    result = NRC_R_INVALID_IN_PARAM;
  
     if ((self != NULL) && (self->type == NRC_N_TCP_IN_TYPE)) {
         switch (self->state) {
@@ -143,22 +155,12 @@ static s32_t nrc_node_tcp_in_init(nrc_node_t slf)
                 // Read topic from configuration
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);
             }
-
             if (OK(result)) {
                 // Get msg type to send; data available or byte array
-                s8_t *cfg_msg_type = NULL;
-                result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &cfg_msg_type);
-
-                if (OK(result)) {
-                    if (strcmp(cfg_msg_type, "dataavailable") == 0) {
-                        self->msg_type = NRC_N_SERIAL_IN_MSG_DATA_AVAIL;
-                    }
-                    else {
-                        self->msg_type = NRC_N_SERIAL_IN_MSG_BYTE_ARRAY;
-
-                        result = nrc_cfg_get_int(self->hdr.cfg_id, "bufsize", &self->max_buf_size);
-                    }
-                }
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &self->cfg_msg_type);
+            }
+            if (OK(result)) {
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "bufsize", &self->max_buf_size);
             }
             if (OK(result)) {
                 // Get node priority
@@ -172,6 +174,13 @@ static s32_t nrc_node_tcp_in_init(nrc_node_t slf)
                     else {
                         result = NRC_R_INVALID_CFG;
                     }
+                }
+            }
+
+            if (OK(result)) {
+                self->data_in = (struct nrc_din*)nrc_port_heap_alloc(sizeof(struct nrc_din));
+                if (self->data_in == NULL) {
+                    result = NRC_R_OUT_OF_MEM;
                 }
             }
 
@@ -205,6 +214,8 @@ static s32_t nrc_node_tcp_in_deinit(nrc_node_t slf)
         case NRC_N_SERIAL_IN_S_INITIALISED:
         case NRC_N_SERIAL_IN_S_ERROR:
             // Free allocated memory (if any)
+            nrc_port_heap_free(self->data_in);
+            self->data_in = NULL;
 
             self->state = NRC_N_SERIAL_IN_S_CREATED;
             break;
@@ -229,6 +240,12 @@ static s32_t nrc_node_tcp_in_start(nrc_node_t slf)
         switch (self->state) {
         case NRC_N_SERIAL_IN_S_INITIALISED:
             result = nrc_tcp_open_reader(self->hdr.cfg_id, self->reader, &self->tcp);
+
+            if (OK(result)) {
+                struct nrc_din_node_pars    pars = {self, self->topic, self->cfg_msg_type, self->prio, self->max_buf_size};
+                struct nrc_din_stream_api   api = { self->tcp, nrc_tcp_read, nrc_tcp_get_bytes, nrc_tcp_clear };
+                result = nrc_din_start(self->data_in, pars, api);
+            }
 
             if (OK(result)) {
                 self->state = NRC_N_SERIAL_IN_S_STARTED;
@@ -267,6 +284,8 @@ static s32_t nrc_node_tcp_in_stop(nrc_node_t slf)
     if ((self != NULL) && (self->type == NRC_N_TCP_IN_TYPE)) {
         switch (self->state) {
         case NRC_N_SERIAL_IN_S_STARTED:
+            result = nrc_din_stop(self->data_in);
+
             // Stop any ongoing activites, free memory allocated in the start state
             result = nrc_tcp_close_reader(self->tcp);
             self->tcp = NULL;
@@ -330,7 +349,7 @@ static s32_t nrc_node_tcp_in_recv_evt(nrc_node_t slf, u32_t event_mask)
                 result = send_data(self);
             }
             if ((event_mask & NRC_N_SERIAL_IN_EVT_ERROR) != 0) {
-                //TODO
+				//TODO
                 //NRC_LOGW(_tag, "recv_evt(%s): tcp error %d", self->hdr.cfg_id, nrc_tcp_get_read_error(self->tcp));
             }
             break;
@@ -347,71 +366,16 @@ static s32_t nrc_node_tcp_in_recv_evt(nrc_node_t slf, u32_t event_mask)
 
 static s32_t send_data(struct nrc_node_tcp_in *self)
 {
-    s32_t result = NRC_R_OK;
+    bool_t      more_to_read;
+    s32_t       result;
 
-    NRC_ASSERT(self != NULL);
-    
-    if (self->msg_type == NRC_N_SERIAL_IN_MSG_DATA_AVAIL) {
-        struct nrc_msg_data_available *msg = NULL;
+    // Data-in sub-node will read and parse data and send correct message
+    result = nrc_din_data_available(self->data_in, &more_to_read);
 
-        msg = (struct nrc_msg_data_available*)nrc_os_msg_alloc(sizeof(struct nrc_msg_data_available));
-        if (msg != NULL) {
-            msg->hdr.next = NULL;
-            msg->hdr.topic = self->topic;
-            msg->hdr.type = NRC_MSG_TYPE_DATA_AVAILABLE;
-
-            msg->node = self;
-            msg->read = read_data;
-
-            result = nrc_os_send_msg_from(self, msg, self->prio);
-        }
-        else {
-            result = NRC_R_OUT_OF_MEM;
-        }
-    }
-    else {
-        struct nrc_msg_buf *msg = NULL;
-        u32_t              bytes_to_read = nrc_tcp_get_bytes(self->tcp);
-
-        while(bytes_to_read > 0) {
-            if (bytes_to_read > self->max_buf_size) {
-                bytes_to_read = self->max_buf_size;
-            }
-
-            msg = (struct nrc_msg_buf*)nrc_os_msg_alloc(sizeof(struct nrc_msg_buf) + bytes_to_read);
-            if (msg != NULL) {
-                msg->hdr.next = NULL;
-                msg->hdr.topic = self->topic;
-                msg->hdr.type = NRC_MSG_TYPE_BUF;
-
-                msg->buf_size = nrc_tcp_read(self->tcp, msg->buf, bytes_to_read);
-
-                result = nrc_os_send_msg_from(self, msg, self->prio);
-
-                bytes_to_read = nrc_tcp_get_bytes(self->tcp);
-            }
-            else {
-                // No memory left; clear data
-                nrc_tcp_clear(self->tcp);
-                result = NRC_R_OUT_OF_MEM;
-                bytes_to_read = 0;
-            }
-        }
+    // If there is more data to read, post data available event to self
+    if (more_to_read) {
+        result = nrc_os_send_evt(self, NRC_N_SERIAL_IN_EVT_DATA_AVAIL, self->prio);
     }
 
     return result;
-}
-
-static u32_t read_data(void *slf, u8_t *buf, u32_t buf_size)
-{
-    u32_t                  bytes_read = 0;
-    struct nrc_node_tcp_in *self = (struct nrc_node_tcp_in*)slf;
-
-    if ((self != NULL) && (self->type == NRC_N_TCP_IN_TYPE) &&
-        (self->state == NRC_N_SERIAL_IN_S_STARTED)) {
-
-        bytes_read = nrc_tcp_read(self->tcp, buf, buf_size);
-    }
-
-    return bytes_read;
 }
