@@ -101,7 +101,7 @@ static s32_t get_wires(struct nrc_os_node_hdr *node);
 
 static s32_t parse_flow_cfg(void);
 
-static void nrc_os_thread_fcn(void);
+static void nrc_os_thread_fcn(void *context);
 
 static struct nrc_os    _os;
 static bool_t           _created = FALSE;
@@ -137,6 +137,7 @@ s32_t nrc_os_init(void)
             NRC_PORT_THREAD_PRIO_NORMAL,
             NRC_OS_STACK_SIZE,
             nrc_os_thread_fcn,
+            NULL,
             &(_os.thread));
         NRC_ASSERT(result == NRC_R_OK);
 
@@ -605,7 +606,7 @@ static void clear_evt(struct nrc_os_node_hdr *node)
     insert_node(node);
 }
 
-static void nrc_os_thread_fcn(void)
+static void nrc_os_thread_fcn(void *context)
 {
     s32_t   result;
 
@@ -615,6 +616,8 @@ static void nrc_os_thread_fcn(void)
     struct nrc_os_msg_hdr   *msg = NULL;
     s8_t                    msg_prio;
     struct nrc_os_node_hdr  *msg_node = NULL;
+
+    NRC_UNUSED(context);
 
     while (_os.state > NRC_OS_S_INITIALIZED) {
         // Wait for msg or event

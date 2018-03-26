@@ -43,6 +43,11 @@ struct nrc_port_timer {
     nrc_port_timeout_fcn_t  fcn;
 };
 
+struct nrc_port_thread {
+    nrc_port_thread_fcn_t   function;
+    void                    *context;
+};
+
 struct nrc_port {
     enum nrc_port_state     state;
 
@@ -58,7 +63,7 @@ struct nrc_port {
     nrc_port_error_handler_t error_handler;
 };
 
-static void timer_thread_fcn(void);
+static void timer_thread_fcn(void *context);
 
 s32_t nrc_port_thread_start(nrc_port_thread_t thread_id);
 
@@ -74,7 +79,7 @@ s32_t nrc_port_init(void)
 
         result = nrc_port_mutex_init(&(_port.timer_mutex));
 
-        result = nrc_port_thread_init(NRC_PORT_THREAD_PRIO_CRITICAL, 4096, timer_thread_fcn, &(_port.timer_thread_id));
+        result = nrc_port_thread_init(NRC_PORT_THREAD_PRIO_CRITICAL, 4096, timer_thread_fcn, NULL, &(_port.timer_thread_id));
 
         result = nrc_port_thread_start(_port.timer_thread_id);
 
@@ -108,10 +113,19 @@ void nrc_port_heap_fast_free(void *buf)
 
 static DWORD WINAPI win32_thread_fcn(LPVOID lpParam)
 {
-    nrc_port_thread_fcn_t fcn = (nrc_port_thread_fcn_t)lpParam;
+    nrc_port_thread_fcn_t  threan_fcn;
+    void                   *context;
+    struct nrc_port_thread *arg = (struct nrc_port_thread*)lpParam;
 
-    fcn();
-
+    NRC_PORT_ASSERT(arg);
+    NRC_PORT_ASSERT(arg->function);
+    
+    threan_fcn = arg->function;
+    context = arg->context;
+    nrc_port_heap_free(arg);
+    
+    threan_fcn(context);
+    
     return 0;
 }
 
@@ -119,24 +133,31 @@ s32_t nrc_port_thread_init(
     enum nrc_port_thread_prio   priority,
     u32_t                       stack_size,
     nrc_port_thread_fcn_t       thread_fcn,
+    void                        *context,
     nrc_port_thread_t           *thread_id)
 {
     HANDLE  handle;
     s32_t   result = NRC_R_OK;
-
+    struct nrc_port_thread *arg;
+    
     NRC_PORT_ASSERT(thread_id != NULL);
 
     if (stack_size < 8 * 1024) {
         stack_size = 8 * 1024;
     }
 
+    arg = (struct nrc_port_thread*)nrc_port_heap_alloc(sizeof(struct nrc_port_thread));
+    NRC_PORT_ASSERT(arg);
+    arg->function = thread_fcn;
+    arg->context = context;
+
     handle = CreateThread(
         NULL,                   // default security attributes
-        stack_size,             // stack size  
-        win32_thread_fcn,       // thread function name
-        thread_fcn,             // argument to thread function 
+        stack_size,
+        win32_thread_fcn,
+        (LPVOID)arg,            // argument to thread function 
         CREATE_SUSPENDED,       // creation flags 
-        NULL);             // thread identifier 
+        NULL);                  // thread identifier 
 
     if (handle != NULL) {
         *thread_id = (nrc_port_thread_t)handle;
@@ -283,7 +304,7 @@ s32_t nrc_port_sema_wait(nrc_port_sema_t sema, u32_t timeout)
 	return result;
 }
 
-static void timer_thread_fcn(void)
+static void timer_thread_fcn(void *context)
 {
     s32_t result;
     struct nrc_port_timer *tmr = 0;

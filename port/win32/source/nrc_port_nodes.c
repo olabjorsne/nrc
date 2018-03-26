@@ -17,6 +17,8 @@
 extern void nrc_node_inject_register(void);
 extern void nrc_node_debug_register(void);
 extern void nrc_node_serial_in_register(void);
+extern void nrc_node_tcp_in_register(void);
+extern void nrc_node_tcp_out_register(void);
 
 /** @brief Registers node types supported by win32 port
 *
@@ -27,4 +29,6 @@ void nrc_port_register_nodes(void)
     nrc_node_inject_register();
     nrc_node_debug_register();
     nrc_node_serial_in_register();
+    nrc_node_tcp_in_register();
+    nrc_node_tcp_out_register();
 }

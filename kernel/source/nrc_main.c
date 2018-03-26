@@ -64,11 +64,7 @@ int nrc_main(const char *cfg, unsigned int cfg_size)
     }
     
     if (OK(result)) {
-        // Register all node types (classes) that may later be instansiated
-        nrc_node_inject_register();
-        nrc_node_debug_register();
-        nrc_node_serial_in_register();
-        nrc_node_serial_out_register();
+        nrc_port_register_nodes();
 
         // Install boot flow configuration in nrc_cfg
         flow_cfg = nrc_cfg_create(boot_cfg, boot_cfg_size);

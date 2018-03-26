@@ -55,6 +55,9 @@ int main(int argc, char** argv)
     // Start nrc with the boot flow (if any)
     nrc_main(boot_flow_cfg, boot_flow_cfg_size);
 
+    //extern void test_port_socket_client_echo(void);
+    //test_port_socket_client_echo();
+
     while (1) {
         SleepEx(1000, TRUE);
     }

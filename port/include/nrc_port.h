@@ -44,7 +44,7 @@ typedef void* nrc_port_sema_t;
 typedef void* nrc_port_mutex_t;
 typedef void* nrc_port_timer_t;
 
-typedef void(*nrc_port_thread_fcn_t)(void);
+typedef void(*nrc_port_thread_fcn_t)(void *context);
 typedef void(*nrc_port_timeout_fcn_t)(nrc_port_timer_t timer_id, void *tag);
 
 typedef void(*nrc_port_error_handler_t)(s8_t *file, u32_t line);
@@ -130,6 +130,7 @@ s32_t nrc_port_thread_init(
     enum nrc_port_thread_prio   priority,
     u32_t                       stack_size,
     nrc_port_thread_fcn_t       thread_fcn,
+    void                        *context,
     nrc_port_thread_t           *thread_id);
 
 /** 

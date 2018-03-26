@@ -147,6 +147,7 @@
     <ClCompile Include="..\..\kernel\source\nrc_factory.c" />
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="..\..\kernel\source\nrc_serial.c" />
+    <ClCompile Include="..\..\kernel\source\nrc_tcp.c" />
     <ClCompile Include="..\..\kernel\source\nrc_timer.c" />
     <ClCompile Include="..\..\misc\source\jsmn.c" />
     <ClCompile Include="..\..\misc\source\nrc_misc_cbuf.c" />
@@ -154,12 +155,15 @@
     <ClCompile Include="..\..\nodes\source\nrc_node_inject.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_serial_in.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_serial_out.c" />
+    <ClCompile Include="..\..\nodes\source\nrc_node_tcp_in.c" />
+    <ClCompile Include="..\..\nodes\source\nrc_node_tcp_out.c" />
     <ClCompile Include="..\..\test\misc\test_cbuf.c" />
     <ClCompile Include="..\..\test\port\test_port.c" />
     <ClCompile Include="..\..\test\port\test_port_uart_echo.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="source\nrc_port.c" />
     <ClCompile Include="source\nrc_port_nodes.c" />
+    <ClCompile Include="source\nrc_port_socket.c" />
     <ClCompile Include="source\nrc_port_uart.c" />
   </ItemGroup>
   <ItemGroup>
@@ -182,6 +186,7 @@
     <ClInclude Include="..\..\test\port\test_port.h" />
     <ClInclude Include="..\..\test\port\test_port_uart_echo.h" />
     <ClInclude Include="..\include\nrc_port.h" />
+    <ClInclude Include="..\include\nrc_port_socket.h" />
     <ClInclude Include="..\include\nrc_port_uart.h" />
   </ItemGroup>
   <ItemGroup>
