@@ -22,11 +22,9 @@ module.exports = function(RED) {
         this.host = n.host;
         this.port = n.port * 1;
         this.topic = n.topic;
-        this.stream = (!n.datamode||n.datamode=='stream'); /* stream,single*/
-        this.datatype = n.datatype||'buffer'; /* buffer,utf8,base64 */
-        this.newline = (n.newline||"").replace("\\n","\n").replace("\\r","\r");
-        this.base64 = n.base64;
-        this.server = (typeof n.server == 'boolean')?n.server:(n.server == "server");
+        //this.stream = (!n.datamode||n.datamode=='stream'); /* stream,single*/
+        this.msgtype = n.msgtype||'buffer'; /* buffer,utf8,base64 */
+        this.role = n.role || "server";
         this.closing = false;
         this.connected = false;
         var node = this;
@@ -38,7 +36,6 @@ module.exports = function(RED) {
         RED.nodes.createNode(this,n);
         this.host = n.host;
         this.port = n.port * 1;
-        this.base64 = n.base64;
         this.doend = n.end || false;
         this.beserver = n.beserver;
         this.name = n.name;

@@ -16,34 +16,27 @@
 
 <script type="text/x-red" data-template-name="nrc-tcp-in">
     <div class="form-row">
-        <label for="node-input-server"><i class="fa fa-dot-circle-o"></i><span>Type</span></label>
-        <select id="node-input-server" style="width:120px; margin-right:5px;">
-            <option value="server">Listen on</option>
-            <option value="client">Connect to</option>
+        <label for="node-input-role"><i class="fa fa-dot-circle-o"></i><span>Type</span></label>
+        <select id="node-input-role" style="width:120px; margin-right:5px;">
+            <option value="server">Server</option>
+            <option value="client">Client</option>
         </select>
         <span>port</span> <input type="text" id="node-input-port" style="width:65px">
     </div>
     <div class="form-row hidden" id="node-input-host-row" style="padding-left: 110px;">
         <span>at host</span> <input type="text" id="node-input-host" placeholder="localhost" style="width: 60%;">
     </div>
-
     <div class="form-row">
-        <label><i class="fa fa-sign-out"></i> <span>Output</span></label>
-        <select id="node-input-datamode" style="width:110px;">
-            <option value="stream">stream of</option>
-            <option value="single">single</option>
+        <label><i class="fa fa-sign-out"></i> <span>Msg Type</span></label>
+        <select id="node-input-msgtype" style="width:150px;">
+            <option value="dataavailable">Data available</option>
+            <option value="buf">Buffer</option>
         </select>
-        <select id="node-input-datatype" style="width:140px;">
-            <option value="buffer">buffer</option>
-            <option value="utf8">string</option>
-        </select>
-        <span>payload</span>
     </div>
-
-    <div id="node-row-newline" class="form-row hidden" style="padding-left:110px;">
-        <span> delimited by</span> <input type="text" id="node-input-newline" style="width:110px;">
+    <div class="form-row hidden" id="node-input-bufsize-row">
+        <label for="node-input-bufsize"><i class="fa fa-tag"></i> Buf size</label>
+        <input type="text" id="node-input-bufsize" placeholder="256">
     </div>
-
     <div class="form-row">
         <label for="node-input-topic"><i class="fa fa-tasks"></i> <span></span>Topic</label>
         <input type="text" id="node-input-topic" placeholder="My topic">
@@ -67,12 +60,11 @@
         color:"Silver",
         defaults: {
             name: {value:""},
-            server: {value:"server",required:true},
-            host: {value:"",validate:function(v) { return (this.server == "server")||v.length > 0;} },
+            role: {value:"server",required:true},
+            host: {value:"",validate:function(v) { return (this.role == "server")||v.length > 0;} },
             port: {value:"",required:true,validate:RED.validators.number()},
-            datamode:{value:"stream"},
-            datatype:{value:"buffer"},
-            newline:{value:""},
+            msgtype:{value:"buf"},
+            bufsize:{value:"256"},
             topic: {value:""}
         },
         inputs:0,
@@ -86,28 +78,22 @@
         },
         oneditprepare: function() {
             var updateOptions = function() {
-                var sockettype = $("#node-input-server").val();
+                var sockettype = $("#node-input-role").val();
                 if (sockettype == "client") {
                     $("#node-input-host-row").show();
                 } else {
                     $("#node-input-host-row").hide();
                 }
-                var datamode = $("#node-input-datamode").val();
-                var datatype = $("#node-input-datatype").val();
-                if (datamode == "stream") {
-                    if (datatype == "utf8") {
-                        $("#node-row-newline").show();
-                    } else {
-                        $("#node-row-newline").hide();
-                    }
+                var messagetype = $("#node-input-msgtype").val();
+                if (messagetype == "buf") {
+                    $("#node-input-bufsize-row").show();
                 } else {
-                    $("#node-row-newline").hide();
+                    $("#node-input-bufsize-row").hide();
                 }
             };
             updateOptions();
-            $("#node-input-server").change(updateOptions);
-            $("#node-input-datatype").change(updateOptions);
-            $("#node-input-datamode").change(updateOptions);
+            $("#node-input-role").change(updateOptions);
+            $("#node-input-msgtype").change(updateOptions);
         }
     });
 </script>
