@@ -178,6 +178,7 @@
     <ClInclude Include="..\..\kernel\include\nrc_factory.h" />
     <ClInclude Include="..\..\kernel\include\nrc_os.h" />
     <ClInclude Include="..\..\kernel\include\nrc_serial.h" />
+    <ClInclude Include="..\..\kernel\include\nrc_tcp.h" />
     <ClInclude Include="..\..\kernel\include\nrc_timer.h" />
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
     <ClInclude Include="..\..\misc\include\jsmn.h" />
