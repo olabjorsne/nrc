@@ -38,7 +38,7 @@
             <option value="buf"> Buffer</option>
         </select>
     </div>
-    <div class="form-row">
+    <div class="form-row hidden" id="node-input-bufsize-row">
         <label for="node-input-bufsize"><i class="fa fa-tag"></i> Read size</label>
         <input type="text" id="node-input-bufsize" placeholder="256">
     </div>
@@ -81,7 +81,20 @@
         },
         labelStyle: function () {
             return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function () {
+            var updateOptions = function () {
+                var messagetype = $("#node-input-msgtype").val();
+                if (messagetype == "buf") {
+                    $("#node-input-bufsize-row").show();
+                } else {
+                    $("#node-input-bufsize-row").hide();
+                }
+            };
+            updateOptions();
+            $("#node-input-msgtype").change(updateOptions);
         }
+
     });
 </script>
 
@@ -93,10 +106,6 @@
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> <span">Name</span></label>
         <input type="text" id="node-input-name" placeholder="Name">
-    </div>
-    <div class="form-row">
-        <label for="node-input-topic"><i class="fa fa-tag"></i> <span>Topic</span></label>
-        <input type="text" id="node-input-topic" placeholder="Topic">
     </div>
     <div class="form-row">
         <label for="node-input-priority"><i class="fa fa-tag"></i> Priority</label>
@@ -120,7 +129,6 @@
         category: 'nrc',
         defaults: {
             name: { name: "" },
-            topic: { value: "" },
             serial: { type: "nrc-serial", required: true },
             priority: { value: "8", required: true, validate: RED.validators.number() },
             bufsize: { value: "256", required: true, validate: RED.validators.number() }
@@ -137,7 +145,7 @@
         labelStyle: function () {
             return this.name ? "node_label_italic" : "";
         }
-    });
+     });
 </script>
 
 
