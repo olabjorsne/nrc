@@ -77,7 +77,7 @@
         icon: "serial.png",
         label: function () {
             var serialNode = RED.nodes.node(this.serial);
-            return this.name || (serialNode ? serialNode.label().split(":")[0] : this._("serial.label.serial"));
+            return this.name || (serialNode ? "Port: " + serialNode.label().split(":")[0] : "nrc-serial-in");
         },
         labelStyle: function () {
             return this.name ? "node_label_italic" : "";
@@ -140,7 +140,7 @@
         align: "right",
         label: function () {
             var serialNode = RED.nodes.node(this.serial);
-            return this.name || (serialNode ? serialNode.label().split(":")[0] : this._("serial.label.serial"));
+            return this.name || (serialNode ? "Port: " + serialNode.label().split(":")[0] : "nrc-serial-out");
         },
         labelStyle: function () {
             return this.name ? "node_label_italic" : "";
