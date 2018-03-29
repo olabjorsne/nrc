@@ -14,10 +14,10 @@
   "license": "Apache-2.0",
   "node-red": {
     "nodes": {
-        "nrc-serial": "nrc-serial.js",
-        "nrc-inject": "nrc-inject.js",
-        "nrc-debug": "nrc-debug.js",
-        "nrc-tcp":  "nrc-tcp.js"
+      "nrc-serial": "nrc-serial.js",
+      "nrc-inject": "nrc-inject.js",
+      "nrc-debug": "nrc-debug.js",
+      "nrc-tcp": "nrc-tcp.js"
     }
   }
 }

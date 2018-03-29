@@ -16,7 +16,7 @@
 
 <script type="text/x-red" data-template-name="nrc-tcp-in">
     <div class="form-row">
-        <label for="node-input-role"><i class="fa fa-dot-circle-o"></i><span>Type</span></label>
+        <label for="node-input-role"><i class="fa fa-dot-circle-o"></i><span>Role</span></label>
         <select id="node-input-role" style="width:120px; margin-right:5px;">
             <option value="server">Server</option>
             <option value="client">Client</option>
@@ -36,6 +36,10 @@
     <div class="form-row hidden" id="node-input-bufsize-row">
         <label for="node-input-bufsize"><i class="fa fa-tag"></i> Buf size</label>
         <input type="text" id="node-input-bufsize" placeholder="256">
+    </div>
+    <div class="form-row">
+        <label for="node-input-priority"><i class="fa fa-tag"></i> Priority</label>
+        <input type="text" id="node-input-priority" placeholder="8">
     </div>
     <div class="form-row">
         <label for="node-input-topic"><i class="fa fa-tasks"></i> <span></span>Topic</label>
@@ -64,7 +68,8 @@
             host: {value:"",validate:function(v) { return (this.role == "server")||v.length > 0;} },
             port: {value:"",required:true,validate:RED.validators.number()},
             msgtype:{value:"buf"},
-            bufsize:{value:"256"},
+            bufsize: { value: "256" },
+            priority: { value: "8", required: true, validate: RED.validators.number() },
             topic: {value:""}
         },
         inputs:0,
@@ -97,15 +102,12 @@
         }
     });
 </script>
-
-
 <script type="text/x-red" data-template-name="nrc-tcp-out">
     <div class="form-row">
-        <label for="node-input-beserver"><i class="fa fa-dot-circle-o"></i> <span></span>Type</label>
-        <select id="node-input-beserver" style="width:150px; margin-right:5px;">
-            <option value="server">Listen on</option>
-            <option value="client">Connect to</option>
-            <option value="reply">Reply to TCP</option>
+        <label for="node-input-role"><i class="fa fa-dot-circle-o"></i> <span></span>Role</label>
+        <select id="node-input-role" style="width:150px; margin-right:5px;">
+            <option value="server">Server</option>
+            <option value="client">Client</option>
         </select>
         <span id="node-input-port-row"><span>port</span> <input type="text" id="node-input-port" style="width: 65px"></span>
     </div>
@@ -113,19 +115,14 @@
     <div class="form-row hidden" id="node-input-host-row" style="padding-left: 110px;">
         <span>at host</span> <input type="text" id="node-input-host" style="width: 60%;">
     </div>
-
-    <div class="form-row hidden" id="node-input-end-row">
-        <label>&nbsp;</label>
-        <input type="checkbox" id="node-input-end" style="display: inline-block; width: auto; vertical-align: top;">
-        <label for="node-input-end" style="width: 70%;"><span>Close connection after each message is sent</span></label>
+    <div class="form-row" id="node-input-bufsize-row">
+        <label for="node-input-bufsize"><i class="fa fa-tag"></i> Buf size</label>
+        <input type="text" id="node-input-bufsize" placeholder="256">
     </div>
-
     <div class="form-row">
-        <label>&nbsp;</label>
-        <input type="checkbox" id="node-input-base64" placeholder="base64" style="display: inline-block; width: auto; vertical-align: top;">
-        <label for="node-input-base64" style="width: 70%;"><span>Decode Base64 message</span></label>
+        <label for="node-input-priority"><i class="fa fa-tag"></i> Priority</label>
+        <input type="text" id="node-input-priority" placeholder="8">
     </div>
-
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> <span>Name</span></label>
         <input type="text" id="node-input-name" placeholder="My name">
@@ -150,11 +147,11 @@
         category: 'nrc',
         color:"Silver",
         defaults: {
-            host: {value:"",validate:function(v) { return (this.beserver != "client")||v.length > 0;} },
-            port: {value:"",validate:function(v) { return (this.beserver == "reply")||RED.validators.number()(v); } },
-            beserver: {value:"client",required:true},
-            base64: {value:false,required:true},
-            end: {value:false,required:true},
+            role: { value: "server", required: true },
+            host: { value: "", validate: function (v) { return (this.role == "server") || v.length > 0; } },
+            port: { value: "", required: true, validate: RED.validators.number() },
+            bufsize: { value: "256" },
+            priority: { value: "8", required: true, validate: RED.validators.number() },
             name: {value:""}
         },
         inputs:1,
@@ -169,16 +166,7 @@
         },
         oneditprepare: function() {
             var updateOptions = function() {
-                var sockettype = $("#node-input-beserver").val();
-                if (sockettype == "reply") {
-                    $("#node-input-port-row").hide();
-                    $("#node-input-host-row").hide();
-                    $("#node-input-end-row").hide();
-                } else {
-                    $("#node-input-port-row").show();
-                    $("#node-input-end-row").show();
-                }
-
+                var sockettype = $("#node-input-role").val();
                 if (sockettype == "client") {
                     $("#node-input-host-row").show();
                 } else {
@@ -186,7 +174,7 @@
                 }
             };
             updateOptions();
-            $("#node-input-beserver").change(updateOptions);
+            $("#node-input-role").change(updateOptions);
         }
     });
 </script>
