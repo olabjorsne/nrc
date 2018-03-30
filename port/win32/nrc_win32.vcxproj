@@ -153,6 +153,7 @@
     <ClCompile Include="..\..\misc\source\nrc_misc_cbuf.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_debug.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_inject.c" />
+    <ClCompile Include="..\..\nodes\source\nrc_node_split.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_serial_in.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_serial_out.c" />
     <ClCompile Include="..\..\nodes\source\nrc_node_tcp_in.c" />
