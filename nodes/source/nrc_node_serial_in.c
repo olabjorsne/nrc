@@ -30,7 +30,9 @@
 #define NRC_N_SERIAL_IN_TYPE            (0x18FF346A)
 
 // Event bitmask for nrc_serial callbacks
-#define NRC_N_SERIAL_IN_EVT_DATA_AVAIL  (1)
+// Data available event is forwarded to data-in sub-node
+// Other events must not conflict data-in sub-node events
+// Use NRC_DIN_EVT_DATA_AVAIL event for data available
 #define NRC_N_SERIAL_IN_EVT_ERROR       (2)
 
 // Default max buffer read size
@@ -75,9 +77,6 @@ static s32_t nrc_node_serial_in_stop(nrc_node_t self);
 static s32_t nrc_node_serial_in_recv_msg(nrc_node_t self, nrc_msg_t msg);
 static s32_t nrc_node_serial_in_recv_evt(nrc_node_t self, u32_t event_mask);
 
-// Internal functions
-static s32_t send_data(struct nrc_node_serial_in *self);
-
 // Internal variables
 const static s8_t*          _tag = "serial-in"; // Used in NRC_LOG function
 static struct nrc_node_api  _api;               // Node API functions
@@ -119,7 +118,7 @@ nrc_node_t nrc_node_serial_in_create(struct nrc_node_factory_pars *pars)
             self->hdr.cfg_name = pars->cfg_name;
 
             // Node specific
-            self->reader.data_available_evt = NRC_N_SERIAL_IN_EVT_DATA_AVAIL;
+            self->reader.data_available_evt = NRC_DIN_EVT_DATA_AVAIL;
             self->reader.error_evt = NRC_N_SERIAL_IN_EVT_ERROR;
             self->reader.node = self;
             self->max_buf_size = NRC_N_SERIAL_IN_MAX_BUF_SIZE;  // Default message buf size
@@ -256,7 +255,7 @@ static s32_t nrc_node_serial_in_start(nrc_node_t slf)
 
                 // Check if there is already data to read
                 if (nrc_serial_get_bytes(self->serial) > 0) {
-                    result = send_data(self);
+                    result = nrc_din_recv_evt(self->data_in, NRC_DIN_EVT_DATA_AVAIL);
                 }
             }
             else {
@@ -349,9 +348,8 @@ static s32_t nrc_node_serial_in_recv_evt(nrc_node_t slf, u32_t event_mask)
     if ((self != NULL) && (self->type == NRC_N_SERIAL_IN_TYPE)) {
         switch (self->state) {
         case NRC_N_SERIAL_IN_S_STARTED:
-            if ((event_mask & NRC_N_SERIAL_IN_EVT_DATA_AVAIL) != 0) {
-                result = send_data(self);
-            }
+            result = nrc_din_recv_evt(self->data_in, event_mask);
+
             if ((event_mask & NRC_N_SERIAL_IN_EVT_ERROR) != 0) {
                 NRC_LOGW(_tag, "recv_evt(%s): serial error %d", self->hdr.cfg_id, nrc_serial_get_read_error(self->serial));
             }
@@ -362,22 +360,6 @@ static s32_t nrc_node_serial_in_recv_evt(nrc_node_t slf, u32_t event_mask)
             result = NRC_R_INVALID_STATE;
             break;
         }
-    }
-
-    return result;
-}
-
-static s32_t send_data(struct nrc_node_serial_in *self)
-{
-    bool_t      more_to_read;
-    s32_t       result;
-
-    // Data-in sub-node will read and parse data and send correct message
-    result = nrc_din_data_available(self->data_in, &more_to_read);
-
-    // If there is more data to read, post data available event to self
-    if (more_to_read) {
-        result = nrc_os_send_evt(self, NRC_N_SERIAL_IN_EVT_DATA_AVAIL, self->prio);
     }
 
     return result;
