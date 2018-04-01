@@ -25,6 +25,12 @@
 extern "C" {
 #endif
 
+// Events that must be forwarded from the node to the data-in sub-node
+// Events only from bit 16 and up
+#define NRC_DIN_EVT_DATA_AVAIL  (1<<16) // Data available event from stream interface
+#define NRC_DIN_EVT_TIMEOUT     (1<<17)
+
+// Node parameters used by the data-in sub-node
 struct nrc_din_node_pars {
     nrc_node_t      node;
     const s8_t      *topic;
@@ -33,8 +39,8 @@ struct nrc_din_node_pars {
     u32_t           max_size;
 };
 
+// Stream API definitions used by the serial-in sub-node
 typedef void* nrc_din_stream_t;
-
 typedef u32_t (*nrc_din_stream_read_t)(nrc_din_stream_t stream, u8_t *buf, u32_t buf_size);
 typedef u32_t (*nrc_din_stream_get_bytes_t)(nrc_din_stream_t stream);
 typedef s32_t (*nrc_din_stream_clear_t)(nrc_din_stream_t stream);
@@ -50,12 +56,27 @@ struct nrc_din_stream_api {
 };
 
 /**
-* @brief Data in class structure
+* @brief Message types configurable for the serial-in sub-node
+*/
+enum nrc_din_msg_type {
+    NRC_DIN_MSG_TYPE_INVALID = 0,   // No type is set
+    NRC_DIN_MSG_TYPE_DA,            // Data available
+    NRC_DIN_MSG_TYPE_BUF,           // Buf
+    NRC_DIN_MSG_TYPE_JSON           // String with JSON object
+};
+
+/**
+* @brief Data-in class structure
 */
 struct nrc_din {
     struct nrc_din_node_pars    node_pars;      // Node parameters
-    u32_t                       msg_type;       // Type of message to send (see nrc_msg.h)
+    enum nrc_din_msg_type       msg_type;       // Type of message to send
     struct nrc_din_stream_api   stream_api;     // Generic stream api for reading data
+
+    struct nrc_msg_str          *msg_str;       // Used for parsing e.g. json
+    u32_t                       str_len;        // Length of string
+    s32_t                       json_cnt;       // Counter for json parsing
+
     u32_t                       type;           // Unique id of class type
 };
 
@@ -83,18 +104,16 @@ s32_t nrc_din_start(
 s32_t nrc_din_stop(struct nrc_din *din);
 
 /**
-* @brief Data available function
+* @brief Receive event function
 *
-* Called when the stream interface has more data to read
+* Called when sub-node events are received
 *
 * @param din Data in sub-node
-* @param more_to_read Return TRUE if there is more data to read.
+* @param evt_mask Event bit mask
 *
 * @return NRC_R_OK if successful
 */
-s32_t nrc_din_data_available(
-    struct nrc_din              *din,
-    bool_t                      *more_to_read);
+s32_t nrc_din_recv_evt(struct nrc_din *din, u32_t evt_mask);
 
 #ifdef __cplusplus
 }
