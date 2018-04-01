@@ -36,6 +36,7 @@
         <select type="text" id="node-input-msgtype">
             <option value="dataavailable"> Data available</option>
             <option value="buf"> Buffer</option>
+            <option value="json"> JSON</option>
         </select>
     </div>
     <div class="form-row hidden" id="node-input-bufsize-row">
@@ -85,7 +86,7 @@
         oneditprepare: function () {
             var updateOptions = function () {
                 var messagetype = $("#node-input-msgtype").val();
-                if (messagetype == "buf") {
+                if ((messagetype == "buf") || (messagetype == "json")) {
                     $("#node-input-bufsize-row").show();
                 } else {
                     $("#node-input-bufsize-row").hide();

@@ -60,7 +60,7 @@ s32_t nrc_din_start(
     else if (strcmp(node_pars.cfg_msg_type, "buf") == 0) {
         self->msg_type = NRC_DIN_MSG_TYPE_BUF;
     }
-    else if (strcmp(node_pars.cfg_msg_type, "json")) {
+    else if (strcmp(node_pars.cfg_msg_type, "json") == 0) {
         self->msg_type = NRC_DIN_MSG_TYPE_JSON;
     }
     else {
@@ -207,6 +207,9 @@ static s32_t send_json(struct nrc_din *self)
 
     if (self->msg_str == NULL) {
         self->msg_str = (struct nrc_msg_str*)nrc_os_msg_alloc(sizeof(struct nrc_msg_str) + self->node_pars.max_size);
+        self->msg_str->hdr.topic = self->node_pars.topic;
+        self->msg_str->hdr.type = NRC_MSG_TYPE_STRING;
+        
         self->str_len = 0;
         self->json_cnt = 0;
     }
@@ -238,13 +241,21 @@ static s32_t send_json(struct nrc_din *self)
     if (done) {
         self->msg_str->str[self->str_len] = 0;
 
-        result = nrc_os_send_msg_from(self, self->msg_str, self->node_pars.prio);
+        // Send string message with (potential) json object
+        result = nrc_os_send_msg_from(self->node_pars.node, self->msg_str, self->node_pars.prio);
         self->msg_str = NULL;
+
+        // There might be more data to read
+        if (self->stream_api.get_bytes(self->stream_api.id) > 0) {
+            result = nrc_os_send_evt(self->node_pars.node, NRC_DIN_EVT_DATA_AVAIL, self->node_pars.prio);
+        }
     }
     else if (self->str_len == (self->node_pars.max_size - 1)) {
-        // TODO: buffer is too small
+        // TODO: buffer is too small?
         self->str_len = 0;
         self->json_cnt = 0;
+
+        result = NRC_R_OUT_OF_MEM;
     }
 
     return result;

@@ -25,6 +25,7 @@
 
 static s32_t write_msg_buf(struct nrc_dout *self, struct nrc_msg_buf *msg);
 static s32_t write_msg_data_avail(struct nrc_dout *self, struct nrc_msg_data_available *msg);
+static s32_t write_msg_string(struct nrc_dout *self, struct nrc_msg_str *msg);
 
 s32_t nrc_dout_start(
     struct nrc_dout              *self,
@@ -81,6 +82,9 @@ s32_t nrc_dout_recv_msg(struct nrc_dout  *self, nrc_msg_t msg)
         else if (msg_hdr->type == NRC_MSG_TYPE_DATA_AVAILABLE) {
             result = write_msg_data_avail(self, (struct nrc_msg_data_available*)msg_hdr);
         }
+        else if (msg_hdr->type == NRC_MSG_TYPE_STRING) {
+            result = write_msg_string(self, (struct nrc_msg_str*)msg_hdr);
+        }
         else {
             nrc_os_msg_free(msg);
         }
@@ -123,6 +127,23 @@ s32_t nrc_dout_write_complete(struct nrc_dout *self)
         }
         break;
     }   
+    case NRC_DOUT_S_TX_STRING:
+    {
+        // Get next msg if any
+        struct nrc_msg_str *msg = (struct nrc_msg_str*)self->msg_str->hdr.next;
+
+        // Free written msg but not linked ones
+        self->msg_str->hdr.next = NULL;
+        nrc_os_msg_free(self->msg_str);
+        self->msg_str = NULL;
+
+        // Write next message if any
+        self->state = NRC_DOUT_S_IDLE;
+        if (msg != NULL) {
+            result = write_msg_string(self, msg);
+        }
+        break;
+    }
     case NRC_DOUT_S_TX_DATA_AVAIL:
         NRC_ASSERT(self->data_avail_buf != NULL);
 
@@ -153,6 +174,29 @@ static s32_t write_msg_buf(struct nrc_dout *self, struct nrc_msg_buf *msg)
 
     if (result == NRC_R_OK) {
         self->state = NRC_DOUT_S_TX_BUF;
+    }
+    else {
+        nrc_os_msg_free(msg);
+        self->state = NRC_DOUT_S_IDLE;
+    }
+
+    return result;
+}
+
+static s32_t write_msg_string(struct nrc_dout *self, struct nrc_msg_str *msg)
+{
+    s32_t result = NRC_R_OK;
+
+    NRC_ASSERT((self != NULL) && (self->type == NRC_DOUT_TYPE));
+    NRC_ASSERT((msg != NULL) && (msg->hdr.type == NRC_MSG_TYPE_STRING));
+
+    NRC_ASSERT(self->msg_str == NULL);
+    self->msg_str = msg;
+
+    result = self->stream_api.write(self->stream_api.id, msg->str, (u32_t)strlen(msg->str));
+
+    if (result == NRC_R_OK) {
+        self->state = NRC_DOUT_S_TX_STRING;
     }
     else {
         nrc_os_msg_free(msg);
