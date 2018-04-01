@@ -46,7 +46,8 @@ enum nrc_dout_state {
     NRC_DOUT_S_INVALID,
     NRC_DOUT_S_IDLE,
     NRC_DOUT_S_TX_BUF,
-    NRC_DOUT_S_TX_DATA_AVAIL
+    NRC_DOUT_S_TX_DATA_AVAIL,
+    NRC_DOUT_S_TX_STRING
 };
 
 /**
@@ -58,7 +59,8 @@ struct nrc_dout {
     struct nrc_dout_node_pars   node_pars;      // Node parameters
     struct nrc_dout_stream_api  stream_api;     // Generic stream api for reading data
 
-    struct nrc_msg_buf          *msg_buf;       // Message for outstanding write
+    struct nrc_msg_buf          *msg_buf;       // Message for outstanding buf write
+    struct nrc_msg_str          *msg_str;       // Message for outstanding string write
 
     nrc_node_t                  read_node;      // Node to read from
     nrc_msg_read_t              read_fcn;       // Read function of data available msg
