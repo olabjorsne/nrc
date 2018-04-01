@@ -24,12 +24,6 @@
 
 #include "test_port.h"
 
-// TODO: Do we need this?
-extern void nrc_node_inject_register(void);
-extern void nrc_node_debug_register(void);
-extern void nrc_node_serial_in_register(void);
-extern void nrc_node_serial_out_register(void);
-
 static const s8_t   *_tag = "nrc_main";
 
 int nrc_main(const char *cfg, unsigned int cfg_size)
