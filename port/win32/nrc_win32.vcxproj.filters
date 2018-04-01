@@ -132,9 +132,6 @@
     <ClCompile Include="..\..\kernel\source\nrc_tcp.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\nodes\source\nrc_node_split.c">
-      <Filter>nodes\source</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
