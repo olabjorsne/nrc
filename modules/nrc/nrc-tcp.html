@@ -31,11 +31,16 @@
         <select id="node-input-msgtype" style="width:150px;">
             <option value="dataavailable">Data available</option>
             <option value="buf">Buffer</option>
+            <option value="json">JSON</option>
         </select>
     </div>
     <div class="form-row hidden" id="node-input-bufsize-row">
         <label for="node-input-bufsize"><i class="fa fa-tag"></i> Buf size</label>
         <input type="text" id="node-input-bufsize" placeholder="256">
+    </div>
+    <div class="form-row hidden" id="node-input-timeout-row">
+        <label for="node-input-timeout"><i class="fa fa-tag"></i> Timeout [ms]</label>
+        <input type="text" id="node-input-timeout" placeholder="1000">
     </div>
     <div class="form-row">
         <label for="node-input-priority"><i class="fa fa-tag"></i> Priority</label>
@@ -66,10 +71,11 @@
             name: {value:""},
             role: {value:"server",required:true},
             host: {value:"",validate:function(v) { return (this.role == "server")||v.length > 0;} },
-            port: {value:"",required:true,validate:RED.validators.number()},
+            port: { value: "", required: true, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= 0))) } },
             msgtype:{value:"buf"},
-            bufsize: { value: "256" },
-            priority: { value: "8", required: true, validate: RED.validators.number() },
+            bufsize: { value: "256", required: false, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= 0))) } },
+            timeout: { value: "1000", required: false, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= 0))) } },
+            priority: { value: "8", required: true, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= -128) && (v < 127))) }  },
             topic: {value:""}
         },
         inputs:0,
@@ -90,10 +96,15 @@
                     $("#node-input-host-row").hide();
                 }
                 var messagetype = $("#node-input-msgtype").val();
-                if (messagetype == "buf") {
+                if ((messagetype == "buf") || (messagetype == "json")) {
                     $("#node-input-bufsize-row").show();
                 } else {
                     $("#node-input-bufsize-row").hide();
+                }
+                if (messagetype == "json") {
+                    $("#node-input-timeout-row").show();
+                } else {
+                    $("#node-input-timeout-row").hide();
                 }
             };
             updateOptions();
@@ -150,8 +161,8 @@
             role: { value: "server", required: true },
             host: { value: "", validate: function (v) { return (this.role == "server") || v.length > 0; } },
             port: { value: "", required: true, validate: RED.validators.number() },
-            bufsize: { value: "256" },
-            priority: { value: "8", required: true, validate: RED.validators.number() },
+            priority: { value: "8", required: true, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= 0))) } },
+            bufsize: { value: "256", required: true, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= 0))) } },
             name: {value:""}
         },
         inputs:1,

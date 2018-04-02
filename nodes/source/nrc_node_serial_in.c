@@ -36,7 +36,8 @@
 #define NRC_N_SERIAL_IN_EVT_ERROR       (2)
 
 // Default max buffer read size
-#define NRC_N_SERIAL_IN_MAX_BUF_SIZE (256)
+#define NRC_N_SERIAL_IN_MAX_BUF_SIZE    (256)  // bytes
+#define NRC_N_SERIAL_IN_TIMEOUT         (1000) // milliseconds
 
 // Node states
 enum nrc_node_serial_in_state {
@@ -56,6 +57,7 @@ struct nrc_node_serial_in {
     const s8_t                      *cfg_msg_type;  // message type from cfg
     s8_t                            prio;           // Node prio; used for sending messages; from cfg
     u32_t                           max_buf_size;   // Max buf size for buf messages
+    u32_t                           timeout;        // Timeout in ms to reset protocol parsing in data-in
 
     enum nrc_node_serial_in_state   state;          // Node state
     nrc_serial_t                    serial;         // NRC serial port
@@ -164,6 +166,15 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
             }
             if (OK(result)) {
                 result = nrc_cfg_get_int(self->hdr.cfg_id, "bufsize", &self->max_buf_size);
+                if (!OK(result) || self->max_buf_size == 0) {
+                    self->max_buf_size = NRC_N_SERIAL_IN_MAX_BUF_SIZE;
+                }
+            }
+            if (OK(result)) {
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "timeout", &self->timeout);
+                if (!OK(result) || self->timeout == 0) {
+                    self->timeout = NRC_N_SERIAL_IN_TIMEOUT;
+                }
             }
             if (OK(result)) {
                 // Get node priority
@@ -245,7 +256,7 @@ static s32_t nrc_node_serial_in_start(nrc_node_t slf)
             result = nrc_serial_open_reader(self->cfg_serial_id, self->reader, &self->serial);
 
             if (OK(result)) {
-                struct nrc_din_node_pars    pars = {self, self->topic, self->cfg_msg_type, self->prio, self->max_buf_size};
+                struct nrc_din_node_pars    pars = {self, self->topic, self->cfg_msg_type, self->prio, self->max_buf_size, self->timeout};
                 struct nrc_din_stream_api   api = { self->serial, nrc_serial_read, nrc_serial_get_bytes, nrc_serial_clear };
                 result = nrc_din_start(self->data_in, pars, api);
             }

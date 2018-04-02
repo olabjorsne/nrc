@@ -31,6 +31,9 @@ static s32_t send_data_available(struct nrc_din *self);
 static s32_t send_buf(struct nrc_din *self);
 static s32_t send_json(struct nrc_din *self);
 
+static void start_timer(struct nrc_din *self);
+static void stop_timer(struct nrc_din *self);
+
 s32_t nrc_din_start(
     struct nrc_din              *self,
     struct nrc_din_node_pars    node_pars,
@@ -54,6 +57,10 @@ s32_t nrc_din_start(
     self->str_len = 0;
     self->json_cnt = 0;
 
+    self->timer_pars.evt = NRC_DIN_EVT_TIMEOUT;
+    self->timer_pars.node = node_pars.node;
+    self->timer_pars.prio = node_pars.prio;
+
     if (strcmp(node_pars.cfg_msg_type, "dataavailable") == 0) {
         self->msg_type = NRC_DIN_MSG_TYPE_DA;
     }
@@ -67,6 +74,10 @@ s32_t nrc_din_start(
         self->msg_type = NRC_MSG_TYPE_INVALID;
 
         result = NRC_R_INVALID_CFG;
+    }
+
+    if (OK(result)) {
+        result = nrc_timer_init();
     }
 
     return result;
@@ -131,7 +142,17 @@ static s32_t timeout(struct nrc_din *self)
 {
     s32_t result = NRC_R_OK;
 
-    // TODO:
+    NRC_ASSERT((self != NULL) && (self->type == NRC_DIN_TYPE));
+
+    switch (self->msg_type) {
+    case NRC_DIN_MSG_TYPE_JSON:
+        self->json_cnt = 0;
+        self->str_len = 0;
+        break;
+    default:
+        // Should be no timeout; Ignore
+        break;
+    }
 
     return result;
 }
@@ -195,8 +216,14 @@ static s32_t send_buf(struct nrc_din *self)
     return result;
 }
 
-static s32_t json_parse(s8_t *str, u32_t str_len) {
+static void start_timer(struct nrc_din *self)
+{
+    s32_t result = nrc_timer_after(self->node_pars.timeout, &self->timer_pars);
+}
 
+static void stop_timer(struct nrc_din *self)
+{
+    s32_t result = nrc_timer_cancel(self->timer_pars.timer);
 }
 
 static s32_t send_json(struct nrc_din *self)
@@ -224,6 +251,11 @@ static s32_t send_json(struct nrc_din *self)
             else {
                 if (self->msg_str->str[self->str_len] == '{') {
                     self->json_cnt++;
+
+                    if (self->json_cnt == 1) {
+                        // Start timer when first json { is received
+                        start_timer(self);
+                    }
                 }
                 else if (self->msg_str->str[self->str_len] == '}') {
                     NRC_ASSERT(self->json_cnt > 0);
@@ -231,6 +263,9 @@ static s32_t send_json(struct nrc_din *self)
 
                     if (self->json_cnt == 0) {
                         done = TRUE;
+
+                        // Stop timer since full json structure is received
+                        stop_timer(self);
                     }
                 }
                 self->str_len++;
@@ -244,18 +279,19 @@ static s32_t send_json(struct nrc_din *self)
         // Send string message with (potential) json object
         result = nrc_os_send_msg_from(self->node_pars.node, self->msg_str, self->node_pars.prio);
         self->msg_str = NULL;
-
-        // There might be more data to read
-        if (self->stream_api.get_bytes(self->stream_api.id) > 0) {
-            result = nrc_os_send_evt(self->node_pars.node, NRC_DIN_EVT_DATA_AVAIL, self->node_pars.prio);
-        }
     }
     else if (self->str_len == (self->node_pars.max_size - 1)) {
         // TODO: buffer is too small?
+        stop_timer(self);
         self->str_len = 0;
         self->json_cnt = 0;
 
         result = NRC_R_OUT_OF_MEM;
+    }
+
+    // There might be more data to read
+    if ((cnt > 0) && (self->stream_api.get_bytes(self->stream_api.id) > 0)) {
+        result = nrc_os_send_evt(self->node_pars.node, NRC_DIN_EVT_DATA_AVAIL, self->node_pars.prio);
     }
 
     return result;
