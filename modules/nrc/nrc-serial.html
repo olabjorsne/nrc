@@ -43,6 +43,10 @@
         <label for="node-input-bufsize"><i class="fa fa-tag"></i> Read size</label>
         <input type="text" id="node-input-bufsize" placeholder="256">
     </div>
+    <div class="form-row hidden" id="node-input-timeout-row">
+        <label for="node-input-timeout"><i class="fa fa-tag"></i> Timeout [ms]</label>
+        <input type="text" id="node-input-timeout" placeholder="1000">
+    </div>
 </script>
 
 <script type="text/x-red" data-help-name="nrc-serial-in">
@@ -68,8 +72,9 @@
             name: { name: "" },
             topic: { value: "" },
             serial: { type: "nrc-serial", required: true },
-            priority: { value: "8", required: true, validate: RED.validators.number() },
-            bufsize: { value: "256", required: true, validate: RED.validators.number() },
+            priority: { value: "8", required: true, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= -128) && (v < 127))) }  },
+            bufsize: { value:"256", required: false, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= 0))) } },
+            timeout: { value: "1000", required: false, validate: function(v) { return ((v === "") || (RED.validators.number(v) && (v >= 0))) }  },
             msgtype: { value: "buf", required: true }
         },
         color: "BurlyWood",
@@ -90,6 +95,11 @@
                     $("#node-input-bufsize-row").show();
                 } else {
                     $("#node-input-bufsize-row").hide();
+                }
+                if (messagetype == "json") {
+                    $("#node-input-timeout-row").show();
+                } else {
+                    $("#node-input-timeout-row").hide();
                 }
             };
             updateOptions();
@@ -131,8 +141,8 @@
         defaults: {
             name: { name: "" },
             serial: { type: "nrc-serial", required: true },
-            priority: { value: "8", required: true, validate: RED.validators.number() },
-            bufsize: { value: "256", required: true, validate: RED.validators.number() }
+            priority: { value: "8", required: true, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= 0))) } },
+            bufsize: { value: "256", required: true, validate: function (v) { return ((v === "") || (RED.validators.number(v) && (v >= 0))) } }
         },
         color: "BurlyWood",
         inputs: 1,
@@ -253,7 +263,7 @@
         defaults: {
             //name: {value:""},
             port: { value: "", required: true },
-            baudrate: { value: "57600", required: true, validate: RED.validators.number() },
+            baudrate: { value: "115200", required: true, validate: RED.validators.number() },
             databits: { value: 8, required: true },
             parity: { value: "none", required: true },
             stopbits: { value: 1, required: true },
@@ -264,7 +274,7 @@
             //addchar: {value:false}
         },
         label: function () {
-            this.baudrate = this.baudrate || 57600;
+            this.baudrate = this.baudrate || 115200;
             this.databits = this.databits || 8;
             this.parity = this.parity || this._("serial.label.none");
             this.stopbits = this.stopbits || 1;
@@ -274,6 +284,9 @@
         oneditprepare: function () {
             var previous = null;
             var blist = [
+                { value: "921600", label: "921600", hasValue: false },
+                { value: "460800", label: "460800", hasValue: false },
+                { value: "230400", label: "230400", hasValue: false },
                 { value: "115200", label: "115200", hasValue: false },
                 { value: "57600", label: "57600", hasValue: false },
                 { value: "38400", label: "38400", hasValue: false },
@@ -281,9 +294,6 @@
                 { value: "9600", label: "9600", hasValue: false },
                 { value: "4800", label: "4800", hasValue: false },
                 { value: "2400", label: "2400", hasValue: false },
-                { value: "1200", label: "1200", hasValue: false },
-                { value: "600", label: "600", hasValue: false },
-                { value: "300", label: "300", hasValue: false },
                 { label: "other", value: "other", icon: "red/images/typedInput/09.png", validate: /^[0-9]*$/ }
             ];
 

@@ -20,6 +20,7 @@
 #include "nrc_types.h"
 #include "nrc_port.h"
 #include "nrc_node.h"
+#include "nrc_timer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,7 @@ struct nrc_din_node_pars {
     const s8_t      *cfg_msg_type;
     s8_t            prio;
     u32_t           max_size;
+    u32_t           timeout; // In milliseconds
 };
 
 // Stream API definitions used by the serial-in sub-node
@@ -76,6 +78,8 @@ struct nrc_din {
     struct nrc_msg_str          *msg_str;       // Used for parsing e.g. json
     u32_t                       str_len;        // Length of string
     s32_t                       json_cnt;       // Counter for json parsing
+
+    struct nrc_timer_pars       timer_pars;
 
     u32_t                       type;           // Unique id of class type
 };

@@ -32,20 +32,20 @@
 // Data available event is forwarded to data-in sub-node
 // Other events must not conflict data-in sub-node events
 // Use NRC_DIN_EVT_DATA_AVAIL event for data available
-#define NRC_N_SERIAL_IN_EVT_ERROR       (2)
+#define NRC_N_TCP_IN_EVT_ERROR       (2)
 
 // Default max buffer read size
-#define NRC_N_SERIAL_IN_MAX_BUF_SIZE (256)
+#define NRC_N_TCP_IN_MAX_BUF_SIZE   (256)   // bytes
+#define NRC_N_TCP_IN_TIMEOUT        (1000)  // milliseconds
 
 // Node states
 enum nrc_node_tcp_in_state {
-    NRC_N_SERIAL_IN_S_INVALID = 0,      
-    NRC_N_SERIAL_IN_S_CREATED,      // Created but not yet initialised. No memory allocated except the object itself.
-    NRC_N_SERIAL_IN_S_INITIALISED,  // Initialised and memory allocated. Ready to be started.
-    NRC_N_SERIAL_IN_S_STARTED,      // Resources is started and node is now running.
-    NRC_N_SERIAL_IN_S_ERROR         // Error occurred which node cannot recover from. Other nodes can continue to run.
+    NRC_N_TCP_IN_S_INVALID = 0,      
+    NRC_N_TCP_IN_S_CREATED,      // Created but not yet initialised. No memory allocated except the object itself.
+    NRC_N_TCP_IN_S_INITIALISED,  // Initialised and memory allocated. Ready to be started.
+    NRC_N_TCP_IN_S_STARTED,      // Resources is started and node is now running.
+    NRC_N_TCP_IN_S_ERROR         // Error occurred which node cannot recover from. Other nodes can continue to run.
 };
-
 
 // Tcp-in node structure
 struct nrc_node_tcp_in {
@@ -55,6 +55,7 @@ struct nrc_node_tcp_in {
     const s8_t                      *cfg_msg_type;  // message type from cfg
     s8_t                            prio;           // Node prio; used for sending messages; from cfg
     u32_t                           max_buf_size;   // Max buf size for buf messages
+    u32_t                           timeout;        // Timeout in ms to reset protocol parsing in data-in
 
     enum nrc_node_tcp_in_state      state;          // Node state
     nrc_tcp_t                       tcp;            // NRC tcp port
@@ -119,14 +120,14 @@ nrc_node_t nrc_node_tcp_in_create(struct nrc_node_factory_pars *pars)
 
             // Node specific
             self->reader.data_available_evt = NRC_DIN_EVT_DATA_AVAIL;
-            self->reader.error_evt = NRC_N_SERIAL_IN_EVT_ERROR;
+            self->reader.error_evt = NRC_N_TCP_IN_EVT_ERROR;
             self->reader.node = self;
-            self->max_buf_size = NRC_N_SERIAL_IN_MAX_BUF_SIZE;  // Default message buf size
+            self->max_buf_size = NRC_N_TCP_IN_MAX_BUF_SIZE;  // Default message buf size
 
             // Object type check
             self->type = NRC_N_TCP_IN_TYPE; // For node pointer validity check
 
-            self->state = NRC_N_SERIAL_IN_S_CREATED;
+            self->state = NRC_N_TCP_IN_S_CREATED;
         }
         else {
             NRC_LOGE(_tag, "create(%s): out of mem", pars->cfg_id);
@@ -147,7 +148,7 @@ static s32_t nrc_node_tcp_in_init(nrc_node_t slf)
  
     if ((self != NULL) && (self->type == NRC_N_TCP_IN_TYPE)) {
         switch (self->state) {
-        case NRC_N_SERIAL_IN_S_CREATED:
+        case NRC_N_TCP_IN_S_CREATED:
             result = nrc_tcp_init();
 
             if (OK(result)) {
@@ -159,7 +160,15 @@ static s32_t nrc_node_tcp_in_init(nrc_node_t slf)
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &self->cfg_msg_type);
             }
             if (OK(result)) {
-                result = nrc_cfg_get_int(self->hdr.cfg_id, "bufsize", &self->max_buf_size);
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "bufsize", &self->max_buf_size); if (!OK(result) || self->max_buf_size == 0) {
+                    self->max_buf_size = NRC_N_TCP_IN_MAX_BUF_SIZE;
+                }
+            }
+            if (OK(result)) {
+                result = nrc_cfg_get_int(self->hdr.cfg_id, "timeout", &self->timeout);
+                if (!OK(result) || self->timeout == 0) {
+                    self->timeout = NRC_N_TCP_IN_TIMEOUT;
+                }
             }
             if (OK(result)) {
                 // Get node priority
@@ -184,17 +193,17 @@ static s32_t nrc_node_tcp_in_init(nrc_node_t slf)
             }
 
             if (OK(result)) {
-                self->state = NRC_N_SERIAL_IN_S_INITIALISED;
+                self->state = NRC_N_TCP_IN_S_INITIALISED;
             }
             else {
-                self->state = NRC_N_SERIAL_IN_S_ERROR;
+                self->state = NRC_N_TCP_IN_S_ERROR;
                 NRC_LOGE(_tag, "init(%s): error %d", self->hdr.cfg_id, result);
             }
             break;
 
         default:
             NRC_LOGE(_tag, "init(%s): invalid state %d", self->hdr.cfg_id, self->state);
-            self->state = NRC_N_SERIAL_IN_S_ERROR;
+            self->state = NRC_N_TCP_IN_S_ERROR;
             result = NRC_R_INVALID_STATE;
             break;
         }
@@ -210,18 +219,18 @@ static s32_t nrc_node_tcp_in_deinit(nrc_node_t slf)
  
     if ((self != NULL) && (self->type == NRC_N_TCP_IN_TYPE)) {
         switch (self->state) {
-        case NRC_N_SERIAL_IN_S_INITIALISED:
-        case NRC_N_SERIAL_IN_S_ERROR:
+        case NRC_N_TCP_IN_S_INITIALISED:
+        case NRC_N_TCP_IN_S_ERROR:
             // Free allocated memory (if any)
             nrc_port_heap_free(self->data_in);
             self->data_in = NULL;
 
-            self->state = NRC_N_SERIAL_IN_S_CREATED;
+            self->state = NRC_N_TCP_IN_S_CREATED;
             break;
 
         default:
             NRC_LOGE(_tag, "deinit(%s): invalid state %d", self->hdr.cfg_id, self->state);
-            self->state = NRC_N_SERIAL_IN_S_ERROR;
+            self->state = NRC_N_TCP_IN_S_ERROR;
             result = NRC_R_INVALID_STATE;
             break;
         }
@@ -237,17 +246,17 @@ static s32_t nrc_node_tcp_in_start(nrc_node_t slf)
  
     if ((self != NULL) && (self->type == NRC_N_TCP_IN_TYPE)) {
         switch (self->state) {
-        case NRC_N_SERIAL_IN_S_INITIALISED:
+        case NRC_N_TCP_IN_S_INITIALISED:
             result = nrc_tcp_open_reader(self->hdr.cfg_id, self->reader, &self->tcp);
 
             if (OK(result)) {
-                struct nrc_din_node_pars    pars = {self, self->topic, self->cfg_msg_type, self->prio, self->max_buf_size};
+                struct nrc_din_node_pars    pars = {self, self->topic, self->cfg_msg_type, self->prio, self->max_buf_size, self->timeout};
                 struct nrc_din_stream_api   api = { self->tcp, nrc_tcp_read, nrc_tcp_get_bytes, nrc_tcp_clear };
                 result = nrc_din_start(self->data_in, pars, api);
             }
 
             if (OK(result)) {
-                self->state = NRC_N_SERIAL_IN_S_STARTED;
+                self->state = NRC_N_TCP_IN_S_STARTED;
 
                 // Check if there is already data to read
                 if (nrc_tcp_get_bytes(self->tcp) > 0) {
@@ -255,18 +264,18 @@ static s32_t nrc_node_tcp_in_start(nrc_node_t slf)
                 }
             }
             else {
-                self->state = NRC_N_SERIAL_IN_S_ERROR;
+                self->state = NRC_N_TCP_IN_S_ERROR;
                 NRC_LOGE(_tag, "start(%s): could not open tcp out", self->hdr.cfg_id);
             }
             break;
 
-        case NRC_N_SERIAL_IN_S_STARTED:
+        case NRC_N_TCP_IN_S_STARTED:
             NRC_LOGW(_tag, "start(%d): already started", self->hdr.cfg_id);
             break;
 
         default:
             NRC_LOGE(_tag, "start(%s): invalid state %d", self->hdr.cfg_id, self->state);
-            self->state = NRC_N_SERIAL_IN_S_ERROR;
+            self->state = NRC_N_TCP_IN_S_ERROR;
             result = NRC_R_INVALID_STATE;
             break;
         }
@@ -282,7 +291,7 @@ static s32_t nrc_node_tcp_in_stop(nrc_node_t slf)
 
     if ((self != NULL) && (self->type == NRC_N_TCP_IN_TYPE)) {
         switch (self->state) {
-        case NRC_N_SERIAL_IN_S_STARTED:
+        case NRC_N_TCP_IN_S_STARTED:
             result = nrc_din_stop(self->data_in);
 
             // Stop any ongoing activites, free memory allocated in the start state
@@ -291,17 +300,17 @@ static s32_t nrc_node_tcp_in_stop(nrc_node_t slf)
 
             // No memory to free
 
-            self->state = NRC_N_SERIAL_IN_S_INITIALISED;
+            self->state = NRC_N_TCP_IN_S_INITIALISED;
             result = NRC_R_OK;
             break;
 
-        case NRC_N_SERIAL_IN_S_INITIALISED:
+        case NRC_N_TCP_IN_S_INITIALISED:
             NRC_LOGW(_tag, "stop(%d): already stopped", self->hdr.cfg_id);
             break;
 
         default:
             NRC_LOGE(_tag, "stop(%s): invalid state", self->hdr.cfg_id, self->state);
-            self->state = NRC_N_SERIAL_IN_S_ERROR;
+            self->state = NRC_N_TCP_IN_S_ERROR;
             result = NRC_R_INVALID_STATE;
             break;
         }
@@ -317,7 +326,7 @@ static s32_t nrc_node_tcp_in_recv_msg(nrc_node_t slf, nrc_msg_t msg)
 
     if ((self != NULL) && (self->type == NRC_N_TCP_IN_TYPE)) {
         switch (self->state) {
-        case NRC_N_SERIAL_IN_S_STARTED:
+        case NRC_N_TCP_IN_S_STARTED:
             // Should not receive messages (other than for simulation/tests).
             // Forward message to wires
             NRC_LOGV(_tag, "recv_msg(%s)", self->hdr.cfg_id);
@@ -343,10 +352,10 @@ static s32_t nrc_node_tcp_in_recv_evt(nrc_node_t slf, u32_t event_mask)
 
     if ((self != NULL) && (self->type == NRC_N_TCP_IN_TYPE)) {
         switch (self->state) {
-        case NRC_N_SERIAL_IN_S_STARTED:
+        case NRC_N_TCP_IN_S_STARTED:
             result = nrc_din_recv_evt(self->data_in, event_mask);
 
-            if ((event_mask & NRC_N_SERIAL_IN_EVT_ERROR) != 0) {
+            if ((event_mask & NRC_N_TCP_IN_EVT_ERROR) != 0) {
 				//TODO
                 //NRC_LOGW(_tag, "recv_evt(%s): tcp error %d", self->hdr.cfg_id, nrc_tcp_get_read_error(self->tcp));
             }

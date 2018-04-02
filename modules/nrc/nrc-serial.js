@@ -25,7 +25,7 @@ module.exports = function(RED) {
         this.serialport = n.serialport;
         //this.newline = n.newline;
         //this.addchar = n.addchar || "false";
-        this.serialbaud = parseInt(n.serialbaud) || 57600;
+        this.serialbaud = parseInt(n.serialbaud) || 115200;
         this.databits = parseInt(n.databits) || 8;
         this.parity = n.parity || "none";
         this.flowctrl = n.flowctrl || "none";
@@ -53,7 +53,8 @@ module.exports = function(RED) {
         this.topic = n.topic;
         this.priority = n.priority;
         this.msgtype = n.msgtype;
-        this.bufsize = n.bufsize;
+        this.bufsize = parseInt(n.bufsize || "256");
+        this.timeout = parseInt(n.timeout) || 1000;
         this.serialConfig = RED.nodes.getNode(this.serial);
     }
     RED.nodes.registerType("nrc-serial-in", NRCSerialInNode);
