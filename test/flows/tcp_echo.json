@@ -1,50 +1,42 @@
 [
-    {
-       "id":"b3ecc3b4.a2484",
-       "type":"tab",
-       "label":"Flow 1"
-    },
-    {
-       "id":"2488e460.84db5c",
-       "type":"nrc-tcp-out",
-       "z":"b3ecc3b4.a2484",
-       "host":"",
-       "port":"2121",
-       "role":"server",
-       "base64":false,
-       "end":false,
-       "priority": "8",
-       "bufsize": "256",
-       "topic":"abrakadabra",
-       "msgtype":"dataavailable",
-       "name":"tcp_listen_out",
-       "x":500.1666946411133,
-       "y":197.0000524520874,
-       "wires":[
- 
-       ]
-    },
-    {
-       "id":"fa6e3dd.a0797c",
-       "type":"nrc-tcp-in",
-       "z":"b3ecc3b4.a2484",
-       "msgtype":"dataavailable",
-       "name":"tcp_listener_in",
-       "port":"2121",
-       "role":"server",
-       "host":"",
-       "datamode":"stream",
-       "datatype":"buffer",
-       "newline":"",
-       "topic":"abrakadabra",
-       "priority": "8",
-       "bufsize": "256", 
-       "x":252.16672134399414,
-       "y":196.00005340576172,
-       "wires":[
-          [
-             "2488e460.84db5c"
-          ]
-       ]
-    }
- ]
+	{
+		"id": "b3ecc3b4.a2484",
+		"type": "tab",
+		"label": "Flow 1"
+	},
+	{
+		"id": "b609ab58.de72f8",
+		"type": "nrc-tcp-in",
+		"z": "b3ecc3b4.a2484",
+		"name": "test_tcp_in",
+		"role": "server",
+		"host": "",
+		"port": "2121",
+		"msgtype": "buf",
+		"bufsize": "256",
+		"timeout": "1000",
+		"priority": "8",
+		"topic": "dummy_topic_in",
+		"x": 147.16668701171875,
+		"y": 185,
+		"wires": [
+			[
+				"9cc3e571.814fc8"
+			]
+		]
+	},
+	{
+		"id": "9cc3e571.814fc8",
+		"type": "nrc-tcp-out",
+		"z": "b3ecc3b4.a2484",
+		"role": "server",
+		"host": "",
+		"port": "2121",
+		"priority": "8",
+		"bufsize": "256",
+		"name": "test_tcp_out",
+		"x": 416.1666946411133,
+		"y": 186.00003051757812,
+		"wires": []
+	}
+]
