@@ -47,7 +47,6 @@ enum nrc_node_tcp_out_state {
 struct nrc_node_tcp_out {
     struct nrc_node_hdr             hdr;            // General node header; from create function in pars
 
-    const s8_t                      *topic;         // Node topic from cfg
     s8_t                            prio;           // Node prio; used for sending messages; from cfg
     u32_t                           max_buf_size;   // Max write size
 
@@ -146,11 +145,6 @@ static s32_t nrc_node_tcp_out_init(nrc_node_t slf)
         switch (self->state) {
         case NRC_N_SERIAL_OUT_S_CREATED:
             result = nrc_tcp_init();
-
-            if (OK(result)) {
-                // Read topic from configuration
-                result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);
-            }
 
             if (OK(result)) {
                 // Get node priority
