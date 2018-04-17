@@ -132,6 +132,9 @@
     <ClCompile Include="..\..\kernel\source\nrc_tcp.c">
       <Filter>kernel\source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\kernel\source\nrc_status.c">
+      <Filter>kernel\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\kernel\include\nrc_os.h">
@@ -198,6 +201,9 @@
       <Filter>port\include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\kernel\include\nrc_tcp.h">
+      <Filter>kernel\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kernel\include\nrc_status.h">
       <Filter>kernel\include</Filter>
     </ClInclude>
   </ItemGroup>

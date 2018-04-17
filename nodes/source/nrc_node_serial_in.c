@@ -23,6 +23,7 @@
 #include "nrc_assert.h"
 #include "nrc_serial.h"
 #include "nrc_data_in.h"
+#include "nrc_status.h"
 
 #include <string.h>
 
@@ -55,6 +56,7 @@ struct nrc_node_serial_in {
     const s8_t                      *topic;         // Node topic from cfg
     const s8_t                      *cfg_serial_id; // serial (configuration) node id from cfg
     const s8_t                      *cfg_msg_type;  // message type from cfg
+    const s8_t                      *cfg_z;         // flow tab from cfg
     s8_t                            prio;           // Node prio; used for sending messages; from cfg
     u32_t                           max_buf_size;   // Max buf size for buf messages
     u32_t                           timeout;        // Timeout in ms to reset protocol parsing in data-in
@@ -161,6 +163,10 @@ static s32_t nrc_node_serial_in_init(nrc_node_t slf)
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "serial", &self->cfg_serial_id);
             }
             if (OK(result)) {
+                // Get cfg z of serial configuration node
+                result = nrc_cfg_get_str(self->hdr.cfg_id, "z", &self->cfg_z);
+            }
+            if (OK(result)) {
                 // Get msg type to send; data available or byte array
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "msgtype", &self->cfg_msg_type);
             }
@@ -262,6 +268,9 @@ static s32_t nrc_node_serial_in_start(nrc_node_t slf)
             }
 
             if (OK(result)) {
+                struct nrc_status status = {self->topic, self->prio, NRC_STATUS_CONNECTED, "Connected"};
+                nrc_status_set(self->cfg_z, self, status);
+
                 self->state = NRC_N_SERIAL_IN_S_STARTED;
 
                 // Check if there is already data to read
@@ -298,6 +307,10 @@ static s32_t nrc_node_serial_in_stop(nrc_node_t slf)
     if ((self != NULL) && (self->type == NRC_N_SERIAL_IN_TYPE)) {
         switch (self->state) {
         case NRC_N_SERIAL_IN_S_STARTED:
+        {
+            struct nrc_status status = { self->topic, self->prio, NRC_STATUS_DISCONNECTED, "Disconnected" };
+            nrc_status_set(self->cfg_z, self, status);
+
             result = nrc_din_stop(self->data_in);
 
             // Stop any ongoing activites, free memory allocated in the start state
@@ -309,7 +322,7 @@ static s32_t nrc_node_serial_in_stop(nrc_node_t slf)
             self->state = NRC_N_SERIAL_IN_S_INITIALISED;
             result = NRC_R_OK;
             break;
-
+        }
         case NRC_N_SERIAL_IN_S_INITIALISED:
             NRC_LOGW(_tag, "stop(%d): already stopped", self->hdr.cfg_id);
             break;

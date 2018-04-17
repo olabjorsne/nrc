@@ -27,6 +27,7 @@
 #define NRC_MSG_TYPE_STRING         (3)
 #define NRC_MSG_TYPE_BUF            (4)
 #define NRC_MSG_TYPE_DATA_AVAILABLE (5)
+#define NRC_MSG_TYPE_STATUS         (6)
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,6 +79,16 @@ struct nrc_msg_data_available {
     void                *node;  // Node to read data from
     nrc_msg_read_t      read;   // Read function. If 0 bytes is returned, a new
 };                              // data_available message shall be sent when new data is available
+ 
+/**
+* @brief Message representing a node status update
+*/
+struct nrc_msg_status {
+    struct nrc_msg_hdr  hdr;
+    void                *node;                  // Node with status update
+    s32_t               status;                 // Status code (see nrc_status.h)
+    s8_t                text[NRC_EMTPY_ARRAY];  // 0 terminated string
+};
 
 #ifdef __cplusplus
 }
