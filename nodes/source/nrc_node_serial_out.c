@@ -23,7 +23,7 @@
 #include "nrc_assert.h"
 #include "nrc_serial.h"
 #include "nrc_data_out.h"
-
+#include "nrc_status.h"
 #include <string.h>
 
 // Type number to check that node pointer is of correct type
@@ -49,6 +49,7 @@ struct nrc_node_serial_out {
     struct nrc_node_hdr             hdr;            // General node header; from create function in pars
 
     const s8_t                      *cfg_serial_id; // serial-port (configuration node) id from cfg
+    const s8_t                      *cfg_z;         // flow tab from cfg
     s8_t                            prio;           // Node prio; used for sending messages; from cfg
     u32_t                           max_buf_size;   // Max write size
 
@@ -239,6 +240,9 @@ static s32_t nrc_node_serial_out_start(nrc_node_t slf)
             }
 
             if (OK(result)) {
+                struct nrc_status status = { NULL, self->prio, NRC_STATUS_CONNECTED, "Connected" };
+                nrc_status_set(self->cfg_z, self, status);
+
                 self->state = NRC_N_SERIAL_OUT_S_STARTED;
             }
             else {
@@ -270,15 +274,20 @@ static s32_t nrc_node_serial_out_stop(nrc_node_t slf)
     if ((self != NULL) && (self->type == NRC_N_SERIAL_OUT_TYPE)) {
         switch (self->state) {
          case NRC_N_SERIAL_OUT_S_STARTED:
-            // Stop any ongoing activites, free memory allocated in the start state
-            result = nrc_serial_close_writer(self->serial);
-            self->serial = NULL;
+         {
+             struct nrc_status status = { NULL, self->prio, NRC_STATUS_DISCONNECTED, "Disconnected" };
+             nrc_status_set(self->cfg_z, self, status);
 
-            result = nrc_dout_stop(self->data_out);
+             // Stop any ongoing activites, free memory allocated in the start state
+             result = nrc_serial_close_writer(self->serial);
+             self->serial = NULL;
 
-            self->state = NRC_N_SERIAL_OUT_S_INITIALISED;
-            result = NRC_R_OK;
-            break;
+             result = nrc_dout_stop(self->data_out);
+
+             self->state = NRC_N_SERIAL_OUT_S_INITIALISED;
+             result = NRC_R_OK;
+             break;
+         }
 
         case NRC_N_SERIAL_OUT_S_INITIALISED:
             NRC_LOGW(_tag, "stop(%d): already stopped", self->hdr.cfg_id);

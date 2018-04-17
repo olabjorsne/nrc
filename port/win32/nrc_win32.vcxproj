@@ -99,7 +99,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_LONG_HANDLES_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_LONG_HANDLES_;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\nodes\include;$(ProjectDir)..\..\test\misc;$(ProjectDir)..\..\test\port;$(ProjectDir)..\..\misc\include;$(ProjectDir)..\..\port\include;$(ProjectDir)..\..\kernel\include</AdditionalIncludeDirectories>
       <StructMemberAlignment>Default</StructMemberAlignment>
     </ClCompile>
@@ -147,6 +147,7 @@
     <ClCompile Include="..\..\kernel\source\nrc_factory.c" />
     <ClCompile Include="..\..\kernel\source\nrc_os.c" />
     <ClCompile Include="..\..\kernel\source\nrc_serial.c" />
+    <ClCompile Include="..\..\kernel\source\nrc_status.c" />
     <ClCompile Include="..\..\kernel\source\nrc_tcp.c" />
     <ClCompile Include="..\..\kernel\source\nrc_timer.c" />
     <ClCompile Include="..\..\misc\source\jsmn.c" />
@@ -178,6 +179,7 @@
     <ClInclude Include="..\..\kernel\include\nrc_factory.h" />
     <ClInclude Include="..\..\kernel\include\nrc_os.h" />
     <ClInclude Include="..\..\kernel\include\nrc_serial.h" />
+    <ClInclude Include="..\..\kernel\include\nrc_status.h" />
     <ClInclude Include="..\..\kernel\include\nrc_tcp.h" />
     <ClInclude Include="..\..\kernel\include\nrc_timer.h" />
     <ClInclude Include="..\..\kernel\include\nrc_types.h" />
