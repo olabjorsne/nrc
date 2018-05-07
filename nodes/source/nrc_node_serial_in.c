@@ -238,6 +238,8 @@ static s32_t nrc_node_serial_in_deinit(nrc_node_t slf)
             self->data_in = NULL;
 
             self->state = NRC_N_SERIAL_IN_S_CREATED;
+
+            result = NRC_R_OK;
             break;
 
         default:

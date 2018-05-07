@@ -209,6 +209,8 @@ static s32_t nrc_node_serial_out_deinit(nrc_node_t slf)
             self->data_out = NULL;
 
             self->state = NRC_N_SERIAL_OUT_S_CREATED;
+
+            result = NRC_R_OK;
             break;
 
         default:

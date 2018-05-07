@@ -305,6 +305,7 @@ static s32_t handle_json(struct nrc_node_host *self, struct nrc_msg_str *msg)
 {
     s32_t result = NRC_R_OK;
 
+    jsmn_init(&self->json_parser);
     self->num_tokens = jsmn_parse(&self->json_parser, msg->str, strlen(msg->str), self->json_tokens, NRC_N_HOST_MAX_TOKENS);
 
     if (self->num_tokens > 2) {

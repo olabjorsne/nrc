@@ -740,6 +740,8 @@ static void free_messages(void)
 
         nrc_port_heap_fast_free(free_msg);
     }
+
+    _os.msg_list = NULL;
 }
 
 static void stop_registered_nodes(void)
