@@ -177,16 +177,23 @@ s32_t nrc_cfg_add_node(struct nrc_cfg_t *config, const u8_t *node_config, u32_t 
     node->n_tokens = jsmn_parse(&config->json_parser, node_config, config_size, node->json_tokens, NODE_MAX_TOKENS);    
     node->json_data = nrc_port_heap_alloc(config_size);    
     if (node->json_data == NULL) {
+        free_node(node);
         status = NRC_R_OUT_OF_MEM;
     }
     if (OK(status)) {
         memcpy(node->json_data, node_config, config_size);
         status = parse_node(config, node);
         if (OK(status)) {
+
+            nrc_cfg_remove_node(config, node->id);
+
             node_add(config, node);
             if (node_id) {
                 *node_id = node->id;
             }
+        }
+        else {
+            free_node(node);
         }
     }
     return status;
@@ -205,6 +212,9 @@ s32_t nrc_cfg_remove_node(struct nrc_cfg_t *config, const s8_t *cfg_id)
                 current->next = node->next;
                 status = NRC_R_OK;
                 break;
+            }
+            else {
+                current = current->next;
             }
         }
         free_node(node);
