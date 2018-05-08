@@ -244,6 +244,11 @@ s32_t nrc_port_uart_close(nrc_port_uart_t uart)
     result = nrc_port_mutex_lock(self->mutex, 0);
     NRC_PORT_ASSERT(result == NRC_R_OK);
 
+    self->rx_overlapped.hEvent = NULL;
+    self->tx_overlapped.hEvent = NULL;
+    //ok = CancelIoEx(self->hPort, NULL);
+    ok = CancelIo(self->hPort);
+    SleepEx(10, TRUE);
     ok = CloseHandle(self->hPort);
 
     self->type = 0;
@@ -396,29 +401,29 @@ static VOID CALLBACK write_complete(
     if (lpOverlapped != NULL) {
         self = (struct nrc_port_uart*)lpOverlapped->hEvent;
 
-        result = nrc_port_mutex_lock(self->mutex, 0);
-        NRC_PORT_ASSERT(result == NRC_R_OK);
+        if ((self != NULL) && (self->type == NRC_PORT_UART_TYPE)) {
+            result = nrc_port_mutex_lock(self->mutex, 0);
+            NRC_PORT_ASSERT(result == NRC_R_OK);
 
-        NRC_PORT_ASSERT(self != NULL);
-        NRC_PORT_ASSERT(self->type == NRC_PORT_UART_TYPE);
-        NRC_PORT_ASSERT(self->tx_state == NRC_PORT_UART_S_WRITING);
+            NRC_PORT_ASSERT(self->tx_state == NRC_PORT_UART_S_WRITING);
 
-        self->tx_state = NRC_PORT_UART_S_IDLE;
+            self->tx_state = NRC_PORT_UART_S_IDLE;
 
-        if (dwErrorCode == 0) {
-            notify_result = NRC_R_OK;
-            notify_bytes = dwNumberOfBytesTransfered;
+            if (dwErrorCode == 0) {
+                notify_result = NRC_R_OK;
+                notify_bytes = dwNumberOfBytesTransfered;
+            }
+            else {
+                notify_result = NRC_R_ERROR;
+                notify_bytes = 0;
+            }
+            notify_fcn = self->callback.write_complete;
+
+            result = nrc_port_mutex_unlock(self->mutex);
+            NRC_PORT_ASSERT(result == NRC_R_OK);
+
+            notify_fcn(self, notify_result, notify_bytes);
         }
-        else {
-            notify_result = NRC_R_ERROR;
-            notify_bytes = 0;
-        }
-        notify_fcn = self->callback.write_complete;
-
-        result = nrc_port_mutex_unlock(self->mutex);
-        NRC_PORT_ASSERT(result == NRC_R_OK);
-
-        notify_fcn(self, notify_result, notify_bytes);
     }
 }
 
@@ -437,47 +442,47 @@ static VOID CALLBACK read_complete(
     if (lpOverlapped != NULL) {
         self = (struct nrc_port_uart*)lpOverlapped->hEvent;
 
-        NRC_PORT_ASSERT(self != NULL);
-        NRC_PORT_ASSERT(self->type == NRC_PORT_UART_TYPE);
-        NRC_PORT_ASSERT(self->rx_state == NRC_PORT_UART_S_READING);
+        if ((self != NULL) && (self->type == NRC_PORT_UART_TYPE)) {
+            NRC_PORT_ASSERT(self->rx_state == NRC_PORT_UART_S_READING);
 
-        result = nrc_port_mutex_lock(self->mutex, 0);
-        NRC_PORT_ASSERT(result == NRC_R_OK);
+            result = nrc_port_mutex_lock(self->mutex, 0);
+            NRC_PORT_ASSERT(result == NRC_R_OK);
 
-        self->rx_state = NRC_PORT_UART_S_IDLE;
+            self->rx_state = NRC_PORT_UART_S_IDLE;
 
-        nrc_misc_cbuf_write_buf_consumed(self->cbuf, dwNumberOfBytesTransfered);
+            nrc_misc_cbuf_write_buf_consumed(self->cbuf, dwNumberOfBytesTransfered);
 
-        buf = nrc_misc_cbuf_get_write_buf(self->cbuf, &buf_size);
+            buf = nrc_misc_cbuf_get_write_buf(self->cbuf, &buf_size);
 
-        if ((buf != NULL) && (buf_size > 0)) {
+            if ((buf != NULL) && (buf_size > 0)) {
 
-            self->rx_overlapped.Offset = 0;
-            self->rx_overlapped.OffsetHigh = 0;
-            self->rx_overlapped.hEvent = self;
+                self->rx_overlapped.Offset = 0;
+                self->rx_overlapped.OffsetHigh = 0;
+                self->rx_overlapped.hEvent = self;
 
-            ok = ReadFileEx(self->hPort, buf, buf_size, &self->rx_overlapped, read_complete);
-            if (ok) {
-                self->rx_state = NRC_PORT_UART_S_READING;
+                ok = ReadFileEx(self->hPort, buf, buf_size, &self->rx_overlapped, read_complete);
+                if (ok) {
+                    self->rx_state = NRC_PORT_UART_S_READING;
+                }
+                else {
+                    error_code = NRC_R_ERROR;
+                }
             }
-            else {
+
+            result = nrc_port_mutex_unlock(self->mutex);
+            NRC_PORT_ASSERT(result == NRC_R_OK);
+
+            if (dwErrorCode != 0) {
                 error_code = NRC_R_ERROR;
             }
-        }
 
-        result = nrc_port_mutex_unlock(self->mutex);
-        NRC_PORT_ASSERT(result == NRC_R_OK);
-
-        if (dwErrorCode != 0) {
-            error_code = NRC_R_ERROR;
-        }
-
-        if ((error_code == NRC_R_OK) && (self->notify_data_available)) {
-            self->notify_data_available = FALSE;
-            self->callback.data_available(self, error_code);
-        }
-        else if (error_code != NRC_R_OK) {
-            self->callback.data_available(self, error_code);
+            if ((error_code == NRC_R_OK) && (self->notify_data_available)) {
+                self->notify_data_available = FALSE;
+                self->callback.data_available(self, error_code);
+            }
+            else if (error_code != NRC_R_OK) {
+                self->callback.data_available(self, error_code);
+            }
         }
     }
 }
