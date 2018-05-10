@@ -158,10 +158,30 @@ nrc_cfg_t* nrc_cfg_create(const u8_t *p_config, u32_t config_size)
         // Nodes are added to configuration using nrc_cfg_add() operation
     }
     if (!OK(status)) {
-        //nrc_cfg_destroy(config); //TODO
+        nrc_cfg_destroy(config);
     }
 
     return config;
+}
+
+void nrc_cfg_destroy(nrc_cfg_t* config)
+{
+    if (config != NULL) {
+        struct nrc_cfg_node *node = config->nodes;
+        struct nrc_cfg_node *free;
+
+        while (node != NULL) {
+            free = node;
+            node = node->next;
+            free_node(free);
+        }
+
+        if (_config == config) {
+            _config = NULL;
+        }
+
+        nrc_port_heap_free(config);
+    }
 }
 
 s32_t nrc_cfg_add_node(struct nrc_cfg_t *config, const u8_t *node_config, u32_t config_size, const s8_t **node_id)
@@ -361,6 +381,7 @@ static s32_t free_node(struct nrc_cfg_node *node)
     if (node->json_data) {
         nrc_port_heap_free(node->json_data);
     }
+    nrc_port_heap_free(node);
 
     return status;
 }
@@ -629,6 +650,46 @@ s32_t nrc_cfg_get_int(const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *int
     }
     return status;
 }
+
+s32_t nrc_cfg_get_bool(const s8_t *cfg_id, const s8_t *cfg_param_name, bool_t *bool_value) 
+{
+    s32_t status = NRC_R_NOT_FOUND;
+    s8_t *value = NULL;
+    s32_t value_len = 0;
+    struct nrc_cfg_node* node = NULL;
+    struct nrc_param* param = NULL;
+
+    NRC_ASSERT(_config);
+
+    node = get_node_by_id(_config, cfg_id);
+    if (node == NULL) {
+        return status;
+    }
+
+    param = get_node_cfg_from_list(node, cfg_param_name);
+    if (param == NULL) {
+        status = get_node_cfg_value_by_name(node, cfg_param_name, &value, &value_len);
+        if (OK(status)) {
+            param = add_node_int_cfg(node, cfg_param_name, value, value_len);
+            NRC_ASSERT(param);
+        }
+    }
+
+    if (param) {
+        status = NRC_R_INVALID_CFG;
+
+        if ((value_len == 4) && ((memcmp(value, "true", 4) == 0) || (memcmp(value, "TRUE", 4) == 0))) {
+                *bool_value = TRUE;
+                status = NRC_R_OK;
+        }
+        else if ((value_len == 5) && ((memcmp(value, "false", 5) == 0) || (memcmp(value, "FALSE", 5) == 0))) {
+            *bool_value = FALSE;
+            status = NRC_R_OK;
+        }
+    }
+    return status;
+}
+
 s32_t nrc_cfg_get_str_from_array(const s8_t *cfg_id, const s8_t *cfg_arr_name, u8_t index, const s8_t **str)
 { 
     s32_t status = NRC_R_NOT_FOUND;

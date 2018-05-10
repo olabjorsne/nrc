@@ -182,7 +182,7 @@ static void stop_flow(void)
     free_messages();
 
     // Deactivate current configuration
-    //nrc_cfg_destroy(_os.flow_cfg); // TODO: function not (yet) implemented
+    nrc_cfg_destroy(_os.flow_cfg);
 }
 
 s32_t nrc_os_start(struct nrc_cfg_t *flow_cfg)

@@ -137,17 +137,7 @@ static s32_t nrc_node_inject_init(nrc_node_t slf)
                 }
             }
             if (OK(result)) {
-                s8_t *str;
-                result = nrc_cfg_get_str(self->hdr.cfg_id, "repeat", &str);
-
-                if (OK(result)) {
-                    if (strcmp(str, "false") == 0) {
-                        self->repeat = FALSE;
-                    }
-                    else {
-                        self->repeat = TRUE;
-                    }
-                }
+                result = nrc_cfg_get_bool(self->hdr.cfg_id, "repeat", &self->repeat);
             }
             if (OK(result)) {
                 result = nrc_cfg_get_str(self->hdr.cfg_id, "topic", &self->topic);

@@ -133,6 +133,20 @@ nrc_cfg_t * nrc_cfg_create(const u8_t *flow_config, u32_t config_size);
 s32_t nrc_cfg_get_int(const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *value);
 
 /**
+* @brief Get configuration boolean value
+*
+* Value is read from the active configuration.
+*
+* @param cfg_id The id of the node
+* @param cfg_param_name The name of the configuration
+* @param value (out) Configuration boolean value
+*
+* @return NRC_R_OK is return if operation succeeds
+*/
+s32_t nrc_cfg_get_bool(const s8_t *cfg_id, const s8_t *cfg_param_name, bool_t *value);
+
+
+/**
  * @brief Get string value from string array configuratoin 
  *
  * Value is read from the active configuration.
