@@ -131,7 +131,7 @@ nrc_cfg_t* nrc_cfg_create(const u8_t *p_config, u32_t config_size)
         config->n_tokens = jsmn_parse(&config->json_parser, config->json_data, config->config_size, config->json_tokens, MAX_TOKENS);
 
         if (config->n_tokens > 0) {            
-            s32_t status = parse_nodes(config);
+            status = parse_nodes(config);
             if (status == NRC_R_OK) {
                 NRC_LOGV(_tag, "Configuration parsed without errors");
             }
@@ -156,9 +156,12 @@ nrc_cfg_t* nrc_cfg_create(const u8_t *p_config, u32_t config_size)
     else {
         // Empty configuration created
         // Nodes are added to configuration using nrc_cfg_add() operation
+        status = NRC_R_OK;
     }
     if (!OK(status)) {
         nrc_cfg_destroy(config);
+        config = NULL;
+
     }
 
     return config;
