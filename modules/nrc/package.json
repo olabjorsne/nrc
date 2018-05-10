@@ -17,7 +17,8 @@
       "nrc-serial": "nrc-serial.js",
       "nrc-inject": "nrc-inject.js",
       "nrc-debug": "nrc-debug.js",
-      "nrc-tcp": "nrc-tcp.js"
+      "nrc-tcp": "nrc-tcp.js",
+      "nrc-host":  "nrc-host.js"
     }
   }
 }

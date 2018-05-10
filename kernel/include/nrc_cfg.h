@@ -39,7 +39,8 @@ typedef struct nrc_cfg_t nrc_cfg_t;
  *        The configuration data is used by the configuration object.
  *        and must be available as long as the configuration is active.
  *
- * @param flow_config json formatted configuration
+ * @param flow_config json formatted configuration, 
+ *                    pass NULL to create an empty confguration 
  * @param config_size Length of configuration data
  *
  * @return A configuration object is returned if parsing of the json flow succeeds, NULL if parsing fails.
@@ -64,6 +65,30 @@ nrc_cfg_t * nrc_cfg_create(const u8_t *flow_config, u32_t config_size);
  */
  s32_t nrc_cfg_set_active(nrc_cfg_t* config);
 
+ /**
+ * @brief Create and add a node to configuration
+ *
+ * @param config configuration to which the node shall be added
+ * @param node_config json formatted node configuration
+ *                    This configuration data is stored by the 
+ *                    created node object and can is not used after this 
+ *                    function returns.
+ * @param config_size Length of configuration data
+ * @param node_id (out) id of added node
+ *
+ * @return NRC_R_OK is return if operation succeeds
+ */
+ s32_t nrc_cfg_add_node(struct nrc_cfg_t *config, const u8_t *node_config, u32_t node_config_size, const s8_t **node_id);
+
+ /**
+ * @brief Remove a node from configuration.
+ *
+ * @param config configuration from which the node shall be removed
+ * @param cfg_id id of node that shall be removed
+ *
+ * @return NRC_R_OK is return if operation succeeds
+ */
+ s32_t nrc_cfg_remove_node(struct nrc_cfg_t *config, const s8_t *cfg_id);
 
 /**
  * @brief Iterator for reading node basic node configuration.
@@ -106,6 +131,20 @@ nrc_cfg_t * nrc_cfg_create(const u8_t *flow_config, u32_t config_size);
  * @return NRC_R_OK is return if operation succeeds
  */
 s32_t nrc_cfg_get_int(const s8_t *cfg_id, const s8_t *cfg_param_name, s32_t *value);
+
+/**
+* @brief Get configuration boolean value
+*
+* Value is read from the active configuration.
+*
+* @param cfg_id The id of the node
+* @param cfg_param_name The name of the configuration
+* @param value (out) Configuration boolean value
+*
+* @return NRC_R_OK is return if operation succeeds
+*/
+s32_t nrc_cfg_get_bool(const s8_t *cfg_id, const s8_t *cfg_param_name, bool_t *value);
+
 
 /**
  * @brief Get string value from string array configuratoin 
